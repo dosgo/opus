@@ -31,15 +31,6 @@ const (
 	MODE_HYBRID
 )
 
-// OpusError represents error codes from Opus operations
-type OpusError int
-
-const (
-	OPUS_OK             OpusError = 0
-	OPUS_BAD_ARG        OpusError = -1
-	OPUS_INVALID_PACKET OpusError = -4
-)
-
 // ParseOpusPacket parses an Opus packet into a PacketInfo object containing one or more frames.
 // Most applications don't need this as Opus_decode performs this internally.
 func ParseOpusPacket(packet []byte, packetOffset, length int) (*OpusPacketInfo, error) {

@@ -31,30 +31,7 @@ type Encoder struct {
 	prevDecodeOnlyMiddle bool
 }
 
-// EncControlState represents encoder control state
-type EncControlState struct {
-	nChannelsAPI              int
-	nChannelsInternal         int
-	API_sampleRate            int
-	maxInternalSampleRate     int
-	minInternalSampleRate     int
-	desiredInternalSampleRate int
-	payloadSizeMs            int
-	bitRate                  int
-	packetLossPercentage     int
-	complexity               int
-	useInBandFEC             bool
-	useDTX                   bool
-	useCBR                   bool
-	internalSampleRate        int
-	allowBandwidthSwitch     bool
-	inWBmodeWithoutVariableLP bool
-	stereoWidthQ14           int
-	toMono                   bool
-	reducedDependency        bool
-	maxBits                  int
-	switchReady              bool
-}
+
 
 // NewEncoder creates a new Silk encoder instance
 func NewEncoder() *Encoder {

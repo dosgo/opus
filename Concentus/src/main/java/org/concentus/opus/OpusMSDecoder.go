@@ -5,16 +5,6 @@ import (
 	"fmt"
 )
 
-// Error constants matching Opus error codes
-const (
-	OPUS_OK               = 0
-	OPUS_BAD_ARG          = -1
-	OPUS_BUFFER_TOO_SMALL = -2
-	OPUS_INTERNAL_ERROR   = -3
-	OPUS_INVALID_PACKET   = -4
-	OPUS_INVALID_STATE    = -5
-)
-
 // ChannelLayout represents the audio channel configuration
 type ChannelLayout struct {
 	NbChannels       int

@@ -1,56 +1,81 @@
-// Package opus provides error codes for the Opus audio codec.
-// Note that since most API-level errors are detected and returned as error types,
-// direct use of these constants is not usually needed.
+/*
+Copyright (c) 2007-2008 CSIRO
+Copyright (c) 2007-2011 Xiph.Org Foundation
+Originally written by Jean-Marc Valin, Gregory Maxwell, Koen Vos,
+Timothy B. Terriberry, and the Opus open-source contributors
+Ported to Java by Logan Stromberg
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+- Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+- Neither the name of Internet Society, IETF or IETF Trust, nor the
+names of specific contributors, may be used to endorse or promote
+products derived from this software without specific prior written
+permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 package opus
 
-// Error codes for Opus operations.
-// These constants mirror the official Opus error codes.
+// Note that since most API-level errors are detected and returned as
+// error values, direct use of these constants is not usually needed
 const (
-	// OpusOK indicates no error
-	OpusOK = 0
+	/// <summary>
+	/// No error
+	/// </summary>
+	OPUS_OK = 0
 
-	// OpusBadArg indicates one or more invalid/out of range arguments
-	OpusBadArg = -1
+	/// <summary>
+	/// One or more invalid/out of range arguments
+	/// </summary>
+	OPUS_BAD_ARG = -1
 
-	// OpusBufferTooSmall indicates not enough bytes allocated in the buffer
-	OpusBufferTooSmall = -2
+	/// <summary>
+	/// Not enough bytes allocated in the buffer
+	/// </summary>
+	OPUS_BUFFER_TOO_SMALL = -2
 
-	// OpusInternalError indicates an internal error was detected
-	OpusInternalError = -3
+	/// <summary>
+	/// An internal error was detected
+	/// </summary>
+	OPUS_INTERNAL_ERROR = -3
 
-	// OpusInvalidPacket indicates the compressed data passed is corrupted
-	OpusInvalidPacket = -4
+	/// <summary>
+	/// The compressed data passed is corrupted
+	/// </summary>
+	OPUS_INVALID_PACKET = -4
 
-	// OpusUnimplemented indicates invalid/unsupported request number
-	OpusUnimplemented = -5
+	/// <summary>
+	/// Invalid/unsupported request number
+	/// </summary>
+	OPUS_UNIMPLEMENTED = -5
 
-	// OpusInvalidState indicates an encoder or decoder structure is invalid or already freed
-	OpusInvalidState = -6
+	/// <summary>
+	/// An encoder or decoder structure is invalid or already freed
+	/// </summary>
+	OPUS_INVALID_STATE = -6
 
-	// OpusAllocFail indicates memory allocation has failed
-	OpusAllocFail = -7
+	/// <summary>
+	/// Memory allocation has failed
+	/// </summary>
+	OPUS_ALLOC_FAIL = -7
 )
-
-// String returns a human-readable description of the Opus error code.
-func (code int) String() string {
-	switch code {
-	case OpusOK:
-		return "no error"
-	case OpusBadArg:
-		return "invalid argument"
-	case OpusBufferTooSmall:
-		return "buffer too small"
-	case OpusInternalError:
-		return "internal error"
-	case OpusInvalidPacket:
-		return "invalid packet"
-	case OpusUnimplemented:
-		return "unimplemented feature"
-	case OpusInvalidState:
-		return "invalid state"
-	case OpusAllocFail:
-		return "allocation failed"
-	default:
-		return "unknown error"
-	}
-}

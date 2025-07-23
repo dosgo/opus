@@ -3,9 +3,9 @@ package silk
 // DecodeParameters decodes parameters from the payload according to the Silk codec specification.
 // This is a direct translation from the Java implementation with Go idioms applied.
 func DecodeParameters(
-	psDec *ChannelDecoder,      // I/O State
-	psDecCtrl *DecoderControl,  // I/O Decoder control
-	condCoding int,             // I The type of conditional coding to use
+	psDec *ChannelDecoder, // I/O State
+	psDecCtrl *DecoderControl, // I/O Decoder control
+	condCoding int, // I The type of conditional coding to use
 ) {
 	lpcOrder := psDec.LPC_order
 	nbSubfr := psDec.nb_subfr
@@ -50,9 +50,9 @@ func DecodeParameters(
 		// the previous NLSF1, and the current NLSF1
 		for i := 0; i < lpcOrder; i++ {
 			pNLSF0_Q15[i] = int16(
-				int(psDec.prevNLSF_Q15[i]) + 
-				((int(psDec.indices.NLSFInterpCoef_Q2) * 
-					(int(pNLSF_Q15[i]) - int(psDec.prevNLSF_Q15[i]))) >> 2,
+				int(psDec.prevNLSF_Q15[i]) +
+					((int(psDec.indices.NLSFInterpCoef_Q2) *
+						(int(pNLSF_Q15[i]) - int(psDec.prevNLSF_Q15[i]))) >> 2),
 			)
 		}
 
@@ -73,13 +73,13 @@ func DecodeParameters(
 	// After a packet loss do BWE of LPC coefs
 	if psDec.lossCnt != 0 {
 		BWExpander(
-			psDecCtrl.PredCoef_Q12[0][:lpcOrder], 
-			lpcOrder, 
+			psDecCtrl.PredCoef_Q12[0][:lpcOrder],
+			lpcOrder,
 			BWE_AFTER_LOSS_Q16,
 		)
 		BWExpander(
-			psDecCtrl.PredCoef_Q12[1][:lpcOrder], 
-			lpcOrder, 
+			psDecCtrl.PredCoef_Q12[1][:lpcOrder],
+			lpcOrder,
 			BWE_AFTER_LOSS_Q16,
 		)
 	}
