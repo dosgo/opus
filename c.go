@@ -16,14 +16,14 @@ import (
 
 const (
 	deepSeekAPIURL  = "https://api.deepseek.com/v1/chat/completions"
-	modelName       = "deepseek-coder"
-	maxConcurrency  = 5
+	modelName       = "deepseek-reasoner"
+	maxConcurrency  = 2
 	maxRetries      = 3
 	cFileExtension  = ".java"
-	hFileExtension  = ".h"
 	goFileExtension = ".go"
 	ignoreDir       = "vendor"
 	apiKeyFile      = "apikey.txt" // API密钥文件
+	targetPackage   = "opus"       // 统一的目标包名
 )
 
 type Message struct {
@@ -34,7 +34,7 @@ type Message struct {
 type RequestPayload struct {
 	Model     string    `json:"model"`
 	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens,omitempty"` // 添加max_tokens参数
+	MaxTokens int       `json:"max_tokens,omitempty"`
 }
 
 type ResponsePayload struct {
@@ -49,33 +49,30 @@ type ResponsePayload struct {
 }
 
 func main() {
-	sourceDir := "./test"
-	fmt.Printf("Converting C files in directory: %s\n", sourceDir)
+	sourceDir := "./Concentus"
+	fmt.Printf("Converting Java files in directory: %s\n", sourceDir)
 	fmt.Printf("Maximum concurrent requests: %d\n", maxConcurrency)
 	fmt.Printf("Skipping directories named: %s\n", ignoreDir)
 	fmt.Printf("Reading API key from: %s\n", apiKeyFile)
+	fmt.Printf("Setting package name to: %s\n", targetPackage)
 
-	// 读取API密钥
 	apiKey, err := readAPIKey(apiKeyFile)
 	if err != nil {
-		fmt.Printf("❌ Failed to read API key: %v\n", err)
+		fmt.Printf("❌❌ Failed to read API key: %v\n", err)
 		os.Exit(1)
 	}
 
-	// 用于控制并发的信号量
 	sem := make(chan struct{}, maxConcurrency)
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	failedFiles := []string{}
 	successCount := 0
 
-	// 遍历目录
 	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// 跳过目录处理
 		if info.IsDir() {
 			if strings.Contains(path, ignoreDir) {
 				return filepath.SkipDir
@@ -83,19 +80,17 @@ func main() {
 			return nil
 		}
 
-		// 只处理Java文件
 		ext := strings.ToLower(filepath.Ext(path))
 		if ext == cFileExtension {
 			wg.Add(1)
 			go func(filePath string) {
 				defer wg.Done()
-				sem <- struct{}{} // 获取信号量槽位
+				sem <- struct{}{}
 
-				// 处理单个文件
 				err := convertFile(filePath, apiKey)
 				lock.Lock()
 				if err != nil {
-					fmt.Printf("\n❌ Failed: %s - %v\n", filePath, err)
+					fmt.Printf("\n❌❌ Failed: %s - %v\n", filePath, err)
 					failedFiles = append(failedFiles, filePath)
 				} else {
 					fmt.Printf("\n✅ Converted: %s\n", filePath)
@@ -103,7 +98,7 @@ func main() {
 				}
 				lock.Unlock()
 
-				<-sem // 释放信号量槽位
+				<-sem
 			}(path)
 		}
 		return nil
@@ -113,7 +108,7 @@ func main() {
 		fmt.Printf("Error walking directory: %v\n", err)
 	}
 
-	wg.Wait() // 等待所有goroutine完成
+	wg.Wait()
 
 	fmt.Println("\n================= Conversion Summary =================")
 	fmt.Printf("Successfully converted: %d files\n", successCount)
@@ -147,61 +142,53 @@ func readAPIKey(filename string) (string, error) {
 	return "", fmt.Errorf("API key file is empty")
 }
 
-func convertFile(cFilePath, apiKey string) error {
-	// 读取Java源代码文件
-	cCode, err := ioutil.ReadFile(cFilePath)
+func convertFile(javaFilePath, apiKey string) error {
+	javaCode, err := ioutil.ReadFile(javaFilePath)
 	if err != nil {
 		return fmt.Errorf("reading file failed: %w", err)
 	}
 
-	// 准备转换指令 - 要求保持类名、函数名、变量名不变
 	prompt := fmt.Sprintf(`
 You are an expert code translator. Convert the following Java code to idiomatic, efficient and modern Go code.
-IMPORTANT: Preserve all original class names, function names, and variable names exactly as they are.
-Do not add any explanations or comments outside the code. Only return the converted Go code.
+IMPORTANT: 
+1. Preserve all original class names, function names, and variable names exactly as they are.
+2. Do not add any explanations or comments outside the code. 
+3. Only return the converted Go code.
 
 Java source code:
 %s
 
 Go translated code (preserving all identifiers):
-`, cCode)
+`, javaCode)
 
-	// 重试机制
 	var result string
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		// 准备API请求
 		payload := RequestPayload{
 			Model: modelName,
 			Messages: []Message{
-				{
-					Role:    "user",
-					Content: prompt,
-				},
+				{Role: "user", Content: prompt},
 			},
-			MaxTokens: 128000,
+			MaxTokens: 65536,
 		}
 
-		// 发送API请求
 		response, err := sendDeepSeekRequest(payload, apiKey)
 		if err != nil {
 			if attempt == maxRetries-1 {
 				return fmt.Errorf("API request failed: %w", err)
 			}
-			fmt.Printf("⚠️ Retrying %s (attempt %d/%d)\n", cFilePath, attempt+1, maxRetries)
+			fmt.Printf("⚠️ Retrying %s (attempt %d/%d)\n", javaFilePath, attempt+1, maxRetries)
 			continue
 		}
 
-		// 处理API错误
 		if response.Error.Message != "" {
 			if attempt == maxRetries-1 {
 				return fmt.Errorf("API error: %s", response.Error.Message)
 			}
 			fmt.Printf("⚠️ API error, retrying %s (attempt %d/%d): %s\n",
-				cFilePath, attempt+1, maxRetries, response.Error.Message)
+				javaFilePath, attempt+1, maxRetries, response.Error.Message)
 			continue
 		}
 
-		// 获取转换结果
 		if len(response.Choices) > 0 {
 			result = response.Choices[0].Message.Content
 			break
@@ -212,16 +199,16 @@ Go translated code (preserving all identifiers):
 		return fmt.Errorf("no choices returned after %d attempts", maxRetries)
 	}
 
-	// 提取纯代码部分（去除任何解释性文本）
 	cleanCode := extractPureGoCode(result)
 	if cleanCode == "" {
 		return fmt.Errorf("unable to extract pure Go code from response")
 	}
 
-	// 创建目标Go文件路径
-	goFilePath := strings.TrimSuffix(cFilePath, filepath.Ext(cFilePath)) + goFileExtension
+	// 强制设置包名为opus
+	cleanCode = setPackageName(cleanCode, targetPackage)
 
-	// 保存转换结果
+	goFilePath := strings.TrimSuffix(javaFilePath, filepath.Ext(javaFilePath)) + goFileExtension
+
 	if err := ioutil.WriteFile(goFilePath, []byte(cleanCode), 0644); err != nil {
 		return fmt.Errorf("writing output file failed: %w", err)
 	}
@@ -229,21 +216,32 @@ Go translated code (preserving all identifiers):
 	return nil
 }
 
-// 提取纯Go代码（去除任何解释性文本）
+// 强制设置包名
+func setPackageName(code, packageName string) string {
+	// 匹配所有包声明语句
+	packageRegex := regexp.MustCompile(`(?m)^\s*package\s+\w+\s*$`)
+
+	// 如果已有包声明，替换为指定包名
+	if packageRegex.MatchString(code) {
+		return packageRegex.ReplaceAllString(code, "package "+packageName)
+	}
+
+	// 如果没有包声明，在文件开头添加
+	return "package " + packageName + "\n\n" + code
+}
+
+// 提取纯Go代码
 func extractPureGoCode(content string) string {
-	// 尝试提取代码块（```go ... ```）
 	codeBlockRegex := regexp.MustCompile("(?s)```go(.*?)```")
 	if matches := codeBlockRegex.FindStringSubmatch(content); len(matches) > 1 {
 		return strings.TrimSpace(matches[1])
 	}
 
-	// 如果找不到代码块，尝试提取代码部分（通常以package开头）
 	packageIndex := strings.Index(content, "package ")
 	if packageIndex != -1 {
 		return content[packageIndex:]
 	}
 
-	// 如果都没有，返回整个内容
 	return content
 }
 
