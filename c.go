@@ -49,7 +49,7 @@ type ResponsePayload struct {
 }
 
 func main() {
-	sourceDir := "./Concentus"
+	sourceDir := "./test"
 	fmt.Printf("Converting Java files in directory: %s\n", sourceDir)
 	fmt.Printf("Maximum concurrent requests: %d\n", maxConcurrency)
 	fmt.Printf("Skipping directories named: %s\n", ignoreDir)

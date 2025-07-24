@@ -67,8 +67,8 @@ func (this *CeltDecoder) ResetState() {
 		this.decode_mem = make([][]int, this.channels)
 		this.lpc = make([][]int, this.channels)
 		for c := 0; c < this.channels; c++ {
-			this.decode_mem[c] = make([]int, DECODE_BUFFER_SIZE+this.mode.overlap)
-			this.lpc[c] = make([]int, LPC_ORDER)
+			this.decode_mem[c] = make([]int, CeltConstants.DECODE_BUFFER_SIZE+this.mode.overlap)
+			this.lpc[c] = make([]int, CeltConstants.LPC_ORDER)
 		}
 		nbEBands := this.mode.nbEBands
 		this.oldEBands = make([]int, 2*nbEBands)
@@ -128,7 +128,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 	for c := 0; c < C; c++ {
 		out_syn[c] = this.decode_mem[c]
-		out_syn_ptrs[c] = DECODE_BUFFER_SIZE - N
+		out_syn_ptrs[c] = CeltConstants.DECODE_BUFFER_SIZE - N
 	}
 
 	noise_based := 0
@@ -169,7 +169,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 		this.rng = seed
 
 		for c := 0; c < C; c++ {
-			copy(this.decode_mem[c][:DECODE_BUFFER_SIZE-N+(overlap>>1)], this.decode_mem[c][N:])
+			copy(this.decode_mem[c][:CeltConstants.DECODE_BUFFER_SIZE-N+(overlap>>1)], this.decode_mem[c][N:])
 		}
 
 		celt_synthesis(mode, X, out_syn, out_syn_ptrs, this.oldEBands, this.start, effEnd, C, C, 0, LM, this.downsample, 0)
@@ -185,28 +185,28 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 		}
 
 		etmp := make([]int, overlap)
-		exc := make([]int, MAX_PERIOD)
+		exc := make([]int, CeltConstants.MAX_PERIOD)
 		window := mode.window
 		for c := 0; c < C; c++ {
 			buf := this.decode_mem[c]
-			for i := 0; i < MAX_PERIOD; i++ {
-				exc[i] = ROUND16(buf[DECODE_BUFFER_SIZE-MAX_PERIOD+i], SIG_SHIFT)
+			for i := 0; i < CeltConstants.MAX_PERIOD; i++ {
+				exc[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD+i], CeltConstants.SIG_SHIFT)
 			}
 
 			if this.loss_count == 0 {
-				ac := make([]int, LPC_ORDER+1)
-				_celt_autocorr(exc, ac, window, overlap, LPC_ORDER, MAX_PERIOD)
+				ac := make([]int, CeltConstants.LPC_ORDER+1)
+				_celt_autocorr(exc, ac, window, overlap, CeltConstants.LPC_ORDER, CeltConstants.MAX_PERIOD)
 				ac[0] += SHR32(ac[0], 13)
-				for i := 1; i <= LPC_ORDER; i++ {
+				for i := 1; i <= CeltConstants.LPC_ORDER; i++ {
 					ac[i] -= MULT16_32_Q15(2*i*i, ac[i])
 				}
 				celt_lpc(this.lpc[c], ac, LPC_ORDER)
 			}
 
-			exc_length := IMIN(2*pitch_index, MAX_PERIOD)
+			exc_length := IMIN(2*pitch_index, CeltConstants.MAX_PERIOD)
 			lpc_mem := make([]int, LPC_ORDER)
 			for i := 0; i < LPC_ORDER; i++ {
-				lpc_mem[i] = ROUND16(buf[DECODE_BUFFER_SIZE-exc_length-1-i], SIG_SHIFT)
+				lpc_mem[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-exc_length-1-i], SIG_SHIFT)
 			}
 			celt_fir(exc, MAX_PERIOD-exc_length, this.lpc[c], 0, exc, MAX_PERIOD-exc_length, exc_length, LPC_ORDER, lpc_mem)
 
@@ -215,17 +215,17 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			E1 := 1
 			E2 := 1
 			for i := 0; i < decay_length; i++ {
-				e := exc[MAX_PERIOD-decay_length+i]
+				e := exc[CeltConstants.MAX_PERIOD-decay_length+i]
 				E1 += SHR32(MULT16_16(e, e), shift)
-				e = exc[MAX_PERIOD-2*decay_length+i]
+				e = exc[CeltConstants.MAX_PERIOD-2*decay_length+i]
 				E2 += SHR32(MULT16_16(e, e), shift)
 			}
 			E1 = MIN32(E1, E2)
 			decay := celt_sqrt(frac_div32(SHR32(E1, 1), E2))
 
-			copy(buf[:DECODE_BUFFER_SIZE-N], buf[N:])
+			copy(buf[:CeltConstants.DECODE_BUFFER_SIZE-N], buf[N:])
 
-			extrapolation_offset := MAX_PERIOD - pitch_index
+			extrapolation_offset := CeltConstants.MAX_PERIOD - pitch_index
 			extrapolation_len := N + overlap
 			attenuation := MULT16_16_Q15(fade, decay)
 			S1 := 0
@@ -236,42 +236,42 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 					attenuation = MULT16_16_Q15(attenuation, decay)
 				}
 				val := MULT16_16_Q15(attenuation, exc[extrapolation_offset+j])
-				buf[DECODE_BUFFER_SIZE-N+i] = SHL32(val, SIG_SHIFT)
-				tmp := ROUND16(buf[DECODE_BUFFER_SIZE-MAX_PERIOD-N+extrapolation_offset+j], SIG_SHIFT)
+				buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = SHL32(val, SIG_SHIFT)
+				tmp := ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD-N+extrapolation_offset+j], SIG_SHIFT)
 				S1 += SHR32(MULT16_16(tmp, tmp), 8)
 				j++
 			}
 
 			lpc_mem = make([]int, LPC_ORDER)
 			for i := 0; i < LPC_ORDER; i++ {
-				lpc_mem[i] = ROUND16(buf[DECODE_BUFFER_SIZE-N-1-i], SIG_SHIFT)
+				lpc_mem[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-N-1-i], SIG_SHIFT)
 			}
-			celt_iir(buf, DECODE_BUFFER_SIZE-N, this.lpc[c], buf, DECODE_BUFFER_SIZE-N, extrapolation_len, LPC_ORDER, lpc_mem)
+			celt_iir(buf, CeltConstants.DECODE_BUFFER_SIZE-N, this.lpc[c], buf, CeltConstants.DECODE_BUFFER_SIZE-N, extrapolation_len, LPC_ORDER, lpc_mem)
 
 			S2 := 0
 			for i := 0; i < extrapolation_len; i++ {
-				tmp := ROUND16(buf[DECODE_BUFFER_SIZE-N+i], SIG_SHIFT)
+				tmp := ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-N+i], SIG_SHIFT)
 				S2 += SHR32(MULT16_16(tmp, tmp), 8)
 			}
 			if !(S1 > SHR32(S2, 2)) {
 				for i := 0; i < extrapolation_len; i++ {
-					buf[DECODE_BUFFER_SIZE-N+i] = 0
+					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = 0
 				}
 			} else if S1 < S2 {
 				ratio := celt_sqrt(frac_div32(SHR32(S1, 1)+1, S2+1))
 				for i := 0; i < overlap; i++ {
 					tmp_g := Q15ONE - MULT16_16_Q15(window[i], Q15ONE-ratio)
-					buf[DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(tmp_g, buf[DECODE_BUFFER_SIZE-N+i])
+					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(tmp_g, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
 				}
 				for i := overlap; i < extrapolation_len; i++ {
-					buf[DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(ratio, buf[DECODE_BUFFER_SIZE-N+i])
+					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(ratio, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
 				}
 			}
 
-			comb_filter(etmp, 0, buf, DECODE_BUFFER_SIZE, this.postfilter_period_old, this.postfilter_period, overlap, -this.postfilter_gain_old, -this.postfilter_gain, this.postfilter_tapset_old, this.postfilter_tapset, nil, 0)
+			comb_filter(etmp, 0, buf, CeltConstants.DECODE_BUFFER_SIZE, this.postfilter_period_old, this.postfilter_period, overlap, -this.postfilter_gain_old, -this.postfilter_gain, this.postfilter_tapset_old, this.postfilter_tapset, nil, 0)
 
 			for i := 0; i < overlap/2; i++ {
-				buf[DECODE_BUFFER_SIZE+i] = MULT16_32_Q15(window[i], etmp[overlap-1-i]) + MULT16_32_Q15(window[overlap-i-1], etmp[i])
+				buf[CeltConstants.DECODE_BUFFER_SIZE+i] = MULT16_32_Q15(window[i], etmp[overlap-1-i]) + MULT16_32_Q15(window[overlap-i-1], etmp[i])
 			}
 		}
 	}
@@ -314,7 +314,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	out_syn_ptrs := make([]int, 2)
 	for c := 0; c < CC; c++ {
 		out_syn[c] = this.decode_mem[c]
-		out_syn_ptrs[c] = DECODE_BUFFER_SIZE - N
+		out_syn_ptrs[c] = CeltConstants.DECODE_BUFFER_SIZE - N
 	}
 
 	effEnd := end
@@ -446,7 +446,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, localDec, CC)
 
 	for c := 0; c < CC; c++ {
-		copy(this.decode_mem[c][:DECODE_BUFFER_SIZE-N+overlap/2], this.decode_mem[c][N:])
+		copy(this.decode_mem[c][:CeltConstants.DECODE_BUFFER_SIZE-N+overlap/2], this.decode_mem[c][N:])
 	}
 
 	collapse_masks := make([]int16, CC*nbEBands)
@@ -485,8 +485,8 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	celt_synthesis(mode, X, out_syn, out_syn_ptrs, oldBandE, start, effEnd, CC, CC, isTransient, LM, this.downsample, silence)
 
 	for c := 0; c < CC; c++ {
-		this.postfilter_period = IMAX(this.postfilter_period, COMBFILTER_MINPERIOD)
-		this.postfilter_period_old = IMAX(this.postfilter_period_old, COMBFILTER_MINPERIOD)
+		this.postfilter_period = IMAX(this.postfilter_period, CeltConstants.COMBFILTER_MINPERIOD)
+		this.postfilter_period_old = IMAX(this.postfilter_period_old, CeltConstants.COMBFILTER_MINPERIOD)
 		comb_filter(out_syn[c], out_syn_ptrs[c], out_syn[c], out_syn_ptrs[c], this.postfilter_period_old, this.postfilter_period, mode.shortMdctSize, this.postfilter_gain_old, this.postfilter_gain, this.postfilter_tapset_old, this.postfilter_tapset, mode.window, overlap)
 		if LM != 0 {
 			comb_filter(out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, this.postfilter_period, postfilter_pitch, N-mode.shortMdctSize, this.postfilter_gain, postfilter_gain, this.postfilter_tapset, postfilter_tapset, mode.window, overlap)

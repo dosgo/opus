@@ -51,7 +51,7 @@ func celt_fir5(x []int, num []int, y []int, N int, mem []int) {
 	mem4 := mem[4]
 
 	for i := 0; i < N; i++ {
-		sum := SHL32(EXTEND32(x[i]), SIG_SHIFT)
+		sum := SHL32(EXTEND32(x[i]), CeltConstants.SIG_SHIFT)
 		sum = MAC16_16(sum, num0, mem0)
 		sum = MAC16_16(sum, num1, mem1)
 		sum = MAC16_16(sum, num2, mem2)
@@ -62,7 +62,7 @@ func celt_fir5(x []int, num []int, y []int, N int, mem []int) {
 		mem2 = mem1
 		mem1 = mem0
 		mem0 = x[i]
-		y[i] = ROUND16(sum, SIG_SHIFT)
+		y[i] = ROUND16(sum, CeltConstants.SIG_SHIFT)
 	}
 
 	mem[0] = mem0

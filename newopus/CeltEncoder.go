@@ -173,24 +173,24 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 	overlap := mode.overlap
 	pre := make([][]int, CC)
 	for z := range pre {
-		pre[z] = make([]int, N+COMBFILTER_MAXPERIOD)
+		pre[z] = make([]int, N+CeltConstants.COMBFILTER_MAXPERIOD)
 	}
 
 	for c := 0; c < CC; c++ {
-		copy(pre[c][:COMBFILTER_MAXPERIOD], prefilter_mem[c])
-		copy(pre[c][COMBFILTER_MAXPERIOD:], input[c][overlap:overlap+N])
+		copy(pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], prefilter_mem[c])
+		copy(pre[c][CeltConstants.COMBFILTER_MAXPERIOD:], input[c][overlap:overlap+N])
 	}
 
 	var gain1 int
 	if enabled != 0 {
-		pitch_buf := make([]int, (COMBFILTER_MAXPERIOD+N)>>1)
-		Pitch_pitch_downsample(pre, pitch_buf, COMBFILTER_MAXPERIOD+N, CC)
+		pitch_buf := make([]int, (CeltConstants.COMBFILTER_MAXPERIOD+N)>>1)
+		Pitch_pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
 		pitch_index := 0
-		Pitch_pitch_search(pitch_buf, COMBFILTER_MAXPERIOD>>1, pitch_buf, N, COMBFILTER_MAXPERIOD-3*COMBFILTER_MINPERIOD, &pitch_index)
-		pitch_index = COMBFILTER_MAXPERIOD - pitch_index
-		gain1 = Pitch_remove_doubling(pitch_buf, COMBFILTER_MAXPERIOD, COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
-		if pitch_index > COMBFILTER_MAXPERIOD-2 {
-			pitch_index = COMBFILTER_MAXPERIOD - 2
+		Pitch_pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
+		pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index
+		gain1 = Pitch_remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
+		if pitch_index > CeltConstants.COMBFILTER_MAXPERIOD-2 {
+			pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}
 		gain1 = MULT16_16_Q15(int(0.5+0.7*float64(1<<15)), gain1)
 		if this.loss_rate > 2 {
@@ -204,7 +204,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		}
 	} else {
 		gain1 = 0
-		pitch_index := COMBFILTER_MINPERIOD
+		pitch_index := CeltConstants.COMBFILTER_MINPERIOD
 		*pitch = pitch_index
 	}
 
@@ -250,20 +250,20 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 
 	for c := 0; c < CC; c++ {
 		offset := mode.shortMdctSize - overlap
-		if this.prefilter_period < COMBFILTER_MINPERIOD {
-			this.prefilter_period = COMBFILTER_MINPERIOD
+		if this.prefilter_period < CeltConstants.COMBFILTER_MINPERIOD {
+			this.prefilter_period = CeltConstants.COMBFILTER_MINPERIOD
 		}
 		copy(input[c][:overlap], this.in_mem[c])
 		if offset != 0 {
-			CeltCommon_comb_filter(input[c][:overlap], overlap, pre[c][:COMBFILTER_MAXPERIOD], COMBFILTER_MAXPERIOD, this.prefilter_period, this.prefilter_period, offset, -this.prefilter_gain, -this.prefilter_gain, this.prefilter_tapset, this.prefilter_tapset, nil, 0)
+			CeltCommon_comb_filter(input[c][:overlap], overlap, pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], CeltConstants.COMBFILTER_MAXPERIOD, this.prefilter_period, this.prefilter_period, offset, -this.prefilter_gain, -this.prefilter_gain, this.prefilter_tapset, this.prefilter_tapset, nil, 0)
 		}
-		CeltCommon_comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][COMBFILTER_MAXPERIOD+offset:], COMBFILTER_MAXPERIOD+offset, this.prefilter_period, *pitch, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
+		CeltCommon_comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][CeltConstants.COMBFILTER_MAXPERIOD+offset:], COMBFILTER_MAXPERIOD+offset, this.prefilter_period, *pitch, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
 		copy(this.in_mem[c], input[c][N:N+overlap])
-		if N > COMBFILTER_MAXPERIOD {
-			copy(prefilter_mem[c], pre[c][N:N+COMBFILTER_MAXPERIOD])
+		if N > CeltConstants.COMBFILTER_MAXPERIOD {
+			copy(prefilter_mem[c], pre[c][N:N+CeltConstants.COMBFILTER_MAXPERIOD])
 		} else {
-			copy(prefilter_mem[c][:COMBFILTER_MAXPERIOD-N], prefilter_mem[c][N:])
-			copy(prefilter_mem[c][COMBFILTER_MAXPERIOD-N:], pre[c][COMBFILTER_MAXPERIOD:COMBFILTER_MAXPERIOD+N])
+			copy(prefilter_mem[c][:CeltConstants.COMBFILTER_MAXPERIOD-N], prefilter_mem[c][N:])
+			copy(prefilter_mem[c][CeltConstants.COMBFILTER_MAXPERIOD-N:], pre[c][CeltConstants.COMBFILTER_MAXPERIOD:CeltConstants.COMBFILTER_MAXPERIOD+N])
 		}
 	}
 

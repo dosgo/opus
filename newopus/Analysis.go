@@ -5,12 +5,11 @@ import (
 )
 
 const (
-	M_PI      = 3.141592653
-	cA        = 0.43157974
-	cB        = 0.67848403
-	cC        = 0.08595542
-	cE        = float32(M_PI / 2)
-	SIG_SHIFT = 0
+	M_PI = 3.141592653
+	cA   = 0.43157974
+	cB   = 0.67848403
+	cC   = 0.08595542
+	cE   = float32(M_PI / 2)
 )
 
 var OpusTables_analysis_window []float32
@@ -286,7 +285,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	bandwidth = 0
 	maxE = 0
 	noise_floor = 5.7e-4 / float32(1<<uint(IMAX(0, lsb_depth-8)))
-	noise_floor *= 1 << (15 + SIG_SHIFT)
+	noise_floor *= 1 << (15 + CeltConstants.SIG_SHIFT)
 	noise_floor *= noise_floor
 	for b := 0; b < NB_TOT_BANDS; b++ {
 		E := float32(0)
