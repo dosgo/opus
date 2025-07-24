@@ -105,7 +105,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 	frame_length := silk_SMULBB(d.nb_subfr, subfr_length)
 
 	if d.fs_kHz != fs_kHz || d.fs_API_hz != fs_API_Hz {
-		ret += Resampler_silk_resampler_init(&d.resampler_state, silk_SMULBB(fs_kHz, 1000), fs_API_Hz, 0)
+		ret += silk_resampler_init(&d.resampler_state, silk_SMULBB(fs_kHz, 1000), fs_API_Hz, 0)
 		d.fs_API_hz = fs_API_Hz
 	}
 

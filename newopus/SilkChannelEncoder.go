@@ -231,7 +231,7 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int32) int32 {
 	ret := int32(0)
 	if s.fs_kHz != fs_kHz || s.prev_API_fs_Hz != s.API_fs_Hz {
 		if s.fs_kHz == 0 {
-			ret += Resampler.Silk_resampler_init(&s.resampler_state, s.API_fs_Hz, fs_kHz*1000, 1)
+			ret += silk_resampler_init(&s.resampler_state, s.API_fs_Hz, fs_kHz*1000, 1)
 		} else {
 			var x_buf_API_fs_Hz []int16
 			var temp_resampler_state SilkResamplerState
@@ -242,12 +242,12 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int32) int32 {
 			buf_length_ms = silk_LSHIFT(s.nb_subfr*5, 1) + SilkConstants.LA_SHAPE_MS
 			old_buf_samples = buf_length_ms * s.fs_kHz
 			temp_resampler_state.Reset()
-			ret += Resampler.Silk_resampler_init(&temp_resampler_state, Silk_SMULBB(s.fs_kHz, 1000), s.API_fs_Hz, 0)
+			ret += silk_resampler_init(&temp_resampler_state, Silk_SMULBB(s.fs_kHz, 1000), s.API_fs_Hz, 0)
 			api_buf_samples = buf_length_ms * Silk_DIV32_16(s.API_fs_Hz, 1000)
 			x_buf_API_fs_Hz = make([]int16, api_buf_samples)
-			ret += Resampler.Silk_resampler(&temp_resampler_state, x_buf_API_fs_Hz, 0, s.x_buf[:], 0, old_buf_samples)
-			ret += Resampler.Silk_resampler_init(&s.resampler_state, s.API_fs_Hz, Silk_SMULBB(fs_kHz, 1000), 1)
-			ret += Resampler.Silk_resampler(&s.resampler_state, s.x_buf[:], 0, x_buf_API_fs_Hz, 0, api_buf_samples)
+			ret += silk_resampler(&temp_resampler_state, x_buf_API_fs_Hz, 0, s.x_buf[:], 0, old_buf_samples)
+			ret += silk_resampler_init(&s.resampler_state, s.API_fs_Hz, Silk_SMULBB(fs_kHz, 1000), 1)
+			ret += silk_resampler(&s.resampler_state, s.x_buf[:], 0, x_buf_API_fs_Hz, 0, api_buf_samples)
 		}
 	}
 	s.prev_API_fs_Hz = s.API_fs_Hz

@@ -58,13 +58,13 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	lo := 0
 	hi := 1 << ALLOC_STEPS
 	var i, j int
-	logM := LM << EntropyCoder.BITRES
+	logM := LM << BITRES
 	stereo := 0
 	if C > 1 {
 		stereo = 1
 	}
 	codedBands := -1
-	alloc_floor := C << EntropyCoder.BITRES
+	alloc_floor := C << BITRES
 
 	for i = 0; i < ALLOC_STEPS; i++ {
 		mid := (lo + hi) >> 1
@@ -115,9 +115,9 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		rem := IMAX(left-(m.eBands[j]-m.eBands[start]), 0)
 		band_width := m.eBands[codedBands] - m.eBands[j]
 		band_bits := bits[j] + percoeff*band_width + rem
-		if band_bits >= IMAX(thresh[j], alloc_floor+(1<<EntropyCoder.BITRES)) {
+		if band_bits >= IMAX(thresh[j], alloc_floor+(1<<BITRES)) {
 			if encode != 0 {
-				if codedBands <= start+2 || (band_bits > ((IMIN(j, prev)*band_width<<LM<<EntropyCoder.BITRES)>>4 && j <= signalBandwidth)) {
+				if codedBands <= start+2 || (band_bits > ((IMIN(j, prev)*band_width<<LM<<BITRES)>>4 && j <= signalBandwidth)) {
 					ec.enc_bit_logp(1, 1)
 					break
 				}
@@ -125,8 +125,8 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 			} else if ec.dec_bit_logp(1) != 0 {
 				break
 			}
-			psum += 1 << EntropyCoder.BITRES
-			band_bits -= 1 << EntropyCoder.BITRES
+			psum += 1 << BITRES
+			band_bits -= 1 << BITRES
 		}
 		psum -= bits[j] + intensity_rsv
 		if intensity_rsv > 0 {
@@ -198,35 +198,35 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 			NClogN := den * (m.logN[j] + logM)
 			offset := (NClogN >> 1) - den*CeltConstants.FINE_OFFSET
 			if N == 2 {
-				offset += den << EntropyCoder.BITRES >> 2
+				offset += den << BITRES >> 2
 			}
-			if bits[j]+offset < den*2<<EntropyCoder.BITRES {
+			if bits[j]+offset < den*2<<BITRES {
 				offset += NClogN >> 2
-			} else if bits[j]+offset < den*3<<EntropyCoder.BITRES {
+			} else if bits[j]+offset < den*3<<BITRES {
 				offset += NClogN >> 3
 			}
-			ebits[j] = IMAX(0, (bits[j] + offset + (den << (EntropyCoder.BITRES - 1))))
-			ebits[j] = celt_udiv(ebits[j], den) >> EntropyCoder.BITRES
-			if C*ebits[j] > (bits[j] >> EntropyCoder.BITRES) {
-				ebits[j] = bits[j] >> stereo >> EntropyCoder.BITRES
+			ebits[j] = IMAX(0, (bits[j] + offset + (den << (BITRES - 1))))
+			ebits[j] = celt_udiv(ebits[j], den) >> BITRES
+			if C*ebits[j] > (bits[j] >> BITRES) {
+				ebits[j] = bits[j] >> stereo >> BITRES
 			}
 			ebits[j] = IMIN(ebits[j], CeltConstants.MAX_FINE_BITS)
-			if ebits[j]*(den<<EntropyCoder.BITRES) >= bits[j]+offset {
+			if ebits[j]*(den<<BITRES) >= bits[j]+offset {
 				fine_priority[j] = 1
 			} else {
 				fine_priority[j] = 0
 			}
-			bits[j] -= C * ebits[j] << EntropyCoder.BITRES
+			bits[j] -= C * ebits[j] << BITRES
 		} else {
-			excess := MAX32(bit-(C<<EntropyCoder.BITRES), 0)
+			excess := MAX32(bit-(C<<BITRES), 0)
 			bits[j] = bit - excess
 			ebits[j] = 0
 			fine_priority[j] = 1
 		}
 		if excess > 0 {
-			extra_fine := IMIN(excess>>(stereo+EntropyCoder.BITRES), CeltConstants.MAX_FINE_BITS-ebits[j])
+			extra_fine := IMIN(excess>>(stereo+BITRES), CeltConstants.MAX_FINE_BITS-ebits[j])
 			ebits[j] += extra_fine
-			extra_bits := extra_fine * C << EntropyCoder.BITRES
+			extra_bits := extra_fine * C << BITRES
 			if extra_bits >= excess-balance {
 				fine_priority[j] = 1
 			} else {
@@ -241,8 +241,8 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	*_balance = balance
 
 	for ; j < end; j++ {
-		ebits[j] = bits[j] >> stereo >> EntropyCoder.BITRES
-		OpusAssert(C*ebits[j]<<EntropyCoder.BITRES == bits[j])
+		ebits[j] = bits[j] >> stereo >> BITRES
+		OpusAssert(C*ebits[j]<<BITRES == bits[j])
 		bits[j] = 0
 		if ebits[j] < 1 {
 			fine_priority[j] = 1
@@ -259,8 +259,8 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 	len := m.nbEBands
 	skip_start := start
 	skip_rsv := 0
-	if total >= 1<<EntropyCoder.BITRES {
-		skip_rsv = 1 << EntropyCoder.BITRES
+	if total >= 1<<BITRES {
+		skip_rsv = 1 << BITRES
 	}
 	total -= skip_rsv
 	intensity_rsv := 0
@@ -271,8 +271,8 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 			intensity_rsv = 0
 		} else {
 			total -= intensity_rsv
-			if total >= 1<<EntropyCoder.BITRES {
-				dual_stereo_rsv = 1 << EntropyCoder.BITRES
+			if total >= 1<<BITRES {
+				dual_stereo_rsv = 1 << BITRES
 			}
 			total -= dual_stereo_rsv
 		}
@@ -284,10 +284,10 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 	trim_offset := make([]int, len)
 
 	for j := start; j < end; j++ {
-		thresh[j] = IMAX(C<<EntropyCoder.BITRES, (3*(m.eBands[j+1]-m.eBands[j])<<LM<<EntropyCoder.BITRES)>>4)
-		trim_offset[j] = C * (m.eBands[j+1] - m.eBands[j]) * (alloc_trim - 5 - LM) * (end - j - 1) * (1 << (LM + EntropyCoder.BITRES)) >> 6
+		thresh[j] = IMAX(C<<BITRES, (3*(m.eBands[j+1]-m.eBands[j])<<LM<<BITRES)>>4)
+		trim_offset[j] = C * (m.eBands[j+1] - m.eBands[j]) * (alloc_trim - 5 - LM) * (end - j - 1) * (1 << (LM + BITRES)) >> 6
 		if (m.eBands[j+1]-m.eBands[j])<<LM == 1 {
-			trim_offset[j] -= C << EntropyCoder.BITRES
+			trim_offset[j] -= C << BITRES
 		}
 	}
 	lo := 1
@@ -305,8 +305,8 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 			if bitsj >= thresh[j] || done != 0 {
 				done = 1
 				psum += IMIN(bitsj, cap[j])
-			} else if bitsj >= C<<EntropyCoder.BITRES {
-				psum += C << EntropyCoder.BITRES
+			} else if bitsj >= C<<BITRES {
+				psum += C << BITRES
 			}
 		}
 		if psum > total {

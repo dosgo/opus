@@ -31,24 +31,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package opus
+
 type SilkPrefilterState struct {
-    sLTP_shp        [SilkConstants.LTP_BUF_LENGTH]int16
-    sAR_shp          [SilkConstants.MAX_SHAPE_LPC_ORDER + 1]int32
-    sLTP_shp_buf_idx int32
-    sLF_AR_shp_Q12   int32
-    sLF_MA_shp_Q12   int32
-    sHarmHP_Q2       int32
-    rand_seed        int32
-    lagPrev          int32
+	sLTP_shp         [LTP_BUF_LENGTH]int16
+	sAR_shp          [MAX_SHAPE_LPC_ORDER + 1]int32
+	sLTP_shp_buf_idx int32
+	sLF_AR_shp_Q12   int32
+	sLF_MA_shp_Q12   int32
+	sHarmHP_Q2       int32
+	rand_seed        int32
+	lagPrev          int32
 }
 
 func (st *SilkPrefilterState) Reset() {
-    st.sLTP_shp = [SilkConstants.LTP_BUF_LENGTH]int16{}
-    st.sAR_shp = [SilkConstants.MAX_SHAPE_LPC_ORDER + 1]int32{}
-    st.sLTP_shp_buf_idx = 0
-    st.sLF_AR_shp_Q12 = 0
-    st.sLF_MA_shp_Q12 = 0
-    st.sHarmHP_Q2 = 0
-    st.rand_seed = 0
-    st.lagPrev = 0
+	st.sLTP_shp = [LTP_BUF_LENGTH]int16{}
+	st.sAR_shp = [MAX_SHAPE_LPC_ORDER + 1]int32{}
+	st.sLTP_shp_buf_idx = 0
+	st.sLF_AR_shp_Q12 = 0
+	st.sLF_MA_shp_Q12 = 0
+	st.sHarmHP_Q2 = 0
+	st.rand_seed = 0
+	st.lagPrev = 0
 }

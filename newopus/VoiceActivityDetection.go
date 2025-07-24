@@ -7,7 +7,7 @@ func silk_VAD_Init(psSilk_VAD *SilkVADState) int {
 	psSilk_VAD.Reset()
 
 	for b := 0; b < VAD_N_BANDS; b++ {
-		bias := max32(DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int16(b+1)), 1)
+		bias := max32(silk_DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int16(b+1)), 1)
 		psSilk_VAD.NoiseLevelBias[b] = bias
 	}
 
@@ -110,7 +110,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 		}
 	}
 
-	sumSquared = DIV32_16(sumSquared, VAD_N_BANDS)
+	sumSquared = silk_DIV32_16(sumSquared, VAD_N_BANDS)
 	pSNR_dB_Q7 = 3 * silk_SQRT_APPROX(sumSquared)
 
 	SA_Q15 = silk_sigm_Q15(silk_SMULWB(VAD_SNR_FACTOR_Q16, int32(pSNR_dB_Q7)) - VAD_NEGATIVE_OFFSET_Q5)
