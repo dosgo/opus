@@ -97,7 +97,7 @@ func opus_multistream_packet_validate(data []byte, data_ptr int, len int, nb_str
 
 func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, decode_fec int, soft_clip int) int {
 	Fs := this.getSampleRate()
-	frame_size = Inlines_IMIN(frame_size, Fs/25*3)
+	frame_size = IMIN(frame_size, Fs/25*3)
 	buf := make([]int16, 2*frame_size)
 	decoder_ptr := 0
 	do_plc := 0
@@ -149,7 +149,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 			}
 			prev = -1
 			for {
-				_chan := OpusMultistream_get_right_channel(&this.layout, s, prev)
+				_chan := get_right_channel(&this.layout, s, prev)
 				if _chan == -1 {
 					break
 				}
@@ -159,7 +159,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 		} else {
 			prev := -1
 			for {
-				_chan := OpusMultistream_get_mono_channel(&this.layout, s, prev)
+				_chan := get_mono_channel(&this.layout, s, prev)
 				if _chan == -1 {
 					break
 				}

@@ -41,7 +41,7 @@ func silk_init_encoder(psEnc *SilkChannelEncoder) int {
 	psEnc.Reset()
 	value := int(float64(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ)*float64(1<<16) + 0.5)
 	logVal := silk_lin2log(value)
-	psEnc.variable_HP_smth1_Q15 = silk_LSHIFT(logVal-(16<<7), 8)
+	psEnc.variable_HP_smth1_Q15 = int32(silk_LSHIFT(logVal-(16<<7), 8))
 	psEnc.variable_HP_smth2_Q15 = psEnc.variable_HP_smth1_Q15
 	psEnc.first_frame_after_reset = 1
 	ret += silk_VAD_Init(psEnc.sVAD)

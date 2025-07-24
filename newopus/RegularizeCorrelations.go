@@ -19,7 +19,7 @@ products derived from this software without specific prior written
 permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+“AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
 OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
@@ -31,11 +31,10 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package opus
-import "Inlines"
 
 func silk_regularize_correlations(XX []int, XX_ptr int, xx []int, xx_ptr int, noise int, D int) {
-    for i := 0; i < D; i++ {
-        Inlines.MatrixSet(XX, XX_ptr, i, i, D, Inlines.silk_ADD32(Inlines.MatrixGet(XX, XX_ptr, i, i, D), noise)
-    }
-    xx[xx_ptr] += noise
+	for i := 0; i < D; i++ {
+		MatrixSet(XX, XX_ptr, i, i, D, silk_ADD32(MatrixGet(XX, XX_ptr, i, i, D), noise))
+	}
+	xx[xx_ptr] += noise
 }

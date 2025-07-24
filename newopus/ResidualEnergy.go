@@ -17,13 +17,13 @@ func silk_residual_energy(
 	OpusAssert((nb_subfr>>1)*(SilkConstants.MAX_NB_SUBFR>>1) == nb_subfr)
 
 	for i := 0; i < nb_subfr>>1; i++ {
-		Filters.Silk_LPC_analysis_filter(LPC_res, 0, x, x_ptr, a_Q12[i], 0, (SilkConstants.MAX_NB_SUBFR>>1)*offset, LPC_order)
+		silk_LPC_analysis_filter(LPC_res, 0, x, x_ptr, a_Q12[i], 0, (SilkConstants.MAX_NB_SUBFR>>1)*offset, LPC_order)
 		LPC_res_ptr := LPC_order
 
 		for j := 0; j < SilkConstants.MAX_NB_SUBFR>>1; j++ {
 			energy := &BoxedValueInt{Val: 0}
 			rshift := &BoxedValueInt{Val: 0}
-			SumSqrShift.Silk_sum_sqr_shift(energy, rshift, LPC_res, LPC_res_ptr, subfr_length)
+			silk_sum_sqr_shift5(energy, rshift, LPC_res, LPC_res_ptr, subfr_length)
 			idx := i*(SilkConstants.MAX_NB_SUBFR>>1) + j
 			nrgs[idx] = energy.Val
 			nrgsQ[idx] = -rshift.Val

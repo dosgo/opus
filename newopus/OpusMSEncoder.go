@@ -56,13 +56,13 @@ func (st *OpusMSEncoder) ResetState() {
 func validate_encoder_layout(layout *ChannelLayout) int {
 	for s := 0; s < layout.nb_streams; s++ {
 		if s < layout.nb_coupled_streams {
-			if Get_left_channel(layout, s, -1) == -1 {
+			if get_left_channel(layout, s, -1) == -1 {
 				return 0
 			}
-			if Get_right_channel(layout, s, -1) == -1 {
+			if get_right_channel(layout, s, -1) == -1 {
 				return 0
 			}
-		} else if Get_mono_channel(layout, s, -1) == -1 {
+		} else if get_mono_channel(layout, s, -1) == -1 {
 			return 0
 		}
 	}
@@ -511,7 +511,7 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 			}
 			c1, c2 = left, right
 		} else {
-			_chan := Get_mono_channel(&st.layout, s, -1)
+			_chan := get_mono_channel(&st.layout, s, -1)
 			opus_copy_channel_in_short(buf, 0, 1, pcm, pcm_ptr, st.layout.nb_channels, _chan, frame_size)
 			encoder_ptr++
 			if st.surround != 0 {

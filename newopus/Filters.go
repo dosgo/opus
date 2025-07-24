@@ -127,19 +127,19 @@ func silk_biquad_alt(
 	stride int) {
 
 	A0_L_Q28 := (-A_Q28[0]) & 0x00003FFF
-	A0_U_Q28 := Inlines_silk_RSHIFT(-A_Q28[0], 14)
+	A0_U_Q28 := silk_RSHIFT(-A_Q28[0], 14)
 	A1_L_Q28 := (-A_Q28[1]) & 0x00003FFF
-	A1_U_Q28 := Inlines_silk_RSHIFT(-A_Q28[1], 14)
+	A1_U_Q28 := silk_RSHIFT(-A_Q28[1], 14)
 	for k := 0; k < len; k++ {
 		inval := int32(input[input_ptr+k*stride])
-		out32_Q14 := Inlines_silk_LSHIFT(Inlines_silk_SMLAWB(S[0], B_Q28[0], inval), 2)
-		S[0] = S[1] + Inlines_silk_RSHIFT_ROUND(Inlines_silk_SMULWB(out32_Q14, A0_L_Q28), 14)
-		S[0] = Inlines_silk_SMLAWB(S[0], out32_Q14, A0_U_Q28)
-		S[0] = Inlines_silk_SMLAWB(S[0], B_Q28[1], inval)
-		S[1] = Inlines_silk_RSHIFT_ROUND(Inlines_silk_SMULWB(out32_Q14, A1_L_Q28), 14)
-		S[1] = Inlines_silk_SMLAWB(S[1], out32_Q14, A1_U_Q28)
-		S[1] = Inlines_silk_SMLAWB(S[1], B_Q28[2], inval)
-		output[output_ptr+k*stride] = int16(Inlines_silk_SAT16(Inlines_silk_RSHIFT(out32_Q14+(1<<14)-1, 14)))
+		out32_Q14 := silk_LSHIFT(silk_SMLAWB(S[0], B_Q28[0], inval), 2)
+		S[0] = S[1] + silk_RSHIFT_ROUND(silk_SMULWB(out32_Q14, A0_L_Q28), 14)
+		S[0] = silk_SMLAWB(S[0], out32_Q14, A0_U_Q28)
+		S[0] = silk_SMLAWB(S[0], B_Q28[1], inval)
+		S[1] = silk_RSHIFT_ROUND(silk_SMULWB(out32_Q14, A1_L_Q28), 14)
+		S[1] = silk_SMLAWB(S[1], out32_Q14, A1_U_Q28)
+		S[1] = silk_SMLAWB(S[1], B_Q28[2], inval)
+		output[output_ptr+k*stride] = int16(silk_SAT16(silk_RSHIFT(out32_Q14+(1<<14)-1, 14)))
 	}
 }
 
@@ -156,23 +156,23 @@ func silk_biquad_alt_ptr(
 	stride int) {
 
 	A0_L_Q28 := (-A_Q28[0]) & 0x00003FFF
-	A0_U_Q28 := Inlines_silk_RSHIFT(-A_Q28[0], 14)
+	A0_U_Q28 := silk_RSHIFT(-A_Q28[0], 14)
 	A1_L_Q28 := (-A_Q28[1]) & 0x00003FFF
-	A1_U_Q28 := Inlines_silk_RSHIFT(-A_Q28[1], 14)
+	A1_U_Q28 := silk_RSHIFT(-A_Q28[1], 14)
 	for k := 0; k < len; k++ {
 		inval := int32(input[input_ptr+k*stride])
 		s0 := S[S_ptr]
 		s1 := S[S_ptr+1]
-		out32_Q14 := Inlines_silk_LSHIFT(Inlines_silk_SMLAWB(s0, B_Q28[0], inval), 2)
-		s0 = s1 + Inlines_silk_RSHIFT_ROUND(Inlines_silk_SMULWB(out32_Q14, A0_L_Q28), 14)
-		s0 = Inlines_silk_SMLAWB(s0, out32_Q14, A0_U_Q28)
-		s0 = Inlines_silk_SMLAWB(s0, B_Q28[1], inval)
-		s1 = Inlines_silk_RSHIFT_ROUND(Inlines_silk_SMULWB(out32_Q14, A1_L_Q28), 14)
-		s1 = Inlines_silk_SMLAWB(s1, out32_Q14, A1_U_Q28)
-		s1 = Inlines_silk_SMLAWB(s1, B_Q28[2], inval)
+		out32_Q14 := silk_LSHIFT(silk_SMLAWB(s0, B_Q28[0], inval), 2)
+		s0 = s1 + silk_RSHIFT_ROUND(silk_SMULWB(out32_Q14, A0_L_Q28), 14)
+		s0 = silk_SMLAWB(s0, out32_Q14, A0_U_Q28)
+		s0 = silk_SMLAWB(s0, B_Q28[1], inval)
+		s1 = silk_RSHIFT_ROUND(silk_SMULWB(out32_Q14, A1_L_Q28), 14)
+		s1 = silk_SMLAWB(s1, out32_Q14, A1_U_Q28)
+		s1 = silk_SMLAWB(s1, B_Q28[2], inval)
 		S[S_ptr] = s0
 		S[S_ptr+1] = s1
-		output[output_ptr+k*stride] = int16(Inlines_silk_SAT16(Inlines_silk_RSHIFT(out32_Q14+(1<<14)-1, 14)))
+		output[output_ptr+k*stride] = int16(silk_SAT16(silk_RSHIFT(out32_Q14+(1<<14)-1, 14)))
 	}
 }
 

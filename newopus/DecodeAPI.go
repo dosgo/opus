@@ -2,7 +2,7 @@ package opus
 
 func silk_InitDecoder(decState *SilkDecoder) int {
 	decState.Reset()
-	ret := SILK_NO_ERROR
+	ret := SilkError.SILK_NO_ERROR
 	channel_states := decState.channel_state
 	for n := 0; n < DECODER_NUM_CHANNELS; n++ {
 		ret = channel_states[n].silk_init_decoder()
@@ -78,11 +78,11 @@ func silk_Decode(
 				channel_state[n].nFramesPerPacket = 3
 				channel_state[n].nb_subfr = 4
 			} else {
-				return SILK_DEC_INVALID_FRAME_SIZE
+				return SilkError.SILK_DEC_INVALID_FRAME_SIZE
 			}
 			fs_kHz_dec = (decControl.internalSampleRate >> 10) + 1
 			if fs_kHz_dec != 8 && fs_kHz_dec != 12 && fs_kHz_dec != 16 {
-				return SILK_DEC_INVALID_SAMPLING_FREQUENCY
+				return SilkError.SILK_DEC_INVALID_SAMPLING_FREQUENCY
 			}
 			ret += channel_state[n].silk_decoder_set_fs(fs_kHz_dec, decControl.API_sampleRate)
 		}
@@ -101,7 +101,7 @@ func silk_Decode(
 	psDec.nChannelsInternal = decControl.nChannelsInternal
 
 	if decControl.API_sampleRate > MAX_API_FS_KHZ*1000 || decControl.API_sampleRate < 8000 {
-		ret = SILK_DEC_INVALID_SAMPLING_FREQUENCY
+		ret = SilkError.SILK_DEC_INVALID_SAMPLING_FREQUENCY
 		return ret
 	}
 

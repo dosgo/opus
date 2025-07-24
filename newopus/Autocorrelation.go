@@ -155,30 +155,30 @@ func silk_warped_autocorr(corr []int32, scale *int, input []int16, warping_Q16 i
 	OpusAssert(2*QS-QC >= 0)
 
 	for n = 0; n < length; n++ {
-		tmp1_QS = int32(SHL32(int32(input[n]), QS))
+		tmp1_QS = int32(SHL32(int(input[n]), QS))
 		for i = 0; i < order; i += 2 {
-			tmp2_QS = SMLAWB(state_QS[i], state_QS[i+1]-tmp1_QS, int32(warping_Q16))
+			tmp2_QS = silk_SMLAWB(state_QS[i], state_QS[i+1]-tmp1_QS, int32(warping_Q16))
 			state_QS[i] = tmp1_QS
-			corr_QC[i] += RSHIFT64(SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
-			tmp1_QS = SMLAWB(state_QS[i+1], state_QS[i+2]-tmp2_QS, int32(warping_Q16))
+			corr_QC[i] += silk_RSHIFT64(silk_SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
+			tmp1_QS = silk_SMLAWB(state_QS[i+1], state_QS[i+2]-tmp2_QS, int32(warping_Q16))
 			state_QS[i+1] = tmp2_QS
-			corr_QC[i+1] += RSHIFT64(SMULL(int64(tmp2_QS), int64(state_QS[0])), 2*QS-QC)
+			corr_QC[i+1] += silk_RSHIFT64(silk_SMULL(int64(tmp2_QS), int64(state_QS[0])), 2*QS-QC)
 		}
 		state_QS[order] = tmp1_QS
-		corr_QC[order] += RSHIFT64(SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
+		corr_QC[order] += silk_RSHIFT64(silk_SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
 	}
 
-	lsh = CLZ64(corr_QC[0]) - 35
-	lsh = LIMIT(lsh, -12-QC, 30-QC)
+	lsh = silk_CLZ64(corr_QC[0]) - 35
+	lsh = silk_LIMIT(lsh, -12-QC, 30-QC)
 	*scale = -(QC + lsh)
 	OpusAssert(*scale >= -30 && *scale <= 12)
 	if lsh >= 0 {
 		for i = 0; i < order+1; i++ {
-			corr[i] = int32(SHL64(corr_QC[i], lsh))
+			corr[i] = int32(silk_LSHIFT64(corr_QC[i], lsh))
 		}
 	} else {
 		for i = 0; i < order+1; i++ {
-			corr[i] = int32(RSHIFT64(corr_QC[i], -lsh))
+			corr[i] = int32(silk_RSHIFT64(corr_QC[i], -lsh))
 		}
 	}
 }

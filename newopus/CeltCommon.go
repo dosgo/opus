@@ -40,14 +40,14 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 			coded_stereo_bands = coded_bands
 		}
 		coded_stereo_dof := (mode.eBands[coded_stereo_bands] << LM) - coded_stereo_bands
-		max_frac := Inlines_DIV32_16(Inlines_MULT16_16(int16(0.8*32767.5), int16(coded_stereo_dof)), int16(coded_bins))
+		max_frac := DIV32_16(MULT16_16(int16(0.8*32767.5), int16(coded_stereo_dof)), int16(coded_bins))
 		stereo_saving_val := stereo_saving
 		if stereo_saving_val > 256 {
 			stereo_saving_val = 256
 		}
-		saving := int(Inlines_MIN32(
-			Inlines_MULT16_32_Q15(int16(max_frac), int32(target)),
-			Inlines_SHR32(Inlines_MULT16_16(int16(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
+		saving := int(MIN32(
+			MULT16_32_Q15(int16(max_frac), int32(target)),
+			SHR32(MULT16_16(int16(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
 		))
 		target -= saving
 	}
@@ -59,7 +59,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	} else {
 		tf_calibration = int16(0.04 * 16384.5)
 	}
-	target += int(Inlines_SHL32(Inlines_MULT16_32_Q15(int16(tf_estimate)-tf_calibration, int32(target)), 1))
+	target += int(SHL32(MULT16_32_Q15(int16(tf_estimate)-tf_calibration, int32(target)), 1))
 
 	if analysis.enabled && analysis.valid != 0 && lfe == 0 {
 		tonal := analysis.tonality - 0.15
@@ -75,7 +75,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	}
 
 	if has_surround_mask != 0 && lfe == 0 {
-		surround_target := target + int(Inlines_SHR32(Inlines_MULT16_16(int16(surround_masking), int16(coded_bins<<EntropyCoder_BITRES)), CeltConstants_DB_SHIFT))
+		surround_target := target + int(SHR32(MULT16_16(int16(surround_masking), int16(coded_bins<<EntropyCoder_BITRES)), CeltConstants_DB_SHIFT))
 		if surround_target > target/4 {
 			target = surround_target
 		} else {
@@ -84,7 +84,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	}
 
 	bins := mode.eBands[mode.nbEBands-2] << LM
-	floor_depth := int(Inlines_SHR32(Inlines_MULT16_16(int16(C*bins<<EntropyCoder_BITRES), int16(maxDepth)), CeltConstants_DB_SHIFT))
+	floor_depth := int(SHR32(MULT16_16(int16(C*bins<<EntropyCoder_BITRES), int16(maxDepth)), CeltConstants_DB_SHIFT))
 	if floor_depth < target>>2 {
 		floor_depth = target >> 2
 	}
@@ -102,13 +102,13 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 				rate_factor = int(0.67 * 32767.5)
 			}
 		}
-		target = base_target + int(Inlines_MULT16_32_Q15(int16(rate_factor), int32(target-base_target)))
+		target = base_target + int(MULT16_32_Q15(int16(rate_factor), int32(target-base_target)))
 	}
 
 	if has_surround_mask == 0 && tf_estimate < int(0.2*16384.5) {
-		amount := Inlines_MULT16_16_Q15(int16(0.0000031*1073741823.5), int16(Inlines_IMAX(0, Inlines_IMIN(32000, 96000-bitrate))))
-		tvbr_factor := Inlines_SHR32(amount, CeltConstants_DB_SHIFT)
-		target += int(Inlines_MULT16_32_Q15(int16(tvbr_factor), int32(target)))
+		amount := MULT16_16_Q15(int16(0.0000031*1073741823.5), int16(IMAX(0, IMIN(32000, 96000-bitrate))))
+		tvbr_factor := SHR32(amount, CeltConstants_DB_SHIFT)
+		target += int(MULT16_32_Q15(int16(tvbr_factor), int32(target)))
 	}
 
 	if target > 2*base_target {

@@ -33,10 +33,10 @@ func silk_encode_pulses(
 		pulses_comb[idx] = 0
 	}
 
-	Inlines_OpusAssert(1<<SilkConstants_LOG2_SHELL_CODEC_FRAME_LENGTH == SilkConstants_SHELL_CODEC_FRAME_LENGTH)
-	iter = int(Inlines_silk_RSHIFT(int32(frame_length), int32(SilkConstants_LOG2_SHELL_CODEC_FRAME_LENGTH)))
+	OpusAssert(1<<SilkConstants_LOG2_SHELL_CODEC_FRAME_LENGTH == SilkConstants_SHELL_CODEC_FRAME_LENGTH)
+	iter = int(silk_RSHIFT(int32(frame_length), int32(SilkConstants_LOG2_SHELL_CODEC_FRAME_LENGTH)))
 	if iter*SilkConstants_SHELL_CODEC_FRAME_LENGTH < frame_length {
-		Inlines_OpusAssert(frame_length == 12*10)
+		OpusAssert(frame_length == 12*10)
 		iter++
 		for idx := frame_length; idx < frame_length+SilkConstants_SHELL_CODEC_FRAME_LENGTH; idx++ {
 			if idx < len(pulses) {
@@ -46,7 +46,7 @@ func silk_encode_pulses(
 	}
 
 	abs_pulses = make([]int, iter*SilkConstants_SHELL_CODEC_FRAME_LENGTH)
-	Inlines_OpusAssert((SilkConstants_SHELL_CODEC_FRAME_LENGTH & 3) == 0)
+	OpusAssert((SilkConstants_SHELL_CODEC_FRAME_LENGTH & 3) == 0)
 
 	for i = 0; i < iter*SilkConstants_SHELL_CODEC_FRAME_LENGTH; i += 4 {
 		val0 := int(pulses[i+0])
@@ -90,7 +90,7 @@ func silk_encode_pulses(
 			if scale_down != 0 {
 				nRshifts[i]++
 				for k = abs_pulses_ptr; k < abs_pulses_ptr+SilkConstants_SHELL_CODEC_FRAME_LENGTH; k++ {
-					abs_pulses[k] = int(Inlines_silk_RSHIFT(int32(abs_pulses[k]), 1))
+					abs_pulses[k] = int(silk_RSHIFT(int32(abs_pulses[k]), 1))
 				}
 			} else {
 				break

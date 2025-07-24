@@ -53,20 +53,20 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	BWExpander.Silk_bwexpander(A_Q12[:], psEnc.pitchEstimationLPCOrder, int32((TuningParameters.FIND_PITCH_BANDWIDTH_EXPANSION)*(1<<16)+0.5))
 
-	Filters.Silk_LPC_analysis_filter(res, 0, x, x_buf, A_Q12[:], 0, buf_len, psEnc.pitchEstimationLPCOrder)
+	silk_LPC_analysis_filter(res, 0, x, x_buf, A_Q12[:], 0, buf_len, psEnc.pitchEstimationLPCOrder)
 
 	if psEnc.indices.signalType != SilkConstants.TYPE_NO_VOICE_ACTIVITY && psEnc.first_frame_after_reset == 0 {
 		thrhld_Q13 = int((0.6 * (1 << 13)) + 0.5)
-		thrhld_Q13 = Silk_SMLABB(int32(thrhld_Q13), int32((-0.004*(1<<13))+0.5, int32(psEnc.pitchEstimationLPCOrder)))
-		thrhld_Q13 = int(Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<21))+0.5, int32(psEnc.speech_activity_Q8))))
-		thrhld_Q13 = Silk_SMLABB(int32(thrhld_Q13), int32((-0.15*(1<<13))+0.5, int32(Silk_RSHIFT(int32(psEnc.prevSignalType), 1))))
-		thrhld_Q13 = int(Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<14))+0.5, int32(psEnc.input_tilt_Q15))))
-		thrhld_Q13 = int(Silk_SAT16(int32(thrhld_Q13)))
+		thrhld_Q13 = silk_SMLABB(int32(thrhld_Q13), int32((-0.004*(1<<13))+0.5, int32(psEnc.pitchEstimationLPCOrder)))
+		thrhld_Q13 = int(silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<21))+0.5, int32(psEnc.speech_activity_Q8))))
+		thrhld_Q13 = silk_SMLABB(int32(thrhld_Q13), int32((-0.15*(1<<13))+0.5, int32(Silk_RSHIFT(int32(psEnc.prevSignalType), 1))))
+		thrhld_Q13 = int(silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<14))+0.5, int32(psEnc.input_tilt_Q15))))
+		thrhld_Q13 = int(silk_SAT16(int(thrhld_Q13)))
 
 		lagIndex := psEnc.indices.lagIndex
 		contourIndex := psEnc.indices.contourIndex
 		LTPcorr_Q15 := psEnc.LTPCorr_Q15
-		if PitchAnalysisCore.Silk_pitch_analysis_core(res, psEncCtrl.pitchL[:], &lagIndex, &contourIndex, &LTPcorr_Q15, psEnc.prevLag, psEnc.pitchEstimationThreshold_Q16, thrhld_Q13, psEnc.fs_kHz, psEnc.pitchEstimationComplexity, psEnc.nb_subfr) == 0 {
+		if silk_pitch_analysis_core(res, psEncCtrl.pitchL[:], &lagIndex, &contourIndex, &LTPcorr_Q15, psEnc.prevLag, psEnc.pitchEstimationThreshold_Q16, thrhld_Q13, psEnc.fs_kHz, psEnc.pitchEstimationComplexity, psEnc.nb_subfr) == 0 {
 			psEnc.indices.signalType = SilkConstants.TYPE_VOICED
 		} else {
 			psEnc.indices.signalType = SilkConstants.TYPE_UNVOICED

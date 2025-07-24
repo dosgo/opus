@@ -1,5 +1,7 @@
 package opus
 
+import "errors"
+
 type OpusPacketInfo struct {
 	TOCByte       byte
 	Frames        [][]byte
@@ -14,10 +16,10 @@ func NewOpusPacketInfo(toc byte, frames [][]byte, payloadOffset int) *OpusPacket
 	}
 }
 
-func ParseOpusPacket(packet []byte, packet_offset, len int) (*OpusPacketInfo, error) {
-	numFrames := GetNumFrames(packet, packet_offset, len)
+func ParseOpusPacket(packet []byte, packet_offset, _len int) (*OpusPacketInfo, error) {
+	numFrames := GetNumFrames(packet, packet_offset, _len)
 	if numFrames < 0 {
-		return nil, &OpusError{Code: numFrames}
+		return nil, errors.New("opus_packet_parse_impl failed")
 	}
 
 	var out_toc byte
@@ -25,9 +27,9 @@ func ParseOpusPacket(packet []byte, packet_offset, len int) (*OpusPacketInfo, er
 	sizes := make([]int16, numFrames)
 	var payload_offset, packet_offset_out int
 
-	errCode := opus_packet_parse_impl(packet, packet_offset, len, 0, &out_toc, frames, sizes, &payload_offset, &packet_offset_out)
+	errCode := opus_packet_parse_impl(packet, packet_offset, _len, 0, &out_toc, frames, sizes, &payload_offset, &packet_offset_out)
 	if errCode < 0 {
-		return nil, &OpusError{Code: errCode}
+		return nil, errors.New("opus_packet_parse_impl failed")
 	}
 
 	copiedFrames := make([][]byte, len(frames))
