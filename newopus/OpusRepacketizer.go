@@ -22,23 +22,23 @@ func (this *OpusRepacketizer) opus_repacketizer_cat_impl(data []byte, data_ptr i
 	dummy_toc := BoxedValueByte{0}
 	dummy_offset := BoxedValueInt{0}
 	if len_val < 1 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 
 	if this.nb_frames == 0 {
 		this.toc = data[data_ptr]
 		this.framesize = getNumSamplesPerFrame(data, data_ptr, 8000)
 	} else if (this.toc & 0xFC) != (data[data_ptr] & 0xFC) {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 
 	curr_nb_frames := getNumFrames(data, data_ptr, len_val)
 	if curr_nb_frames < 1 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 
 	if (curr_nb_frames+this.nb_frames)*this.framesize > 960 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 
 	ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, &dummy_toc, this.frames[:], this.nb_frames, this.len[:], this.nb_frames, &dummy_offset, &dummy_offset)
@@ -47,7 +47,7 @@ func (this *OpusRepacketizer) opus_repacketizer_cat_impl(data []byte, data_ptr i
 	}
 
 	this.nb_frames += curr_nb_frames
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (this *OpusRepacketizer) addPacket(data []byte, data_offset int, len_val int) int {
@@ -60,7 +60,7 @@ func (this *OpusRepacketizer) getNumFrames() int {
 
 func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end int, data []byte, data_ptr int, maxlen int, self_delimited int, pad int) int {
 	if begin < 0 || begin >= end || end > this.nb_frames {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	count := end - begin
 
@@ -76,7 +76,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 	if count == 1 {
 		tot_size += this.len[0] + 1
 		if tot_size > maxlen {
-			return OPUS_BUFFER_TOO_SMALL
+			return OpusError.OPUS_BUFFER_TOO_SMALL
 		}
 		data[ptr] = this.toc & 0xFC
 		ptr++
@@ -84,7 +84,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 		if this.len[1] == this.len[0] {
 			tot_size += 2*this.len[0] + 1
 			if tot_size > maxlen {
-				return OPUS_BUFFER_TOO_SMALL
+				return OpusError.OPUS_BUFFER_TOO_SMALL
 			}
 			data[ptr] = (this.toc & 0xFC) | 0x01
 			ptr++
@@ -94,7 +94,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 				tot_size += 1
 			}
 			if tot_size > maxlen {
-				return OPUS_BUFFER_TOO_SMALL
+				return OpusError.OPUS_BUFFER_TOO_SMALL
 			}
 			data[ptr] = (this.toc & 0xFC) | 0x02
 			ptr++
@@ -130,7 +130,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 			}
 			tot_size += this.len[count-1]
 			if tot_size > maxlen {
-				return OPUS_BUFFER_TOO_SMALL
+				return OpusError.OPUS_BUFFER_TOO_SMALL
 			}
 			data[ptr] = (this.toc & 0xFC) | 0x03
 			ptr++
@@ -139,7 +139,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 		} else {
 			tot_size += count*this.len[0] + 2
 			if tot_size > maxlen {
-				return OPUS_BUFFER_TOO_SMALL
+				return OpusError.OPUS_BUFFER_TOO_SMALL
 			}
 			data[ptr] = (this.toc & 0xFC) | 0x03
 			ptr++
@@ -198,12 +198,12 @@ func (this *OpusRepacketizer) createPacketOut(data []byte, data_offset int, maxl
 
 func PadPacket(data []byte, data_offset int, len_val int, new_len int) int {
 	if len_val < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if len_val == new_len {
-		return OPUS_OK
+		return OpusError.OPUS_OK
 	} else if len_val > new_len {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	rp := NewOpusRepacketizer()
@@ -211,14 +211,14 @@ func PadPacket(data []byte, data_offset int, len_val int, new_len int) int {
 	rp.addPacket(data, data_offset+new_len-len_val, len_val)
 	ret := rp.opus_repacketizer_out_range_impl(0, rp.nb_frames, data, data_offset, new_len, 0, 1)
 	if ret > 0 {
-		return OPUS_OK
+		return OpusError.OPUS_OK
 	}
 	return ret
 }
 
 func UnpadPacket(data []byte, data_offset int, len_val int) int {
 	if len_val < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	rp := NewOpusRepacketizer()
@@ -232,12 +232,12 @@ func UnpadPacket(data []byte, data_offset int, len_val int) int {
 
 func PadMultistreamPacket(data []byte, data_offset int, len_val int, new_len int, nb_streams int) int {
 	if len_val < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if len_val == new_len {
-		return OPUS_OK
+		return OpusError.OPUS_OK
 	} else if len_val > new_len {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	amount := new_len - len_val
@@ -248,7 +248,7 @@ func PadMultistreamPacket(data []byte, data_offset int, len_val int, new_len int
 
 	for s := 0; s < nb_streams-1; s++ {
 		if len_val <= 0 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		count := opus_packet_parse_impl(data, data_offset, len_val, 1, &dummy_toc, nil, 0, size[:], 0, &dummy_offset, &packet_offset)
 		if count < 0 {
@@ -262,7 +262,7 @@ func PadMultistreamPacket(data []byte, data_offset int, len_val int, new_len int
 
 func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_streams int) int {
 	if len_val < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	dst := data_offset
@@ -278,7 +278,7 @@ func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_stream
 			self_delimited = 1
 		}
 		if len_val <= 0 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		rp := NewOpusRepacketizer()
 		count := opus_packet_parse_impl(data, data_offset, len_val, self_delimited, &dummy_toc, nil, 0, size[:], 0, &dummy_offset, &packet_offset)
@@ -321,13 +321,13 @@ func getNumSamplesPerFrame(data []byte, data_ptr int, fs int) int {
 
 func getNumFrames(data []byte, data_ptr int, len_val int) int {
 	if len_val < 1 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 	toc := data[data_ptr]
 	if (toc & 0x80) != 0 {
 		count := int(toc & 0x3F)
 		if count == 0 || count > 48 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		return count
 	} else if (toc & 0x60) == 0x60 {

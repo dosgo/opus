@@ -75,7 +75,7 @@ func (st *OpusEncoder) PartialReset() {
 	st.stream_channels = 0
 	st.hybrid_stereo_width_Q14 = 0
 	st.variable_HP_smth2_Q15 = 0
-	st.prev_HB_gain = Q15ONE
+	st.prev_HB_gain = CeltConstants.Q15ONE
 	for i := range st.hp_mem {
 		st.hp_mem[i] = 0
 	}
@@ -103,7 +103,7 @@ func (st *OpusEncoder) resetState() {
 	silk_InitEncoder(&st.SilkEncoder, &dummy)
 	st.stream_channels = st.channels
 	st.hybrid_stereo_width_Q14 = 1 << 14
-	st.prev_HB_gain = Q15ONE
+	st.prev_HB_gain = CeltConstants.Q15ONE
 	st.first = 1
 	st.mode = MODE_HYBRID
 	st.bandwidth = OPUS_BANDWIDTH_FULLBAND
@@ -119,8 +119,8 @@ func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder
 	}
 	st := &OpusEncoder{}
 	ret := st.opus_init_encoder(Fs, channels, application)
-	if ret != OPUS_OK {
-		if ret == OPUS_BAD_ARG {
+	if ret != OpusError.OPUS_OK {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return nil, errors.New("OPUS_BAD_ARG when creating encoder")
 		}
 		return nil, errors.New("Error while initializing encoder")
@@ -130,7 +130,7 @@ func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder
 
 func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusApplication) int {
 	if (Fs != 48000 && Fs != 24000 && Fs != 16000 && Fs != 12000 && Fs != 8000) || (channels != 1 && channels != 2) || application == OPUS_APPLICATION_UNIMPLEMENTED {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	st.reset()
 	st.stream_channels = channels
@@ -138,7 +138,7 @@ func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusAppli
 	st.Fs = Fs
 	ret := silk_InitEncoder(&st.SilkEncoder, &st.silk_mode)
 	if ret != 0 {
-		return OPUS_INTERNAL_ERROR
+		return OpusError.OPUS_INTERNAL_ERROR
 	}
 	st.silk_mode.nChannelsAPI = channels
 	st.silk_mode.nChannelsInternal = channels
@@ -155,8 +155,8 @@ func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusAppli
 	st.silk_mode.useCBR = 0
 	st.silk_mode.reducedDependency = 0
 	err := st.Celt_Encoder.celt_encoder_init(Fs, channels)
-	if err != OPUS_OK {
-		return OPUS_INTERNAL_ERROR
+	if err != OpusError.OPUS_OK {
+		return OpusError.OPUS_INTERNAL_ERROR
 	}
 	st.Celt_Encoder.SetSignalling(0)
 	st.Celt_Encoder.SetComplexity(st.silk_mode.complexity)
@@ -176,13 +176,13 @@ func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusAppli
 	st.variable_duration = OPUS_FRAMESIZE_ARG
 	st.delay_compensation = Fs / 250
 	st.hybrid_stereo_width_Q14 = 1 << 14
-	st.prev_HB_gain = Q15ONE
+	st.prev_HB_gain = CeltConstants.Q15ONE
 	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 	st.first = 1
 	st.mode = MODE_HYBRID
 	st.bandwidth = OPUS_BANDWIDTH_FULLBAND
 	tonality_analysis_init(&st.analysis)
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (st *OpusEncoder) user_bitrate_to_bitrate(frame_size, max_data_bytes int) int {
@@ -205,7 +205,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	max_data_bytes := imin(1276, out_data_bytes)
 	st.rangeFinal = 0
 	if (st.variable_duration == OPUS_FRAMESIZE_UNKNOWN && 400*frame_size != st.Fs && 200*frame_size != st.Fs && 100*frame_size != st.Fs && 50*frame_size != st.Fs && 25*frame_size != st.Fs && 50*frame_size != 3*st.Fs) || (400*frame_size < st.Fs) || max_data_bytes <= 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	delay_compensation := 0
 	if st.application != OPUS_APPLICATION_RESTRICTED_LOWDELAY {
@@ -281,7 +281,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		ret := 1
 		if st.use_vbr == 0 {
 			ret = padPacket(data, data_ptr, ret, max_data_bytes)
-			if ret == OPUS_OK {
+			if ret == OpusError.OPUS_OK {
 				ret = max_data_bytes
 			}
 		}
@@ -325,8 +325,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	if st.application == OPUS_APPLICATION_RESTRICTED_LOWDELAY {
 		st.mode = MODE_CELT_ONLY
 	} else if st.user_forced_mode == MODE_AUTO {
-		mode_voice := MULT16_32_Q15(Q15ONE-stereo_width, MODE_THRESHOLDS[0][0]) + MULT16_32_Q15(stereo_width, MODE_THRESHOLDS[1][0])
-		mode_music := MULT16_32_Q15(Q15ONE-stereo_width, MODE_THRESHOLDS[1][1]) + MULT16_32_Q15(stereo_width, MODE_THRESHOLDS[1][1])
+		mode_voice := MULT16_32_Q15(CeltConstants.Q15ONE-stereo_width, MODE_THRESHOLDS[0][0]) + MULT16_32_Q15(stereo_width, MODE_THRESHOLDS[1][0])
+		mode_music := MULT16_32_Q15(CeltConstants.Q15ONE-stereo_width, MODE_THRESHOLDS[1][1]) + MULT16_32_Q15(stereo_width, MODE_THRESHOLDS[1][1])
 		threshold := mode_music + ((voice_est * voice_est * (mode_voice - mode_music)) >> 14)
 		if st.application == OPUS_APPLICATION_VOIP {
 			threshold += 8000
@@ -517,10 +517,10 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			}
 			tmp_len := st.opus_encode_native(pcm, pcm_ptr+i*(st.channels*st.Fs/50), st.Fs/50, tmp_data, i*bytes_per_frame, bytes_per_frame, lsb_depth, nil, 0, 0, c1, c2, analysis_channels, float_api)
 			if tmp_len < 0 {
-				return OPUS_INTERNAL_ERROR
+				return OpusError.OPUS_INTERNAL_ERROR
 			}
 			if rp.AddPacket(tmp_data, i*bytes_per_frame, tmp_len) < 0 {
-				return OPUS_INTERNAL_ERROR
+				return OpusError.OPUS_INTERNAL_ERROR
 			}
 		}
 		repacketize_len := out_data_bytes
@@ -529,7 +529,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		ret := rp.OutRange(0, nb_frames, data, data_ptr, repacketize_len, false, st.use_vbr == 0)
 		if ret < 0 {
-			return OPUS_INTERNAL_ERROR
+			return OpusError.OPUS_INTERNAL_ERROR
 		}
 		st.user_forced_mode = bak_mode
 		st.user_bandwidth = bak_bandwidth
@@ -555,7 +555,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		dc_reject(pcm, pcm_ptr, 3, pcm_buf, total_buffer*st.channels, st.hp_mem[:], frame_size, st.channels, st.Fs)
 	}
-	HB_gain := Q15ONE
+	HB_gain := CeltConstants.Q15ONE
 	if st.mode != MODE_CELT_ONLY {
 		pcm_silk := make([]int16, st.channels*frame_size)
 		total_bitRate := 8 * bytes_target * frame_rate
@@ -579,10 +579,10 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 					HB_gain_ref = 3600
 				}
 				HB_gain = SHL32(celt_rate, 9) / SHR32(celt_rate+st.stream_channels*HB_gain_ref, 6)
-				if HB_gain < Q15ONE*6/7 {
-					HB_gain += Q15ONE / 7
+				if HB_gain < CeltConstants.Q15ONE*6/7 {
+					HB_gain += CeltConstants.Q15ONE / 7
 				} else {
-					HB_gain = Q15ONE
+					HB_gain = CeltConstants.Q15ONE
 				}
 			}
 		} else {
@@ -642,7 +642,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		ret := silk_Encode(silk_enc, &st.silk_mode, pcm_silk, frame_size, enc, &silkBytes, 0)
 		nBytes = silkBytes
 		if ret != 0 {
-			return OPUS_INTERNAL_ERROR
+			return OpusError.OPUS_INTERNAL_ERROR
 		}
 		if nBytes == 0 {
 			st.rangeFinal = 0
@@ -725,7 +725,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		copy(st.delay_buffer[:], pcm_buf[(frame_size+total_buffer-st.encoder_buffer)*st.channels:(frame_size+total_buffer-st.encoder_buffer)*st.channels+st.encoder_buffer*st.channels])
 	}
-	if st.prev_HB_gain < Q15ONE || HB_gain < Q15ONE {
+	if st.prev_HB_gain < CeltConstants.Q15ONE || HB_gain < CeltConstants.Q15ONE {
 		gain_fade(pcm_buf, 0, st.prev_HB_gain, HB_gain, celt_mode.overlap, frame_size, st.channels, celt_mode.window, st.Fs)
 	}
 	st.prev_HB_gain = HB_gain
@@ -736,12 +736,12 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		g1 := st.hybrid_stereo_width_Q14
 		g2 := st.silk_mode.stereoWidth_Q14
 		if g1 == 16384 {
-			g1 = Q15ONE
+			g1 = CeltConstants.Q15ONE
 		} else {
 			g1 = SHL16(g1, 1)
 		}
 		if g2 == 16384 {
-			g2 = Q15ONE
+			g2 = CeltConstants.Q15ONE
 		} else {
 			g2 = SHL16(g2, 1)
 		}
@@ -782,7 +782,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		celt_enc.SetVBR(false)
 		err := celt_enc.celt_encode_with_ec(pcm_buf, 0, st.Fs/200, data, data_ptr+nb_compr_bytes, redundancy_bytes, nil)
 		if err < 0 {
-			return OPUS_INTERNAL_ERROR
+			return OpusError.OPUS_INTERNAL_ERROR
 		}
 		redundant_rng = celt_enc.GetFinalRange()
 		celt_enc.ResetState()
@@ -798,7 +798,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		if enc.Tell() <= 8*nb_compr_bytes {
 			ret := celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			if ret < 0 {
-				return OPUS_INTERNAL_ERROR
+				return OpusError.OPUS_INTERNAL_ERROR
 			}
 		}
 	}
@@ -812,7 +812,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		celt_enc.celt_encode_with_ec(pcm_buf[st.channels*(frame_size-N2-N4):], 0, N4, dummy, 0, 2, nil)
 		err := celt_enc.celt_encode_with_ec(pcm_buf[st.channels*(frame_size-N2):], 0, N2, data, data_ptr+nb_compr_bytes, redundancy_bytes, nil)
 		if err < 0 {
-			return OPUS_INTERNAL_ERROR
+			return OpusError.OPUS_INTERNAL_ERROR
 		}
 		redundant_rng = celt_enc.GetFinalRange()
 	}
@@ -830,7 +830,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	ret := (enc.Tell() + 7) >> 3
 	if enc.Tell() > (max_data_bytes-1)*8 {
 		if max_data_bytes < 2 {
-			return OPUS_BUFFER_TOO_SMALL
+			return OpusError.OPUS_BUFFER_TOO_SMALL
 		}
 		data[data_ptr+1] = 0
 		ret = 1
@@ -842,8 +842,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	ret += 1 + redundancy_bytes
 	if st.use_vbr == 0 {
-		if padPacket(data, data_ptr, ret, max_data_bytes) != OPUS_OK {
-			return OPUS_INTERNAL_ERROR
+		if padPacket(data, data_ptr, ret, max_data_bytes) != OpusError.OPUS_OK {
+			return OpusError.OPUS_INTERNAL_ERROR
 		}
 		ret = max_data_bytes
 	}
@@ -864,7 +864,7 @@ func (st *OpusEncoder) Encode(in_pcm []int16, pcm_offset, frame_size int, out_da
 	}
 	ret := st.opus_encode_native(in_pcm, pcm_offset, internal_frame_size, out_data, out_data_offset, max_data_bytes, 16, in_pcm, pcm_offset, frame_size, 0, -2, st.channels, 0)
 	if ret < 0 {
-		if ret == OPUS_BAD_ARG {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return 0, errors.New("OPUS_BAD_ARG while encoding")
 		}
 		return 0, errors.New("An error occurred during encoding")

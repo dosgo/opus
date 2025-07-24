@@ -86,22 +86,22 @@ func (this *CeltDecoder) ResetState() {
 
 func (this *CeltDecoder) celt_decoder_init(sampling_rate int, channels int) int {
 	ret := this.opus_custom_decoder_init(mode48000_960_120, channels)
-	if ret != OPUS_OK {
+	if ret != OpusError.OPUS_OK {
 		return ret
 	}
 	this.downsample = resampling_factor(sampling_rate)
 	if this.downsample == 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (this *CeltDecoder) opus_custom_decoder_init(mode *CeltMode, channels int) int {
 	if channels < 0 || channels > 2 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if this == nil {
-		return OPUS_ALLOC_FAIL
+		return OpusError.OPUS_ALLOC_FAIL
 	}
 	this.Reset()
 	this.mode = mode
@@ -114,7 +114,7 @@ func (this *CeltDecoder) opus_custom_decoder_init(mode *CeltMode, channels int) 
 	this.signalling = 1
 	this.loss_count = 0
 	this.ResetState()
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
@@ -301,13 +301,13 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 		}
 	}
 	if LM > mode.maxLM {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	M := 1 << LM
 	N := M * mode.shortMdctSize
 
 	if len < 0 || len > 1275 || pcm == nil {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	out_syn := make([][]int, 2)
@@ -547,7 +547,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	this.loss_count = 0
 
 	if localDec.tell() > 8*len {
-		return OPUS_INTERNAL_ERROR
+		return OpusError.OPUS_INTERNAL_ERROR
 	}
 	if localDec.get_error() != 0 {
 		this.error = 1

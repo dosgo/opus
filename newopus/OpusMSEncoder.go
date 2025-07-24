@@ -208,7 +208,7 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 
 func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, coupled_streams int, mapping []int16, application OpusApplication, surround int) int {
 	if channels > 255 || channels < 1 || coupled_streams > streams || streams < 1 || coupled_streams < 0 || streams > 255-coupled_streams {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	st.layout.nb_channels = channels
@@ -223,13 +223,13 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 	st.variable_duration = OPUS_FRAMESIZE_ARG
 	copy(st.layout.mapping[:], mapping)
 	if validate_layout(&st.layout) == 0 || validate_encoder_layout(&st.layout) == 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	encoder_ptr := 0
 	for i := 0; i < st.layout.nb_coupled_streams; i++ {
 		ret := st.encoders[encoder_ptr].opus_init_encoder(Fs, 2, application)
-		if ret != OPUS_OK {
+		if ret != OpusError.OPUS_OK {
 			return ret
 		}
 		if i == st.lfe_stream {
@@ -242,7 +242,7 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 		if i == st.lfe_stream {
 			st.encoders[encoder_ptr].SetIsLFE(true)
 		}
-		if ret != OPUS_OK {
+		if ret != OpusError.OPUS_OK {
 			return ret
 		}
 		encoder_ptr++
@@ -256,14 +256,14 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 		}
 	}
 	st.surround = surround
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, mapping_family int, streams, coupled_streams *int, mapping []int16, application OpusApplication) int {
 	*streams = 0
 	*coupled_streams = 0
 	if channels > 255 || channels < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	st.lfe_stream = -1
 	if mapping_family == 0 {
@@ -277,7 +277,7 @@ func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, ma
 			mapping[0] = 0
 			mapping[1] = 1
 		} else {
-			return OPUS_UNIMPLEMENTED
+			return OpusError.OPUS_UNIMPLEMENTED
 		}
 	} else if mapping_family == 1 && channels >= 1 && channels <= 8 {
 		*streams = vorbis_mappings[channels-1].nb_streams
@@ -295,7 +295,7 @@ func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, ma
 		*streams = channels
 		*coupled_streams = 0
 	} else {
-		return OPUS_UNIMPLEMENTED
+		return OpusError.OPUS_UNIMPLEMENTED
 	}
 	return st.opus_multistream_encoder_init(Fs, channels, *streams, *coupled_streams, mapping, application, Ternary(channels > 2 && mapping_family == 1, 1, 0))
 }
@@ -309,11 +309,11 @@ func CreateOpusMSEncoder(Fs, channels, streams, coupled_streams int, mapping []i
 		return nil, err
 	}
 	ret := st.opus_multistream_encoder_init(Fs, channels, streams, coupled_streams, mapping, application, 0)
-	if ret != OPUS_OK {
-		if ret == OPUS_BAD_ARG {
+	if ret != OpusError.OPUS_OK {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return nil, errors.New("OPUS_BAD_ARG when creating MS encoder")
 		}
-		return nil, NewOpusError(ret)
+		return nil, errors.New("Error while initializing MS encoder")
 	}
 	return st, nil
 }
@@ -356,11 +356,11 @@ func CreateSurroundOpusMSEncoder(Fs, channels, mapping_family int, streams, coup
 		return nil, err
 	}
 	ret := st.opus_multistream_surround_encoder_init(Fs, channels, mapping_family, streams, coupled_streams, mapping, application)
-	if ret != OPUS_OK {
-		if ret == OPUS_BAD_ARG {
+	if ret != OpusError.OPUS_OK {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return nil, errors.New("Bad argument passed to CreateSurround")
 		}
-		return nil, NewOpusError(ret)
+		return nil, errors.New("Error while initializing encoder")
 	}
 	return st, nil
 }
@@ -431,15 +431,15 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 	frame_size = compute_frame_size(pcm, pcm_ptr, analysis_frame_size, st.variable_duration, st.layout.nb_channels, Fs, st.bitrate_bps, delay_compensation, st.subframe_mem[:], st.encoders[encoder_ptr].analysis.enabled)
 
 	if 400*frame_size < Fs {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if 400*frame_size != Fs && 200*frame_size != Fs && 100*frame_size != Fs && 50*frame_size != Fs && 25*frame_size != Fs && 50*frame_size != 3*Fs {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	smallest_packet = st.layout.nb_streams*2 - 1
 	if max_data_bytes < smallest_packet {
-		return OPUS_BUFFER_TOO_SMALL
+		return OpusError.OPUS_BUFFER_TOO_SMALL
 	}
 	buf := make([]int16, 2*frame_size)
 

@@ -43,7 +43,7 @@ func (this *OpusDecoder) opus_decoder_init(Fs int, channels int) int {
 
 	if (Fs != 48000 && Fs != 24000 && Fs != 16000 && Fs != 12000 && Fs != 8000) ||
 		(channels != 1 && channels != 2) {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	this.reset()
 
@@ -58,19 +58,19 @@ func (this *OpusDecoder) opus_decoder_init(Fs int, channels int) int {
 
 	ret = silk_InitDecoder(silk_dec)
 	if ret != 0 {
-		return OPUS_INTERNAL_ERROR
+		return OpusError.OPUS_INTERNAL_ERROR
 	}
 
 	ret = celt_dec.celt_decoder_init(Fs, channels)
-	if ret != OPUS_OK {
-		return OPUS_INTERNAL_ERROR
+	if ret != OpusError.OPUS_OK {
+		return OpusError.OPUS_INTERNAL_ERROR
 	}
 
 	celt_dec.SetSignalling(0)
 
 	this.prev_mode = MODE_UNKNOWN
 	this.frame_size = Fs / 400
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func NewOpusDecoder(Fs int, channels int) (*OpusDecoder, error) {
@@ -84,11 +84,11 @@ func NewOpusDecoder(Fs int, channels int) (*OpusDecoder, error) {
 	}
 
 	ret = this.opus_decoder_init(Fs, channels)
-	if ret != OPUS_OK {
-		if ret == OPUS_BAD_ARG {
+	if ret != OpusError.OPUS_OK {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return nil, errors.New("OPUS_BAD_ARG when creating decoder")
 		}
-		return nil, OpusError(ret)
+		return nil, errors.New("eeee")
 	}
 	return this, nil
 }
@@ -182,7 +182,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		this.opus_decode_frame(nil, 0, 0, pcm_transition, 0, IMIN(F5, audiosize), 0)
 	}
 	if audiosize > frame_size {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	} else {
 		frame_size = audiosize
 	}
@@ -254,7 +254,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 						pcm_ptr2[i] = 0
 					}
 				} else {
-					return OPUS_INTERNAL_ERROR
+					return OpusError.OPUS_INTERNAL_ERROR
 				}
 			}
 			pcm_ptr2_ptr += silk_frame_size * this.channels
@@ -429,10 +429,10 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	var packet_mode OpusMode
 	size := make([]int, 48)
 	if decode_fec < 0 || decode_fec > 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if (decode_fec != 0 || len == 0 || data == nil) && frame_size%(this.Fs/400) != 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if len == 0 || data == nil {
 		pcm_count := 0
@@ -447,7 +447,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 		this.last_packet_duration = pcm_count
 		return pcm_count
 	} else if len < 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 
 	packet_mode = getEncoderMode(data, data_ptr)
@@ -492,7 +492,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	}
 
 	if count*packet_frame_size > frame_size {
-		return OPUS_BUFFER_TOO_SMALL
+		return OpusError.OPUS_BUFFER_TOO_SMALL
 	}
 
 	this.mode = packet_mode
@@ -528,7 +528,7 @@ func (this *OpusDecoder) Decode(in_data []byte, in_data_offset int, len int, out
 	ret := this.opus_decode_native(in_data, in_data_offset, len, out_pcm, out_pcm_offset, frame_size, decode_fec_int, 0, &dummy, 0)
 
 	if ret < 0 {
-		if ret == OPUS_BAD_ARG {
+		if ret == OpusError.OPUS_BAD_ARG {
 			return 0, errors.New("OPUS_BAD_ARG while decoding")
 		}
 		return 0, errors.New("OPUS_BAD_ARG while decoding")

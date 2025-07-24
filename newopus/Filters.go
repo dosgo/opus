@@ -289,24 +289,24 @@ func LPC_inverse_pred_gain_QA(
 		if Anew_QA[k] > A_LIMIT || Anew_QA[k] < -A_LIMIT {
 			return 0
 		}
-		rc_Q31 := -Inlines_silk_LSHIFT(Anew_QA[k], 31-QA)
-		rc_mult1_Q30 := (1 << 30) - Inlines_silk_SMMUL(rc_Q31, rc_Q31)
-		mult2Q := 32 - Inlines_silk_CLZ32(Inlines_silk_abs(rc_mult1_Q30))
-		rc_mult2 := Inlines_silk_INVERSE32_varQ(rc_mult1_Q30, mult2Q+30)
-		invGain_Q30 = Inlines_silk_LSHIFT(Inlines_silk_SMMUL(invGain_Q30, rc_mult1_Q30), 2)
+		rc_Q31 := -silk_LSHIFT(Anew_QA[k], 31-QA)
+		rc_mult1_Q30 := (1 << 30) - silk_SMMUL(rc_Q31, rc_Q31)
+		mult2Q := 32 - silk_CLZ32(silk_abs(rc_mult1_Q30))
+		rc_mult2 := silk_INVERSE32_varQ(rc_mult1_Q30, mult2Q+30)
+		invGain_Q30 = silk_LSHIFT(silk_SMMUL(invGain_Q30, rc_mult1_Q30), 2)
 		Aold_QA := Anew_QA
 		Anew_QA = A_QA[k&1]
 		for n := 0; n < k; n++ {
-			tmp_QA := Aold_QA[n] - Inlines_MUL32_FRAC_Q(Aold_QA[k-n-1], rc_Q31, 31)
-			Anew_QA[n] = Inlines_MUL32_FRAC_Q(tmp_QA, rc_mult2, mult2Q)
+			tmp_QA := Aold_QA[n] - MUL32_FRAC_Q(Aold_QA[k-n-1], rc_Q31, 31)
+			Anew_QA[n] = MUL32_FRAC_Q(tmp_QA, rc_mult2, mult2Q)
 		}
 	}
 	if Anew_QA[0] > A_LIMIT || Anew_QA[0] < -A_LIMIT {
 		return 0
 	}
-	rc_Q31 := -Inlines_silk_LSHIFT(Anew_QA[0], 31-QA)
-	rc_mult1_Q30 := (1 << 30) - Inlines_silk_SMMUL(rc_Q31, rc_Q31)
-	invGain_Q30 = Inlines_silk_LSHIFT(Inlines_silk_SMMUL(invGain_Q30, rc_mult1_Q30), 2)
+	rc_Q31 := -silk_LSHIFT(Anew_QA[0], 31-QA)
+	rc_mult1_Q30 := (1 << 30) - silk_SMMUL(rc_Q31, rc_Q31)
+	invGain_Q30 = silk_LSHIFT(silk_SMMUL(invGain_Q30, rc_mult1_Q30), 2)
 	return invGain_Q30
 }
 
@@ -319,7 +319,7 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int32 {
 	DC_resp := 0
 	for k := 0; k < order; k++ {
 		DC_resp += int(A_Q12[k])
-		Anew_QA[k] = Inlines_silk_LSHIFT32(int32(A_Q12[k]), QA-12)
+		Anew_QA[k] = silk_LSHIFT32(int32(A_Q12[k]), QA-12)
 	}
 	if DC_resp >= 4096 {
 		return 0

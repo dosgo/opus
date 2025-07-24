@@ -39,28 +39,22 @@ package opus
 /// Note that since most API-level errors are detected and thrown as
 /// OpusExceptions, direct use of this class is not usually needed
 
-const (
-	/// No error
-	OPUS_OK int = 0
-
-	/// One or more invalid/out of range arguments
-	OPUS_BAD_ARG int = -1
-
-	/// Not enough bytes allocated in the buffer
-	OPUS_BUFFER_TOO_SMALL int = -2
-
-	/// An public error was detected
-	OPUS_INTERNAL_ERROR int = -3
-
-	/// The compressed data passed is corrupted
-	OPUS_INVALID_PACKET int = -4
-
-	/// Invalid/unsupported request number
-	OPUS_UNIMPLEMENTED int = -5
-
-	/// An encoder or decoder structure is invalid or already freed
-	OPUS_INVALID_STATE int = -6
-
-	/// Memory allocation has failed
-	OPUS_ALLOC_FAIL int = -7
-)
+var OpusError = struct {
+	OPUS_OK               int
+	OPUS_BAD_ARG          int
+	OPUS_BUFFER_TOO_SMALL int
+	OPUS_INTERNAL_ERROR   int
+	OPUS_INVALID_PACKET   int
+	OPUS_UNIMPLEMENTED    int
+	OPUS_INVALID_STATE    int
+	OPUS_ALLOC_FAIL       int
+}{
+	OPUS_OK:               0,
+	OPUS_BAD_ARG:          -1,
+	OPUS_BUFFER_TOO_SMALL: -2,
+	OPUS_INTERNAL_ERROR:   -3,
+	OPUS_INVALID_PACKET:   -4,
+	OPUS_UNIMPLEMENTED:    -5,
+	OPUS_INVALID_STATE:    -6,
+	OPUS_ALLOC_FAIL:       -7,
+}

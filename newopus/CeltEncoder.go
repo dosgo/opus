@@ -135,10 +135,10 @@ func (this *CeltEncoder) ResetState() {
 
 func (this *CeltEncoder) opus_custom_encoder_init_arch(mode *CeltMode, channels int) int {
 	if channels < 0 || channels > 2 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if this == nil || mode == nil {
-		return OPUS_ALLOC_FAIL
+		return OpusError.OPUS_ALLOC_FAIL
 	}
 	this.Reset()
 	this.mode = mode
@@ -156,16 +156,16 @@ func (this *CeltEncoder) opus_custom_encoder_init_arch(mode *CeltMode, channels 
 	this.complexity = 5
 	this.lsb_depth = 24
 	this.ResetState()
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (this *CeltEncoder) celt_encoder_init(sampling_rate int, channels int) int {
 	ret := this.opus_custom_encoder_init_arch(mode48000_960_120, channels)
-	if ret != OPUS_OK {
+	if ret != OpusError.OPUS_OK {
 		return ret
 	}
 	this.upsample = resampling_factor(sampling_rate)
-	return OPUS_OK
+	return OpusError.OPUS_OK
 }
 
 func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC int, N int, prefilter_tapset int, pitch *int, gain *int, qgain *int, enabled int, nbAvailableBytes int) int {

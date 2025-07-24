@@ -70,7 +70,7 @@ func GetNumEncodedChannels(packet []byte, packet_offset int) int {
 
 func GetNumFrames(packet []byte, packet_offset, len int) int {
 	if len < 1 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	count := packet[packet_offset] & 0x3
 	if count == 0 {
@@ -78,7 +78,7 @@ func GetNumFrames(packet []byte, packet_offset, len int) int {
 	} else if count != 3 {
 		return 2
 	} else if len < 2 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	} else {
 		return int(packet[packet_offset+1] & 0x3F)
 	}
@@ -92,7 +92,7 @@ func GetNumSamples(packet []byte, packet_offset, len, Fs int) int {
 
 	samples := count * GetNumSamplesPerFrame(packet, packet_offset, Fs)
 	if samples*25 > Fs*3 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 	return samples
 }
@@ -150,10 +150,10 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 	*packet_offset = 0
 
 	if sizes == nil || len < 0 {
-		return OPUS_BAD_ARG
+		return OpusError.OPUS_BAD_ARG
 	}
 	if len == 0 {
-		return OPUS_INVALID_PACKET
+		return OpusError.OPUS_INVALID_PACKET
 	}
 
 	framesize = GetNumSamplesPerFrame(data, data_ptr, 48000)
@@ -172,7 +172,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 		cbr = 1
 		if self_delimited == 0 {
 			if len&0x1 != 0 {
-				return OPUS_INVALID_PACKET
+				return OpusError.OPUS_INVALID_PACKET
 			}
 			last_size = len / 2
 			sizes[0] = int16(last_size)
@@ -184,26 +184,26 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 		sizes[0] = size_val
 		len -= bytes
 		if sizes[0] < 0 || int(sizes[0]) > len {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		data_ptr += bytes
 		last_size = len - int(sizes[0])
 	default:
 		if len < 1 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		ch = int(data[data_ptr])
 		data_ptr++
 		count = ch & 0x3F
 		if count <= 0 || framesize*count > 5760 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		len--
 		if (ch & 0x40) != 0 {
 			var p int
 			for {
 				if len <= 0 {
-					return OPUS_INVALID_PACKET
+					return OpusError.OPUS_INVALID_PACKET
 				}
 				p = int(data[data_ptr])
 				data_ptr++
@@ -220,7 +220,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 			}
 		}
 		if len < 0 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		if (ch & 0x80) == 0 {
 			cbr = 1
@@ -233,18 +233,18 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 				sizes[i] = size_val
 				len -= bytes
 				if sizes[i] < 0 || int(sizes[i]) > len {
-					return OPUS_INVALID_PACKET
+					return OpusError.OPUS_INVALID_PACKET
 				}
 				data_ptr += bytes
 				last_size -= bytes + int(sizes[i])
 			}
 			if last_size < 0 {
-				return OPUS_INVALID_PACKET
+				return OpusError.OPUS_INVALID_PACKET
 			}
 		} else if self_delimited == 0 {
 			last_size = len / count
 			if last_size*count != len {
-				return OPUS_INVALID_PACKET
+				return OpusError.OPUS_INVALID_PACKET
 			}
 			for i = 0; i < count-1; i++ {
 				sizes[i] = int16(last_size)
@@ -258,22 +258,22 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 		sizes[count-1] = size_val
 		len -= bytes
 		if sizes[count-1] < 0 || int(sizes[count-1]) > len {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		data_ptr += bytes
 		if cbr != 0 {
 			if int(sizes[count-1])*count > len {
-				return OPUS_INVALID_PACKET
+				return OpusError.OPUS_INVALID_PACKET
 			}
 			for i = 0; i < count-1; i++ {
 				sizes[i] = sizes[count-1]
 			}
 		} else if bytes+int(sizes[count-1]) > last_size {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 	} else {
 		if last_size > 1275 {
-			return OPUS_INVALID_PACKET
+			return OpusError.OPUS_INVALID_PACKET
 		}
 		sizes[count-1] = int16(last_size)
 	}
