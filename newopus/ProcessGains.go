@@ -67,7 +67,7 @@ func silk_process_gains(
 	psEncCtrl.lastGainIndexPrev = psShapeSt.LastGainIndex
 
 	lastGainIndex := psShapeSt.LastGainIndex
-	GainQuantization.silk_gains_quant(
+	silk_gains_quant(
 		psEnc.indices.GainsIndices[:],
 		psEncCtrl.Gains_Q16[:psEnc.nb_subfr],
 		&lastGainIndex,

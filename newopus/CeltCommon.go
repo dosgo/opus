@@ -373,7 +373,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		}
 		minXC = sum
 		for i := 8; i < intensity; i++ {
-			partial := Kernels_celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
+			partial := celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
 			absPartial := ABS16(EXTRACT16(SHR32(partial, 18)))
 			if absPartial < minXC {
 				minXC = absPartial

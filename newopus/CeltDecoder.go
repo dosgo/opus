@@ -76,7 +76,7 @@ func (this *CeltDecoder) ResetState() {
 		this.oldLogE2 = make([]int, 2*nbEBands)
 		this.backgroundLogE = make([]int, 2*nbEBands)
 
-		q28 := QCONST16(28.0, DB_SHIFT)
+		q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
 		for i := 0; i < 2*nbEBands; i++ {
 			this.oldLogE[i] = -q28
 			this.oldLogE2[i] = -q28
@@ -146,7 +146,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 		decay := QCONST16(0.5, CeltConstants.DB_SHIFT)
 		if this.loss_count == 0 {
-			decay = QCONST16(1.5, CeltConstants, DB_SHIFT)
+			decay = QCONST16(1.5, CeltConstants.DB_SHIFT)
 		}
 		for c := 0; c < C; c++ {
 			for i := this.start; i < end; i++ {
@@ -476,7 +476,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	}
 
 	if silence != 0 {
-		q28 := QCONST16(28.0, DB_SHIFT)
+		q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
 		for i := 0; i < CC*nbEBands; i++ {
 			oldBandE[i] = -q28
 		}
@@ -511,9 +511,9 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	if isTransient == 0 {
 		max_background_increase := 0
 		if this.loss_count < 10 {
-			max_background_increase = M * QCONST16(0.001, DB_SHIFT)
+			max_background_increase = M * QCONST16(0.001, CeltConstants.DB_SHIFT)
 		} else {
-			max_background_increase = QCONST16(1.0, DB_SHIFT)
+			max_background_increase = QCONST16(1.0, CeltConstants.DB_SHIFT)
 		}
 		copy(oldLogE2, oldLogE)
 		copy(oldLogE, oldBandE)
@@ -526,7 +526,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 		}
 	}
 
-	q28 := QCONST16(28.0, DB_SHIFT)
+	q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
 	for c := 0; c < 2; c++ {
 		for i := 0; i < start; i++ {
 			idx := c*nbEBands + i

@@ -194,28 +194,28 @@ var tansig_table = []float32{
 	1.000000,
 }
 
-var mono_voice_bandwidth_thresholds = []int{
+var MONO_VOICE_BANDWIDTH_THRESHOLDS = []int{
 	11000, 1000,
 	14000, 1000,
 	17000, 1000,
 	21000, 2000,
 }
 
-var mono_music_bandwidth_thresholds = []int{
+var MONO_MUSIC_BANDWIDTH_THRESHOLDS = []int{
 	12000, 1000,
 	15000, 1000,
 	18000, 2000,
 	22000, 2000,
 }
 
-var stereo_voice_bandwidth_thresholds = []int{
+var STEREO_VOICE_BANDWIDTH_THRESHOLDS = []int{
 	11000, 1000,
 	14000, 1000,
 	21000, 2000,
 	28000, 2000,
 }
 
-var stereo_music_bandwidth_thresholds = []int{
+var STEREO_MUSIC_BANDWIDTH_THRESHOLDS = []int{
 	12000, 1000,
 	18000, 2000,
 	21000, 2000,

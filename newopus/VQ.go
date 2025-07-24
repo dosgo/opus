@@ -212,8 +212,8 @@ func stereo_itheta(X []int, X_ptr int, Y []int, Y_ptr int, stereo int, N int) in
 			Eside = MAC16_16(Eside, s, s)
 		}
 	} else {
-		Emid += Kernels.Celt_inner_prod(X, X_ptr, X, X_ptr, N)
-		Eside += Kernels.Celt_inner_prod(Y, Y_ptr, Y, Y_ptr, N)
+		Emid += celt_inner_prod(X, X_ptr, X, X_ptr, N)
+		Eside += celt_inner_prod(Y, Y_ptr, Y, Y_ptr, N)
 	}
 	mid := celt_sqrt(Emid)
 	side := celt_sqrt(Eside)

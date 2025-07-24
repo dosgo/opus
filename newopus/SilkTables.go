@@ -677,6 +677,9 @@ var SilkTables = struct {
 	Silk_rate_levels_iCDF               [][]int16
 	Silk_pulses_per_block_iCDF          [][]int16
 	Silk_max_pulses_table               []int8
+	Silk_uniform6_iCDF                  []int16
+	Silk_uniform4_iCDF                  []int16
+	Silk_shell_code_table_offsets       []int16
 }{
 	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
@@ -707,4 +710,7 @@ var SilkTables = struct {
 	Silk_rate_levels_iCDF:               silk_rate_levels_iCDF,
 	Silk_pulses_per_block_iCDF:          silk_pulses_per_block_iCDF,
 	Silk_max_pulses_table:               silk_max_pulses_table,
+	Silk_uniform6_iCDF:                  silk_uniform6_iCDF,
+	Silk_uniform4_iCDF:                  silk_uniform4_iCDF,
+	Silk_shell_code_table_offsets:       silk_shell_code_table_offsets,
 }
