@@ -13,7 +13,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	buf_len = psEnc.la_pitch + psEnc.frame_length + psEnc.ltp_mem_length
 
-	Inlines.OpusAssert(buf_len >= psEnc.pitch_LPC_win_length)
+	OpusAssert(buf_len >= psEnc.pitch_LPC_win_length)
 
 	x_buf = x_ptr - psEnc.ltp_mem_length
 

@@ -81,7 +81,7 @@ func stereo_fade(pcm_buf []int16, g1 int, g2 int, overlap48 int, frame_size int,
 	for i := 0; i < overlap; i++ {
 		var diff int32
 		var g, w int32
-		w = Inlines_MULT16_16_Q15(window[i*inc], window[i*inc])
+		w = MULT16_16_Q15(window[i*inc], window[i*inc])
 		g = Inlines_SHR32(Inlines_MAC16_16(Inlines_MULT16_16(w, int32(g2)), CeltConstants.Q15ONE-w, int32(g1)), 15)
 		diff = Inlines_EXTRACT16(Inlines_HALF32(int32(pcm_buf[i*channels]) - int32(pcm_buf[i*channels+1])))
 		diff = Inlines_MULT16_16_Q15(int32(g), diff)

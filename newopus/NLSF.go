@@ -12,20 +12,20 @@ func silk_NLSF_VQ(err_Q26 []int32, in_Q15 []int16, pCB_Q8 []int16, K int, LPC_or
 	var diff_Q15, sum_error_Q30, sum_error_Q26 int32
 	pCB_idx := 0
 
-	Inlines_OpusAssert(err_Q26 != nil)
-	Inlines_OpusAssert(LPC_order <= 16)
-	Inlines_OpusAssert((LPC_order & 1) == 0)
+	OpusAssert(err_Q26 != nil)
+	OpusAssert(LPC_order <= 16)
+	OpusAssert((LPC_order & 1) == 0)
 
 	for i := 0; i < K; i++ {
 		sum_error_Q26 = 0
 		for m := 0; m < LPC_order; m += 2 {
-			diff_Q15 = Inlines_silk_SUB_LSHIFT32(in_Q15[m], pCB_Q8[pCB_idx], 7)
-			sum_error_Q30 = Inlines_silk_SMULBB(diff_Q15, diff_Q15)
-			diff_Q15 = Inlines_silk_SUB_LSHIFT32(in_Q15[m+1], pCB_Q8[pCB_idx+1], 7)
-			sum_error_Q30 = Inlines_silk_SMLABB(sum_error_Q30, diff_Q15, diff_Q15)
-			sum_error_Q26 = Inlines_silk_ADD_RSHIFT32(sum_error_Q26, sum_error_Q30, 4)
-			Inlines_OpusAssert(sum_error_Q26 >= 0)
-			Inlines_OpusAssert(sum_error_Q30 >= 0)
+			diff_Q15 = silk_SUB_LSHIFT32(in_Q15[m], pCB_Q8[pCB_idx], 7)
+			sum_error_Q30 = silk_SMULBB(diff_Q15, diff_Q15)
+			diff_Q15 = silk_SUB_LSHIFT32(in_Q15[m+1], pCB_Q8[pCB_idx+1], 7)
+			sum_error_Q30 = silk_SMLABB(sum_error_Q30, diff_Q15, diff_Q15)
+			sum_error_Q26 = silk_ADD_RSHIFT32(sum_error_Q26, sum_error_Q30, 4)
+			OpusAssert(sum_error_Q26 >= 0)
+			OpusAssert(sum_error_Q30 >= 0)
 			pCB_idx += 2
 		}
 		err_Q26[i] = sum_error_Q26
@@ -35,33 +35,33 @@ func silk_NLSF_VQ(err_Q26 []int32, in_Q15 []int16, pCB_Q8 []int16, K int, LPC_or
 func silk_NLSF_VQ_weights_laroia(pNLSFW_Q_OUT []int16, pNLSF_Q15 []int16, D int) {
 	var tmp1_int, tmp2_int int32
 
-	Inlines_OpusAssert(pNLSFW_Q_OUT != nil)
-	Inlines_OpusAssert(D > 0)
-	Inlines_OpusAssert((D & 1) == 0)
+	OpusAssert(pNLSFW_Q_OUT != nil)
+	OpusAssert(D > 0)
+	OpusAssert((D & 1) == 0)
 
-	tmp1_int = int32(Inlines_silk_max_int(int(pNLSF_Q15[0]), 1))
-	tmp1_int = Inlines_silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
-	tmp2_int = int32(Inlines_silk_max_int(int(pNLSF_Q15[1]-pNLSF_Q15[0]), 1))
-	tmp2_int = Inlines_silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp2_int)
-	pNLSFW_Q_OUT[0] = int16(Inlines_silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
-	Inlines_OpusAssert(pNLSFW_Q_OUT[0] > 0)
+	tmp1_int = int32(silk_max_int(int(pNLSF_Q15[0]), 1))
+	tmp1_int = silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
+	tmp2_int = int32(silk_max_int(int(pNLSF_Q15[1]-pNLSF_Q15[0]), 1))
+	tmp2_int = silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp2_int)
+	pNLSFW_Q_OUT[0] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
+	OpusAssert(pNLSFW_Q_OUT[0] > 0)
 
 	for k := 1; k < D-1; k += 2 {
-		tmp1_int = int32(Inlines_silk_max_int(int(pNLSF_Q15[k+1]-pNLSF_Q15[k]), 1))
-		tmp1_int = Inlines_silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
-		pNLSFW_Q_OUT[k] = int16(Inlines_silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
-		Inlines_OpusAssert(pNLSFW_Q_OUT[k] > 0)
+		tmp1_int = int32(silk_max_int(int(pNLSF_Q15[k+1]-pNLSF_Q15[k]), 1))
+		tmp1_int = silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
+		pNLSFW_Q_OUT[k] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
+		OpusAssert(pNLSFW_Q_OUT[k] > 0)
 
-		tmp2_int = int32(Inlines_silk_max_int(int(pNLSF_Q15[k+2]-pNLSF_Q15[k+1]), 1))
-		tmp2_int = Inlines_silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp2_int)
-		pNLSFW_Q_OUT[k+1] = int16(Inlines_silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
-		Inlines_OpusAssert(pNLSFW_Q_OUT[k+1] > 0)
+		tmp2_int = int32(silk_max_int(int(pNLSF_Q15[k+2]-pNLSF_Q15[k+1]), 1))
+		tmp2_int = silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp2_int)
+		pNLSFW_Q_OUT[k+1] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
+		OpusAssert(pNLSFW_Q_OUT[k+1] > 0)
 	}
 
-	tmp1_int = int32(Inlines_silk_max_int(int((1<<15)-int(pNLSF_Q15[D-1]), 1)))
-	tmp1_int = Inlines_silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
-	pNLSFW_Q_OUT[D-1] = int16(Inlines_silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
-	Inlines_OpusAssert(pNLSFW_Q_OUT[D-1] > 0)
+	tmp1_int = int32(silk_max_int(int((1<<15)-int(pNLSF_Q15[D-1]), 1)))
+	tmp1_int = silk_DIV32(1<<(15+SilkConstants_NLSF_W_Q), tmp1_int)
+	pNLSFW_Q_OUT[D-1] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
+	OpusAssert(pNLSFW_Q_OUT[D-1] > 0)
 }
 
 func silk_NLSF_residual_dequant(x_Q10 []int16, indices []byte, indices_ptr int, pred_coef_Q8 []int16, quant_step_size_Q16 int32, order int16) {
@@ -69,14 +69,14 @@ func silk_NLSF_residual_dequant(x_Q10 []int16, indices []byte, indices_ptr int, 
 
 	out_Q10 = 0
 	for i := int(order) - 1; i >= 0; i-- {
-		pred_Q10 = Inlines_silk_RSHIFT(int32(Inlines_silk_SMULBB(out_Q10, pred_coef_Q8[i])), 8)
+		pred_Q10 = silk_RSHIFT(int32(silk_SMULBB(out_Q10, pred_coef_Q8[i])), 8)
 		out_Q10 = int32(indices[indices_ptr+i]) << 10
 		if out_Q10 > 0 {
-			out_Q10 -= int32(SilkConstants_NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out_Q10 -= int32(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
 		} else if out_Q10 < 0 {
-			out_Q10 += int32(SilkConstants_NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out_Q10 += int32(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
 		}
-		out_Q10 = Inlines_silk_SMLAWB(pred_Q10, out_Q10, quant_step_size_Q16)
+		out_Q10 = silk_SMLAWB(pred_Q10, out_Q10, quant_step_size_Q16)
 		x_Q10[i] = int16(out_Q10)
 	}
 }
@@ -88,9 +88,9 @@ func silk_NLSF_unpack(ec_ix []int16, pred_Q8 []int16, psNLSF_CB *NLSFCodebook, C
 	for i := 0; i < psNLSF_CB.order; i += 2 {
 		entry = psNLSF_CB.ec_sel[ec_sel_ptr]
 		ec_sel_ptr++
-		ec_ix[i] = int16(Inlines_silk_SMULBB(int32((entry>>1)&7), int32(2*SilkConstants_NLSF_QUANT_MAX_AMPLITUDE+1)))
+		ec_ix[i] = int16(silk_SMULBB(int32((entry>>1)&7), int32(2*SilkConstants_NLSF_QUANT_MAX_AMPLITUDE+1)))
 		pred_Q8[i] = psNLSF_CB.pred_Q8[i+int(entry&1)*(psNLSF_CB.order-1)]
-		ec_ix[i+1] = int16(Inlines_silk_SMULBB(int32((entry>>5)&7), int32(2*SilkConstants_NLSF_QUANT_MAX_AMPLITUDE+1)))
+		ec_ix[i+1] = int16(silk_SMULBB(int32((entry>>5)&7), int32(2*SilkConstants_NLSF_QUANT_MAX_AMPLITUDE+1)))
 		pred_Q8[i+1] = psNLSF_CB.pred_Q8[i+int((entry>>4)&1)*(psNLSF_CB.order-1)+1]
 	}
 }
@@ -100,7 +100,7 @@ func silk_NLSF_stabilize(NLSF_Q15 []int16, NDeltaMin_Q15 []int16, L int) {
 	var center_freq_Q15 int16
 	var diff_Q15, min_diff_Q15, min_center_Q15, max_center_Q15 int32
 
-	Inlines_OpusAssert(int(NDeltaMin_Q15[L]) >= 1)
+	OpusAssert(int(NDeltaMin_Q15[L]) >= 1)
 
 	for loops = 0; loops < MAX_STABILIZE_LOOPS; loops++ {
 		min_diff_Q15 = int32(NLSF_Q15[0] - NDeltaMin_Q15[0])
@@ -133,31 +133,31 @@ func silk_NLSF_stabilize(NLSF_Q15 []int16, NDeltaMin_Q15 []int16, L int) {
 			for k = 0; k < I; k++ {
 				min_center_Q15 += int32(NDeltaMin_Q15[k])
 			}
-			min_center_Q15 += int32(Inlines_silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			min_center_Q15 += int32(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
 
 			max_center_Q15 = 1 << 15
 			for k = L; k > I; k-- {
 				max_center_Q15 -= int32(NDeltaMin_Q15[k])
 			}
-			max_center_Q15 -= int32(Inlines_silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			max_center_Q15 -= int32(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
 
-			center_freq_Q15 = int16(Inlines_silk_LIMIT_32(
-				Inlines_silk_RSHIFT_ROUND(int32(NLSF_Q15[I-1])+int32(NLSF_Q15[I]), 1),
+			center_freq_Q15 = int16(silk_LIMIT_32(
+				silk_RSHIFT_ROUND(int32(NLSF_Q15[I-1])+int32(NLSF_Q15[I]), 1),
 				min_center_Q15, max_center_Q15))
-			NLSF_Q15[I-1] = center_freq_Q15 - int16(Inlines_silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			NLSF_Q15[I-1] = center_freq_Q15 - int16(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
 			NLSF_Q15[I] = NLSF_Q15[I-1] + NDeltaMin_Q15[I]
 		}
 	}
 
 	if loops == MAX_STABILIZE_LOOPS {
-		Sort_silk_insertion_sort_increasing_all_values_int16(NLSF_Q15, L)
-		NLSF_Q15[0] = int16(Inlines_silk_max_int(int(NLSF_Q15[0]), int(NDeltaMin_Q15[0])))
+		silk_insertion_sort_increasing_all_values_int16(NLSF_Q15, L)
+		NLSF_Q15[0] = int16(silk_max_int(int(NLSF_Q15[0]), int(NDeltaMin_Q15[0])))
 		for i := 1; i < L; i++ {
-			NLSF_Q15[i] = int16(Inlines_silk_max_int(int(NLSF_Q15[i]), int(NLSF_Q15[i-1])+int(NDeltaMin_Q15[i])))
+			NLSF_Q15[i] = int16(silk_max_int(int(NLSF_Q15[i]), int(NLSF_Q15[i-1])+int(NDeltaMin_Q15[i])))
 		}
-		NLSF_Q15[L-1] = int16(Inlines_silk_min_int(int(NLSF_Q15[L-1]), (1<<15)-int(NDeltaMin_Q15[L])))
+		NLSF_Q15[L-1] = int16(silk_min_int(int(NLSF_Q15[L-1]), (1<<15)-int(NDeltaMin_Q15[L])))
 		for i := L - 2; i >= 0; i-- {
-			NLSF_Q15[i] = int16(Inlines_silk_min_int(int(NLSF_Q15[i]), int(NLSF_Q15[i+1])-int(NDeltaMin_Q15[i+1])))
+			NLSF_Q15[i] = int16(silk_min_int(int(NLSF_Q15[i]), int(NLSF_Q15[i+1])-int(NDeltaMin_Q15[i+1])))
 		}
 	}
 }
@@ -179,9 +179,9 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 	silk_NLSF_VQ_weights_laroia(W_tmp_QW, pNLSF_Q15, psNLSF_CB.order)
 
 	for i := 0; i < psNLSF_CB.order; i++ {
-		W_tmp_Q9 = Inlines_silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants_NLSF_W_Q))
-		NLSF_Q15_tmp = int32(pNLSF_Q15[i]) + Inlines_silk_DIV32_16(int32(res_Q10[i])<<14, int16(W_tmp_Q9))
-		pNLSF_Q15[i] = int16(Inlines_silk_LIMIT(NLSF_Q15_tmp, 0, 32767))
+		W_tmp_Q9 = silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants_NLSF_W_Q))
+		NLSF_Q15_tmp = int32(pNLSF_Q15[i]) + silk_DIV32_16(int32(res_Q10[i])<<14, int16(W_tmp_Q9))
+		pNLSF_Q15[i] = int16(silk_LIMIT(NLSF_Q15_tmp, 0, 32767))
 	}
 
 	silk_NLSF_stabilize(pNLSF_Q15, psNLSF_CB.deltaMin_Q15, psNLSF_CB.order)
@@ -232,7 +232,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 		out1_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = Inlines_silk_SMULWB(out1_Q10, quant_step_size_Q16)
 	}
 
-	Inlines_OpusAssert((NLSF_QUANT_DEL_DEC_STATES & (NLSF_QUANT_DEL_DEC_STATES - 1)) == 0)
+	OpusAssert((NLSF_QUANT_DEL_DEC_STATES & (NLSF_QUANT_DEL_DEC_STATES - 1)) == 0)
 
 	nStates = 1
 	RD_Q25[0] = 0
@@ -362,13 +362,13 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 
 	for j := 0; j < ord; j++ {
 		indices[j] = ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]
-		Inlines_OpusAssert(int(indices[j]) >= -NLSF_QUANT_MAX_AMPLITUDE_EXT)
-		Inlines_OpusAssert(int(indices[j]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
+		OpusAssert(int(indices[j]) >= -NLSF_QUANT_MAX_AMPLITUDE_EXT)
+		OpusAssert(int(indices[j]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
 	}
 
 	indices[0] += byte(ind_tmp >> NLSF_QUANT_DEL_DEC_STATES_LOG2)
-	Inlines_OpusAssert(int(indices[0]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
-	Inlines_OpusAssert(min_Q25 >= 0)
+	OpusAssert(int(indices[0]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
+	OpusAssert(min_Q25 >= 0)
 	return min_Q25
 }
 
@@ -393,13 +393,13 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	pred_Q8 := make([]int16, psNLSF_CB.order)
 	ec_ix := make([]int16, psNLSF_CB.order)
 
-	Inlines_OpusAssert(nSurvivors <= NLSF_VQ_MAX_SURVIVORS)
-	Inlines_OpusAssert(signalType >= 0 && signalType <= 2)
-	Inlines_OpusAssert(NLSF_mu_Q20 <= 32767 && NLSF_mu_Q20 >= 0)
+	OpusAssert(nSurvivors <= NLSF_VQ_MAX_SURVIVORS)
+	OpusAssert(signalType >= 0 && signalType <= 2)
+	OpusAssert(NLSF_mu_Q20 <= 32767 && NLSF_mu_Q20 >= 0)
 
 	silk_NLSF_stabilize(pNLSF_Q15, psNLSF_CB.deltaMin_Q15, psNLSF_CB.order)
 	silk_NLSF_VQ(err_Q26, pNLSF_Q15, psNLSF_CB.CB1_NLSF_Q8, psNLSF_CB.nVectors, psNLSF_CB.order)
-	Sort_silk_insertion_sort_increasing(err_Q26, tempIndices1, psNLSF_CB.nVectors, nSurvivors)
+	silk_insertion_sort_increasing(err_Q26, tempIndices1, psNLSF_CB.nVectors, nSurvivors)
 
 	for s := 0; s < nSurvivors; s++ {
 		ind1 = tempIndices1[s]
@@ -431,12 +431,12 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 			prob_Q8 = psNLSF_CB.CB1_iCDF[iCDF_ptr+ind1-1] - psNLSF_CB.CB1_iCDF[iCDF_ptr+ind1]
 		}
 
-		bits_q7 = (8 << 7) - Inlines_silk_lin2log(prob_Q8)
-		RD_Q25[s] = Inlines_silk_SMLABB(RD_Q25[s], int32(bits_q7), NLSF_mu_Q20>>2)
+		bits_q7 = (8 << 7) - silk_lin2log(prob_Q8)
+		RD_Q25[s] = silk_SMLABB(RD_Q25[s], int32(bits_q7), NLSF_mu_Q20>>2)
 	}
 
 	bestIndex := make([]int, 1)
-	Sort_silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1)
+	silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1)
 	NLSFIndices[0] = byte(tempIndices1[bestIndex[0]])
 	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]])
 
@@ -447,9 +447,9 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 func silk_NLSF2A_find_poly(o []int32, cLSF []int32, cLSF_ptr int, dd int) {
 	for k := 1; k < dd; k++ {
 		ftmp := cLSF[cLSF_ptr+2*k]
-		o[k+1] = (o[k-1] << 1) - int32(Inlines_silk_RSHIFT_ROUND64(Inlines_silk_SMULL(ftmp, o[k]), QA))
+		o[k+1] = (o[k-1] << 1) - int32(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[k]), QA))
 		for n := k; n > 1; n-- {
-			o[n] += o[n-2] - int32(Inlines_silk_RSHIFT_ROUND64(Inlines_silk_SMULL(ftmp, o[n-1]), QA))
+			o[n] += o[n-2] - int32(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[n-1]), QA))
 		}
 		o[1] -= ftmp
 	}
@@ -471,19 +471,19 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 		ordering = ordering10
 	}
 
-	Inlines_OpusAssert(LSF_COS_TAB_SZ == 128)
-	Inlines_OpusAssert(d == 10 || d == 16)
+	OpusAssert(LSF_COS_TAB_SZ == 128)
+	OpusAssert(d == 10 || d == 16)
 
 	cos_LSF_QA := make([]int32, d)
 	for k := 0; k < d; k++ {
-		Inlines_OpusAssert(int(NLSF[k]) >= 0)
+		OpusAssert(int(NLSF[k]) >= 0)
 		f_int := int(NLSF[k]) >> (15 - 7)
 		f_frac := int(NLSF[k]) - (f_int << (15 - 7))
-		Inlines_OpusAssert(f_int >= 0)
-		Inlines_OpusAssert(f_int < LSF_COS_TAB_SZ)
+		OpusAssert(f_int >= 0)
+		OpusAssert(f_int < LSF_COS_TAB_SZ)
 		cos_val := SilkTables_silk_LSFCosTab_Q12[f_int]
 		delta := SilkTables_silk_LSFCosTab_Q12[f_int+1] - cos_val
-		cos_LSF_QA[ordering[k]] = int32(Inlines_silk_RSHIFT_ROUND(int64(cos_val)<<8+int64(delta)*int64(f_frac), 20-QA))
+		cos_LSF_QA[ordering[k]] = int32(silk_RSHIFT_ROUND(int64(cos_val)<<8+int64(delta)*int64(f_frac), 20-QA))
 	}
 
 	dd := d / 2
@@ -510,18 +510,18 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 		maxabs := int32(0)
 		idx := 0
 		for k := 0; k < d; k++ {
-			absval := Inlines_silk_abs(a32_QA1[k])
+			absval := silk_abs(a32_QA1[k])
 			if absval > maxabs {
 				maxabs = absval
 				idx = k
 			}
 		}
-		maxabs = int32(Inlines_silk_RSHIFT_ROUND(int64(maxabs), int64(QA+1-12)))
+		maxabs = int32(silk_RSHIFT_ROUND(int64(maxabs), int64(QA+1-12)))
 
 		if maxabs > math.MaxInt16 {
-			maxabs = Inlines_silk_min_int32(maxabs, 163838)
-			sc_Q16 := int32((0.999*65536.0)+0.5) - Inlines_silk_DIV32(int32(maxabs-math.MaxInt16)<<14, Inlines_silk_RSHIFT32(Inlines_silk_MUL(maxabs, int32(idx+1)), 2))
-			Filters_silk_bwexpander_32(a32_QA1, d, sc_Q16)
+			maxabs = silk_min_int32(maxabs, 163838)
+			sc_Q16 := int32((0.999*65536.0)+0.5) - silk_DIV32(int32(maxabs-math.MaxInt16)<<14, Inlines_silk_RSHIFT32(Inlines_silk_MUL(maxabs, int32(idx+1)), 2))
+			silk_bwexpander_32(a32_QA1, d, sc_Q16)
 		} else {
 			break
 		}
@@ -529,20 +529,20 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 
 	if i := 10; i == 10 {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(Inlines_silk_SAT16(int32(Inlines_silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))))
+			a_Q12[k] = int16(silk_SAT16(int32(silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))))
 			a32_QA1[k] = int32(a_Q12[k]) << (QA + 1 - 12)
 		}
 	} else {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(Inlines_silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))
+			a_Q12[k] = int16(silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))
 		}
 	}
 
 	for i := 0; i < MAX_LPC_STABILIZE_ITERATIONS; i++ {
-		if Filters_silk_LPC_inverse_pred_gain(a_Q12, d) < int32((1.0/MAX_PREDICTION_POWER_GAIN)*1073741824.0+0.5) {
-			Filters_silk_bwexpander_32(a32_QA1, d, 65536-int32(2<<i))
+		if silk_LPC_inverse_pred_gain(a_Q12, d) < int32((1.0/MAX_PREDICTION_POWER_GAIN)*1073741824.0+0.5) {
+			silk_bwexpander_32(a32_QA1, d, 65536-int32(2<<i))
 			for k := 0; k < d; k++ {
-				a_Q12[k] = int16(Inlines_silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))
+				a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))
 			}
 		} else {
 			break
@@ -683,7 +683,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
 					return
 				}
 
-				Filters_silk_bwexpander_32(a_Q16, d, 65536-int32(10+i)*int32(i))
+				silk_bwexpander_32(a_Q16, d, 65536-int32(10+i)*int32(i))
 				silk_A2NLSF_init(a_Q16, P, Q, dd)
 				p = P
 				xlo = SilkTables_silk_LSFCosTab_Q12[0]

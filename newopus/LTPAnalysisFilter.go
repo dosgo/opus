@@ -1,22 +1,5 @@
 package opus
 
-func silk_RSHIFT_ROUND(a int32, shift int) int32 {
-	if shift <= 0 {
-		return a
-	}
-	rnd := int32(1 << (shift - 1))
-	return (a + rnd) >> shift
-}
-
-func silk_SAT16(a int32) int16 {
-	if a > 32767 {
-		return 32767
-	} else if a < -32768 {
-		return -32768
-	}
-	return int16(a)
-}
-
 func silk_LTP_analysis_filter(
 	LTP_res []int16,
 	x []int16,

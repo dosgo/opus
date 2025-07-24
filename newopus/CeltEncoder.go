@@ -184,11 +184,11 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 	var gain1 int
 	if enabled != 0 {
 		pitch_buf := make([]int, (CeltConstants.COMBFILTER_MAXPERIOD+N)>>1)
-		Pitch_pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
+		pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
 		pitch_index := 0
-		Pitch_pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
+		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
 		pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index
-		gain1 = Pitch_remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
+		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
 		if pitch_index > CeltConstants.COMBFILTER_MAXPERIOD-2 {
 			pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}

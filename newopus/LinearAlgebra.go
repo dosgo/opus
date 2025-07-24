@@ -1,6 +1,7 @@
 package opus
+
 func silk_solve_LDL(A []int32, A_ptr int, M int, b []int32, x_Q16 []int32) {
-	Inlines.OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
+	OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
 	L_Q16 := make([]int32, M*M)
 	Y := make([]int32, SilkConstants.MAX_MATRIX_SIZE)
 	inv_D := make([]int32, SilkConstants.MAX_MATRIX_SIZE*2)
@@ -22,12 +23,12 @@ func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int3
 	D_Q0 := make([]int32, M)
 	var one_div_diag_Q36, one_div_diag_Q40, one_div_diag_Q48 int32
 
-	Inlines.OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
+	OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
 
 	status = 1
-	diag_min_value = Inlines.silk_max_32(
-		Inlines.silk_SMMUL(
-			Inlines.silk_ADD_SAT32(A[A_ptr], A[A_ptr+Inlines.silk_SMULBB(M, M)-1]),
+	diag_min_value = silk_max_32(
+		silk_SMMUL(
+			silk_ADD_SAT32(A[A_ptr], A[A_ptr+silk_SMULBB(M, M)-1]),
 			int32(float64(TuningParameters.FIND_LTP_COND_FAC)*float64(int32(1<<31))+0.5),
 		),
 		1<<9,
@@ -81,7 +82,7 @@ func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int3
 			}
 		}
 	}
-	Inlines.OpusAssert(status == 0)
+	OpusAssert(status == 0)
 }
 
 func silk_LS_divide_Q16(T []int32, inv_D []int32, M int) {
@@ -91,9 +92,9 @@ func silk_LS_divide_Q16(T []int32, inv_D []int32, M int) {
 		one_div_diag_Q36 = inv_D[i*2+0]
 		one_div_diag_Q48 = inv_D[i*2+1]
 		tmp_32 = T[i]
-		T[i] = Inlines.silk_ADD32(
-			Inlines.silk_SMMUL(tmp_32, one_div_diag_Q48),
-			Inlines.silk_RSHIFT(Inlines.silk_SMULWW(tmp_32, one_div_diag_Q36), 4),
+		T[i] = silk_ADD32(
+			silk_SMMUL(tmp_32, one_div_diag_Q48),
+			silk_RSHIFT(silk_SMULWW(tmp_32, one_div_diag_Q36), 4),
 		)
 	}
 }

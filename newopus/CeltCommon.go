@@ -779,8 +779,8 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 func celt_plc_pitch_search(decode_mem [][]int, C int) int {
 	pitch_index := &BoxedValueInt{Val: 0}
 	lp_pitch_buf := make([]int, CeltConstants.DECODE_BUFFER_SIZE>>1)
-	Pitch_pitch_downsample(decode_mem, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE, C)
-	Pitch_pitch_search(lp_pitch_buf, CeltConstants.PLC_PITCH_LAG_MAX>>1, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.PLC_PITCH_LAG_MAX, CeltConstants.PLC_PITCH_LAG_MAX-CeltConstants_PLC_PITCH_LAG_MIN, pitch_index)
+	pitch_downsample(decode_mem, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE, C)
+	pitch_search(lp_pitch_buf, CeltConstants.PLC_PITCH_LAG_MAX>>1, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.PLC_PITCH_LAG_MAX, CeltConstants.PLC_PITCH_LAG_MAX-CeltConstants_PLC_PITCH_LAG_MIN, pitch_index)
 	return CeltConstants.PLC_PITCH_LAG_MAX - pitch_index.Val
 }
 
