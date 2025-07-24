@@ -222,42 +222,6 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 	}
 }
 
-func silk_SMMUL(a, b int32) int32 {
-	return int32((int64(a) * int64(b)) >> 32)
-}
-
-func silk_abs(a int32) int32 {
-	if a < 0 {
-		return -a
-	}
-	return a
-}
-
-func silk_min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func silk_RSHIFT_ROUND(a int32, shift int) int32 {
-	if shift == 1 {
-		return (a >> 1) + (a & 1)
-	}
-	return ((a >> (shift - 1)) + 1) >> 1
-}
-
-func silk_SQRT_APPROX(x int32) int32 {
-	y := int32(0)
-	for i := 15; i >= 0; i-- {
-		y |= 1 << i
-		if y*y > x {
-			y ^= 1 << i
-		}
-	}
-	return y
-}
-
 func pitch_xcorr(x []int16, x_offset int, y []int16, y_offset int, xcorr []int32, len int, max_pitch int) {
 	for k := 0; k < max_pitch; k++ {
 		sum := int64(0)

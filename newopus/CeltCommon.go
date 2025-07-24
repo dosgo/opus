@@ -872,13 +872,6 @@ func comb_filter(y []int, y_ptr int, x []int, x_ptr int, T0 int, T1 int, N int, 
 	}
 }
 
-var tf_select_table = [][]int8{
-	{0, -1, 0, -1, 0, -1, 0, -1},
-	{0, -1, 0, -2, 1, 0, 1, -1},
-	{0, -2, 0, -3, 2, 0, 1, -1},
-	{0, -2, 0, -3, 3, 0, 1, -1},
-}
-
 func init_caps(m *CeltMode, cap []int, LM int, C int) {
 	for i := 0; i < m.nbEBands; i++ {
 		N := (m.eBands[i+1] - m.eBands[i]) << LM

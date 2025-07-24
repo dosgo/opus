@@ -1,9 +1,5 @@
 package opus
 
-type BoxedValueInt struct {
-	Val int32
-}
-
 const (
 	NB_ATT = 2
 )
@@ -15,9 +11,9 @@ var (
 )
 
 func silk_PLC_Reset(psDec *SilkChannelDecoder) {
-	psDec.sPLC.pitchL_Q8 = int32(int(psDec.frame_length) << (8 - 1))
-	psDec.sPLC.prevGain_Q16[0] = int32((1) * (1 << 16))
-	psDec.sPLC.prevGain_Q16[1] = int32((1) * (1 << 16))
+	psDec.sPLC.pitchL_Q8 = int(int(psDec.frame_length) << (8 - 1))
+	psDec.sPLC.prevGain_Q16[0] = int((1) * (1 << 16))
+	psDec.sPLC.prevGain_Q16[1] = int((1) * (1 << 16))
 	psDec.sPLC.subfr_length = 20
 	psDec.sPLC.nb_subfr = 2
 }
@@ -40,7 +36,7 @@ func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
 	var LTP_Gain_Q14, temp_LTP_Gain_Q14 int32
 	psPLC := &psDec.sPLC
 
-	psDec.prevSignalType = psDec.indices.signalType
+	psDec.prevSignalType = int(psDec.indices.signalType)
 	LTP_Gain_Q14 = 0
 	if psDec.indices.signalType == TYPE_VOICED {
 		for j := 0; j*psDec.subfr_length < int(psDecCtrl.pitchL[psDec.nb_subfr-1]); j++ {

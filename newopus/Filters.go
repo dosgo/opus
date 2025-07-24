@@ -207,15 +207,6 @@ func silk_ana_filt_bank_1(
 	}
 }
 
-func silk_bwexpander_32(ar []int32, d int, chirp_Q16 int32) {
-	chirp_minus_one_Q16 := chirp_Q16 - 65536
-	for i := 0; i < d-1; i++ {
-		ar[i] = Inlines_silk_SMULWW(chirp_Q16, ar[i])
-		chirp_Q16 += Inlines_silk_RSHIFT_ROUND(Inlines_silk_MUL(chirp_Q16, chirp_minus_one_Q16), 16)
-	}
-	ar[d-1] = Inlines_silk_SMULWW(chirp_Q16, ar[d-1])
-}
-
 func silk_LP_interpolate_filter_taps(
 	B_Q28 []int32,
 	A_Q28 []int32,

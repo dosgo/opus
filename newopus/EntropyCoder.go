@@ -217,7 +217,7 @@ func (ec *EntropyCoder) dec_uint(_ft uint32) uint32 {
 		panic("ft must be >1")
 	}
 	ft--
-	ftb := EC_ILOG(ft)
+	ftb := EC_ILOG(int64(ft))
 	if ftb > EC_UINT_BITS {
 		ftb -= EC_UINT_BITS
 		ft1 := (ft >> ftb) + 1
@@ -365,7 +365,7 @@ func (ec *EntropyCoder) enc_uint(_fl uint32, _ft uint32) {
 		panic("ft must be >1")
 	}
 	ft := _ft - 1
-	ftb := EC_ILOG(ft)
+	ftb := EC_ILOG(int64(ft))
 	if ftb > EC_UINT_BITS {
 		ftb -= EC_UINT_BITS
 		ft1 := (ft >> ftb) + 1
@@ -425,12 +425,12 @@ func (ec *EntropyCoder) get_error() int {
 }
 
 func (ec *EntropyCoder) tell() int {
-	return ec.nbits_total - EC_ILOG(ec.rng)
+	return ec.nbits_total - EC_ILOG(int64(ec.rng))
 }
 
 func (ec *EntropyCoder) tell_frac() int {
 	nbits := ec.nbits_total << BITRES
-	l := EC_ILOG(ec.rng)
+	l := EC_ILOG(int64(ec.rng))
 	var r uint32
 	if l < 16 {
 		r = ec.rng << uint(16-l)
@@ -451,7 +451,7 @@ func (ec *EntropyCoder) tell_frac() int {
 }
 
 func (ec *EntropyCoder) enc_done() {
-	l := EC_CODE_BITS - EC_ILOG(ec.rng)
+	l := EC_CODE_BITS - EC_ILOG(int64(ec.rng))
 	msk := (EC_CODE_TOP - 1) >> l
 	end := (ec.val + uint32(msk)) & ^uint32(msk)
 	if (end | uint32(msk)) >= ec.val+ec.rng {
@@ -492,13 +492,4 @@ func (ec *EntropyCoder) enc_done() {
 			}
 		}
 	}
-}
-
-func EC_ILOG(x uint32) int {
-	ret := 0
-	for x > 0 {
-		ret++
-		x >>= 1
-	}
-	return ret
 }

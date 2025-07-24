@@ -98,7 +98,7 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 			}
 			data[ptr] = (this.toc & 0xFC) | 0x02
 			ptr++
-			ptr += encode_size(this.len[0], data[ptr:])
+			ptr += encode_size(this.len[0], data[ptr:], ptr)
 		}
 	}
 	if count > 2 || (pad != 0 && tot_size < maxlen) {
@@ -164,13 +164,13 @@ func (this *OpusRepacketizer) opus_repacketizer_out_range_impl(begin int, end in
 
 		if vbr != 0 {
 			for i := 0; i < count-1; i++ {
-				ptr += encode_size(this.len[i], data[ptr:])
+				ptr += encode_size(this.len[i], data[ptr:], ptr)
 			}
 		}
 	}
 
 	if self_delimited != 0 {
-		sdlen := encode_size(this.len[count-1], data[ptr:])
+		sdlen := encode_size(this.len[count-1], data[ptr:], ptr)
 		ptr += sdlen
 	}
 
@@ -254,8 +254,8 @@ func PadMultistreamPacket(data []byte, data_offset int, len_val int, new_len int
 		if count < 0 {
 			return count
 		}
-		data_offset += packet_offset.Val
-		len_val -= packet_offset.Val
+		data_offset += int(packet_offset.Val)
+		len_val -= int(packet_offset.Val)
 	}
 	return PadPacket(data, data_offset, len_val, len_val+amount)
 }
@@ -285,7 +285,7 @@ func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_stream
 		if count < 0 {
 			return count
 		}
-		ret := rp.opus_repacketizer_cat_impl(data, data_offset, packet_offset.Val, self_delimited)
+		ret := rp.opus_repacketizer_cat_impl(data, data_offset, int(packet_offset.Val), self_delimited)
 		if ret < 0 {
 			return ret
 		}
@@ -295,8 +295,8 @@ func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_stream
 		}
 		dst_len += ret
 		dst += ret
-		data_offset += packet_offset.Val
-		len_val -= packet_offset.Val
+		data_offset += int(packet_offset.Val)
+		len_val -= int(packet_offset.Val)
 	}
 	return dst_len
 }
@@ -338,134 +338,5 @@ func getNumFrames(data []byte, data_ptr int, len_val int) int {
 		return count
 	} else {
 		return 1
-	}
-}
-
-func opus_packet_parse_impl(data []byte, data_ptr int, len_val int, self_delimited int, toc *BoxedValueByte, frames [][]byte, frames_size int, size []int, size_length int, packet_offset *BoxedValueInt, last_offset *BoxedValueInt) int {
-	tmp_toc := data[data_ptr]
-	if toc != nil {
-		toc.Val = tmp_toc
-	}
-
-	sizes := [48]int{}
-	packet_offset.Val = 0
-	last_offset.Val = 0
-
-	if len_val < 1 {
-		return OPUS_INVALID_PACKET
-	}
-
-	count := getNumFrames(data, data_ptr, len_val)
-	if count < 0 {
-		return count
-	}
-
-	if count == 0 {
-		return OPUS_INVALID_PACKET
-	}
-
-	if frames_size < count {
-		return OPUS_INVALID_PACKET
-	}
-
-	if self_delimited != 0 {
-		last_size := len_val
-		for i := count - 1; i > 0; i-- {
-			if last_size < 1 {
-				return OPUS_INVALID_PACKET
-			}
-			extract_size := last_size
-			if data[data_ptr+last_size-1] < 254 {
-				extract_size = last_size - 1
-			} else if last_size >= 2 && data[data_ptr+last_size-2] >= 252 {
-				extract_size = last_size - 2
-			}
-			sizes[i] = extract_size
-			last_size = extract_size
-		}
-		sizes[0] = last_size
-	} else {
-		if (tmp_toc & 0x80) != 0 {
-			ptr := data_ptr + 1
-			for i := 0; i < count-1; i++ {
-				if ptr >= data_ptr+len_val {
-					return OPUS_INVALID_PACKET
-				}
-				sizes[i] = int(data[ptr])
-				if sizes[i] < 252 {
-					ptr++
-				} else if ptr+2 <= data_ptr+len_val {
-					sizes[i] = int(data[ptr])<<8 | int(data[ptr+1])
-					ptr += 2
-				} else {
-					return OPUS_INVALID_PACKET
-				}
-			}
-			sizes[count-1] = len_val - (ptr - data_ptr)
-		} else if (tmp_toc & 0x40) != 0 {
-			if len_val < 2 {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] = (int(data[data_ptr+1]) & 0x3F) << 8
-			if sizes[0] < 0 {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] |= int(data[data_ptr+2])
-			if sizes[0]+3 > len_val {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] += 3
-			if count > 1 {
-				sizes[1] = len_val - sizes[0]
-			}
-		} else if (tmp_toc & 0x20) != 0 {
-			if len_val < 2 {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] = int(data[data_ptr+1]) & 0x3F
-			if sizes[0] < 0 {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] += 1
-			if sizes[0] > len_val-2 {
-				return OPUS_INVALID_PACKET
-			}
-			sizes[0] += 2
-			if count > 1 {
-				sizes[1] = len_val - sizes[0]
-			}
-		} else {
-			sizes[0] = len_val - 1
-		}
-	}
-
-	ptr := data_ptr
-	for i := 0; i < count; i++ {
-		if sizes[i] < 0 || ptr+sizes[i] > data_ptr+len_val {
-			return OPUS_INVALID_PACKET
-		}
-		if frames != nil {
-			frames[i] = data[ptr : ptr+sizes[i]]
-		}
-		if size != nil {
-			size[i] = sizes[i]
-		}
-		ptr += sizes[i]
-	}
-
-	packet_offset.Val = ptr - data_ptr
-	last_offset.Val = sizes[count-1]
-
-	return count
-}
-
-func encode_size(size int, data []byte) int {
-	if size < 252 {
-		data[0] = byte(size)
-		return 1
-	} else {
-		data[0] = byte(size >> 8)
-		data[1] = byte(size & 0xFF)
-		return 2
 	}
 }

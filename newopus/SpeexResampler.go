@@ -4,14 +4,6 @@ import (
 	"math"
 )
 
-type BoxedValueInt struct {
-	Val int
-}
-
-type BoxedValueShort struct {
-	Val int16
-}
-
 type FuncDef struct {
 	table      []float64
 	oversample int

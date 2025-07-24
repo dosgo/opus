@@ -1,4 +1,5 @@
 package opus
+
 type band_ctx struct {
 	encode         int
 	m              *CeltMode
@@ -359,7 +360,7 @@ func spreading_decision(m *CeltMode, X [][]int, average *BoxedValueInt, last_dec
 	sum = celt_udiv(sum, nbBands)
 	sum = (sum + average.Val) >> 1
 	average.Val = sum
-	sum = (3*sum + (((3-last_decision)<<7)+64) + 2) >> 2
+	sum = (3*sum + (((3 - last_decision) << 7) + 64) + 2) >> 2
 
 	decision := SPREAD_NONE
 	if sum < 80 {
@@ -523,7 +524,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 					fl = itheta * (itheta + 1) >> 1
 				} else {
 					fs = qn + 1 - itheta
-					fl = ft - ((qn+1-itheta)*(qn+2-itheta) >> 1)
+					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
 				}
 				ec.encode(fl, fl+fs, ft)
 			} else {
@@ -536,7 +537,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 				} else {
 					itheta = (2*(qn+1) - isqrt32(8*(ft-fm-1)+1)) >> 1
 					fs = qn + 1 - itheta
-					fl = ft - ((qn+1-itheta)*(qn+2-itheta) >> 1)
+					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
 				}
 				ec.dec_update(fl, fl+fs, ft)
 			}
@@ -588,7 +589,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 		imid = bitexact_cos(itheta)
 		iside = bitexact_cos(16384 - itheta)
 		delta = FRAC_MUL16((N-1)<<7, bitexact_log2tan(iside, imid))
-		fill_mask = (1<<B - 1) | (1<<B - 1) << B
+		fill_mask = (1<<B - 1) | (1<<B-1)<<B
 		fill.Val &= fill_mask
 	} else {
 		fill.Val &= fill_mask
@@ -1016,13 +1017,17 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 	}
 
 	ctx := &band_ctx{
-		encode:         encode,
-		m:              m,
-		intensity:      intensity,
-		spread:         spread,
-		ec:             ec,
-		bandE:          bandE,
-		seed:           seed.Val,
+		encode:    encode,
+		m:         m,
+		intensity: intensity,
+		spread:    spread,
+		ec:        ec,
+		bandE:     bandE,
+		seed:      seed.Val,
+	}
+	resynth := 0
+	if encode == 0 {
+		resynth = 1
 	}
 
 	for i := start; i < end; i++ {
@@ -1056,9 +1061,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		x_cm := int64(0)
 		y_cm := int64(0)
 
-		if resynth := 0; encode == 0 {
-			resynth = 1
-		}; resynth != 0 && M*eBands[i]-N >= M*eBands[start] && (update_lowband != 0 || lowband_offset == 0) {
+		if resynth != 0 && M*eBands[i]-N >= M*eBands[start] && (update_lowband != 0 || lowband_offset == 0) {
 			lowband_offset = i
 		}
 
@@ -1100,9 +1103,8 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 
 		if dual_stereo != 0 && i == intensity {
 			dual_stereo = 0
-			if resynth := 0; encode == 0 {
-				resynth = 1
-			}; resynth != 0 {
+
+			if resynth != 0 {
 				for j := 0; j < M*eBands[i]-norm_offset; j++ {
 					norm[j] = HALF32(norm[j] + norm[norm2+j])
 				}

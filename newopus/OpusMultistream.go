@@ -6,7 +6,7 @@ func validate_layout(layout ChannelLayout) int {
 		return 0
 	}
 	for i := 0; i < layout.nb_channels; i++ {
-		if layout.mapping[i] >= max_channel && layout.mapping[i] != 255 {
+		if int(layout.mapping[i]) >= max_channel && layout.mapping[i] != 255 {
 			return 0
 		}
 	}
@@ -19,7 +19,7 @@ func get_left_channel(layout ChannelLayout, stream_id int, prev int) int {
 		start = prev + 1
 	}
 	for i := start; i < layout.nb_channels; i++ {
-		if layout.mapping[i] == stream_id*2 {
+		if int(layout.mapping[i]) == stream_id*2 {
 			return i
 		}
 	}
@@ -32,7 +32,7 @@ func get_right_channel(layout ChannelLayout, stream_id int, prev int) int {
 		start = prev + 1
 	}
 	for i := start; i < layout.nb_channels; i++ {
-		if layout.mapping[i] == stream_id*2+1 {
+		if int(layout.mapping[i]) == stream_id*2+1 {
 			return i
 		}
 	}
@@ -45,7 +45,7 @@ func get_mono_channel(layout ChannelLayout, stream_id int, prev int) int {
 		start = prev + 1
 	}
 	for i := start; i < layout.nb_channels; i++ {
-		if layout.mapping[i] == stream_id+layout.nb_coupled_streams {
+		if int(layout.mapping[i]) == stream_id+layout.nb_coupled_streams {
 			return i
 		}
 	}

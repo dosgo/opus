@@ -1,6 +1,5 @@
 package opus
 
-/*
 var SilkConstants = struct {
 	ENCODER_NUM_CHANNELS                  int
 	DECODER_NUM_CHANNELS                  int
@@ -296,7 +295,7 @@ var SilkConstants = struct {
 	RESAMPLER_MAX_BATCH_SIZE_IN:           10 * 48,
 	SILK_MAX_FRAMES_PER_PACKET:            3,
 }
-*/
+
 const (
 	ENCODER_NUM_CHANNELS                          = 2
 	DECODER_NUM_CHANNELS                          = 2

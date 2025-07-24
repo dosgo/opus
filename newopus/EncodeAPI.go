@@ -1,4 +1,5 @@
 package opus
+
 func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
 	ret := SILK_NO_ERROR
 	encState.Reset()
@@ -460,7 +461,7 @@ func silk_Encode(
 
 				speech_act_thr_for_switch_Q8 = SILK_CONST(SPEECH_ACTIVITY_DTX_THRES, 8) +
 					int(SILK_CONST((1.0-SPEECH_ACTIVITY_DTX_THRES)/MAX_BANDWIDTH_SWITCH_DELAY_MS, 16+8)*
-						psEnc.timeSinceSwitchAllowed_ms>>16
+						psEnc.timeSinceSwitchAllowed_ms>>16)
 				if psEnc.state_Fxx[0].speech_activity_Q8 < speech_act_thr_for_switch_Q8 {
 					psEnc.allowBandwidthSwitch = 1
 					psEnc.timeSinceSwitchAllowed_ms = 0

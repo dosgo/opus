@@ -1,26 +1,5 @@
 package opus
 
-func silk_SAT16(x int) int {
-	if x > 32767 {
-		return 32767
-	}
-	if x < -32768 {
-		return -32768
-	}
-	return x
-}
-
-func silk_RSHIFT_ROUND(a, shift int) int {
-	if shift == 1 {
-		return (a >> 1) + (a & 1)
-	}
-	return ((a >> (shift - 1)) + 1) >> 1
-}
-
-func silk_SMMUL(a, b int) int {
-	return int(int64(a) * int64(b) >> 32)
-}
-
 func MemSetInt(array []int, value, length int) {
 	for i := 0; i < length; i++ {
 		array[i] = value

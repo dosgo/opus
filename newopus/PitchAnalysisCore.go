@@ -1,26 +1,23 @@
 package opus
-const (
-	SCRATCH_SIZE             = 22
-	SF_LENGTH_4KHZ          = PE_SUBFR_LENGTH_MS * 4
-	SF_LENGTH_8KHZ          = PE_SUBFR_LENGTH_MS * 8
-	MIN_LAG_4KHZ            = PE_MIN_LAG_MS * 4
-	MIN_LAG_8KHZ            = PE_MIN_LAG_MS * 8
-	MAX_LAG_4KHZ            = PE_MAX_LAG_MS * 4
-	MAX_LAG_8KHZ            = PE_MAX_LAG_MS*8 - 1
-	CSTRIDE_4KHZ            = MAX_LAG_4KHZ + 1 - MIN_LAG_4KHZ
-	CSTRIDE_8KHZ            = MAX_LAG_8KHZ + 3 - (MIN_LAG_8KHZ - 2)
-	D_COMP_MIN              = MIN_LAG_8KHZ - 3
-	D_COMP_MAX              = MAX_LAG_8KHZ + 4
-	D_COMP_STRIDE           = D_COMP_MAX - D_COMP_MIN
 
+const (
+	SCRATCH_SIZE   = 22
+	SF_LENGTH_4KHZ = PE_SUBFR_LENGTH_MS * 4
+	SF_LENGTH_8KHZ = PE_SUBFR_LENGTH_MS * 8
+	MIN_LAG_4KHZ   = PE_MIN_LAG_MS * 4
+	MIN_LAG_8KHZ   = PE_MIN_LAG_MS * 8
+	MAX_LAG_4KHZ   = PE_MAX_LAG_MS * 4
+	MAX_LAG_8KHZ   = PE_MAX_LAG_MS*8 - 1
+	CSTRIDE_4KHZ   = MAX_LAG_4KHZ + 1 - MIN_LAG_4KHZ
+	CSTRIDE_8KHZ   = MAX_LAG_8KHZ + 3 - (MIN_LAG_8KHZ - 2)
+	D_COMP_MIN     = MIN_LAG_8KHZ - 3
+	D_COMP_MAX     = MAX_LAG_8KHZ + 4
+	D_COMP_STRIDE  = D_COMP_MAX - D_COMP_MIN
 )
 
 type silk_pe_stage3_vals struct {
 	Values [PE_NB_STAGE3_LAGS]int
 }
-
-type BoxedValueShort struct{ Val int16 }
-type BoxedValueInt struct{ Val int }
 
 func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedValueShort, contourIndex *BoxedValueByte, LTPCorr_Q15 *BoxedValueInt, prevLag int, search_thres1_Q16 int, search_thres2_Q13 int, Fs_kHz int, complexity int, nb_subfr int) int {
 	frame_8kHz := make([]int16, (PE_LTP_MEM_LENGTH_MS+nb_subfr*PE_SUBFR_LENGTH_MS)*8)
@@ -358,7 +355,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		silk_P_Ana_calc_energy_st3(energies_st3, input_frame_ptr, start_lag, sf_length, nb_subfr, complexity)
 
 		lag_counter = 0
-		contour_bias_Q15 = silk_DIV32_16(int(0.05*float64(1<<15)+0.5, lag)
+		contour_bias_Q15 = silk_DIV32_16(int(0.05*float64(1<<15)+0.5, lag))
 
 		target = input_frame_ptr
 		target_ptr = PE_LTP_MEM_LENGTH_MS * Fs_kHz
@@ -509,7 +506,6 @@ func silk_RSHIFT(a, shift int) int {
 	return a
 }
 
-
 func silk_LSHIFT(a, shift int) int {
 	return a << uint(shift)
 }
@@ -517,9 +513,6 @@ func silk_LSHIFT(a, shift int) int {
 func silk_SMULBB(a, b int) int {
 	return int(int16(a)) * int(int16(b))
 }
-
-
-
 
 func silk_inner_prod_self(buf []int16, start, len int) int32 {
 	var sum int64
@@ -604,19 +597,6 @@ func pitch_xcorr(target []int16, t_start int, basis []int16, b_start int, xcorr 
 	}
 }
 
-func silk_sum_sqr_shift(buf []int16, len int) (int32, int32) {
-	var sum int64
-	for i := 0; i < len; i++ {
-		sum += int64(buf[i]) * int64(buf[i])
-	}
-	shift := 0
-	for sum > 0x7FFFFFFF {
-		sum >>= 1
-		shift++
-	}
-	return int32(sum), int32(shift)
-}
-
 func silk_insertion_sort_decreasing_int16(a []int16, idx []int, stride, len int) {
 	for i := 1; i < len; i++ {
 		value := a[i*stride]
@@ -632,7 +612,7 @@ func silk_insertion_sort_decreasing_int16(a []int16, idx []int, stride, len int)
 	}
 }
 
-func silk_resampler_down2(state []int32, out, in []int16, len int) {}
+func silk_resampler_down2(state []int32, out, in []int16, len int)   {}
 func silk_resampler_down2_3(state []int32, out, in []int16, len int) {}
 
 var silk_CB_lags_stage2 = [][]byte{}

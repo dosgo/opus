@@ -47,20 +47,6 @@ func (e *EncControlState) Reset() {
 	*e = EncControlState{}
 }
 
-type StereoWidthState struct {
-	mem            float32
-	coeff          float32
-	smoothed_width float32
-	max_freq       float32
-}
-
-func (s *StereoWidthState) Reset() {
-	s.mem = 0
-	s.coeff = 0
-	s.smoothed_width = 0
-	s.max_freq = 0
-}
-
 type OpusEncoder struct {
 	silk_mode               EncControlState
 	application             OpusApplication

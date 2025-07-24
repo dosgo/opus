@@ -36,13 +36,6 @@ Copyright (c) 2007-2008 CSIRO
 */
 package opus
 
-type MDCTLookup struct {
-	n        int
-	maxshift int
-	kfft     []*FFTState
-	trig     []float32
-}
-
 type CeltMode struct {
 	Fs             int
 	overlap        int

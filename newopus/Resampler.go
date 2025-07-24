@@ -150,7 +150,7 @@ func silk_resampler_down2_3(S []int32, output []int16, input []int16, inLen int)
 	copy(buf[:ORDER_FIR], S[:ORDER_FIR])
 
 	for {
-		nSamplesIn := min(inLen, RESAMPLER_MAX_BATCH_SIZE_IN)
+		nSamplesIn := silk_min(inLen, RESAMPLER_MAX_BATCH_SIZE_IN)
 		silk_resampler_private_AR2(S, 0, buf, ORDER_FIR, input, input_ptr, silk_Resampler_2_3_COEFS_LQ, nSamplesIn)
 
 		buf_ptr := 0
@@ -280,7 +280,7 @@ func silk_resampler_private_down_FIR(S *SilkResamplerState, output []int16, outp
 
 	index_increment_Q16 := S.invRatio_Q16
 	for {
-		nSamplesIn := min(inLen, S.batchSize)
+		nSamplesIn := silk_min(inLen, S.batchSize)
 		silk_resampler_private_AR2(S.sIIR[:], 0, buf, S.FIR_Order, input, input_ptr, S.Coefs, nSamplesIn)
 
 		max_index_Q16 := silk_LSHIFT32(nSamplesIn, 16)
@@ -324,7 +324,7 @@ func silk_resampler_private_IIR_FIR(S *SilkResamplerState, output []int16, outpu
 
 	index_increment_Q16 := S.invRatio_Q16
 	for {
-		nSamplesIn := min(inLen, S.batchSize)
+		nSamplesIn := silk_min(inLen, S.batchSize)
 		silk_resampler_private_up2_HQ(S.sIIR[:], buf, RESAMPLER_ORDER_FIR_12, input, input_ptr, nSamplesIn)
 
 		max_index_Q16 := silk_LSHIFT32(nSamplesIn, 16+1)
@@ -384,11 +384,4 @@ func silk_resampler_private_up2_HQ(S []int32, output []int16, output_ptr int, in
 		S[5] = silk_ADD32(out32_2, X)
 		output[output_ptr+2*k+1] = int16(silk_SAT16(silk_RSHIFT_ROUND(out32_1, 10)))
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

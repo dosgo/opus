@@ -531,7 +531,7 @@ func (this *OpusDecoder) Decode(in_data []byte, in_data_offset int, len int, out
 		if ret == OPUS_BAD_ARG {
 			return 0, errors.New("OPUS_BAD_ARG while decoding")
 		}
-		return 0, OpusError(ret)
+		return 0, errors.New("OPUS_BAD_ARG while decoding")
 	}
 
 	return ret, nil
