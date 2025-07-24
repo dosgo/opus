@@ -13,7 +13,7 @@ func encode_split(
 	shell_table []int16,
 ) {
 	if p > 0 {
-		psRangeEnc.enc_icdf(p_child1, shell_table, SilkTables.Silk_shell_code_table_offsets[p], 8)
+		psRangeEnc.enc_icdf_offset(p_child1, shell_table, int(SilkTables.Silk_shell_code_table_offsets[p]), 8)
 	}
 }
 
@@ -27,7 +27,7 @@ func decode_split(
 	shell_table []int16,
 ) {
 	if p > 0 {
-		p_child1[child1_ptr] = int16(psRangeDec.dec_icdf(shell_table, SilkTables.Silk_shell_code_table_offsets[p], 8))
+		p_child1[child1_ptr] = int16(psRangeDec.dec_icdf_offset(shell_table, int(SilkTables.Silk_shell_code_table_offsets[p]), 8))
 		p_child2[p_child2_ptr] = int16(p) - p_child1[child1_ptr]
 	} else {
 		p_child1[child1_ptr] = 0

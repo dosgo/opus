@@ -620,7 +620,7 @@ func init() {
 	silk_NLSF_CB_NB_MB = &NLSFCodebook{
 		nVectors:            32,
 		order:               10,
-		quantStepSize_Q16:   int16(0.18*65536 + 0.5),
+		quantStepSize_Q16:    (short) (((int) ((0.15f) * (int64(1 << (16))) + 0.5)),
 		invQuantStepSize_Q6: int16(1.0/0.18*64 + 0.5),
 		CB1_NLSF_Q8:         silk_NLSF_CB1_NB_MB_Q8,
 		CB1_iCDF:            silk_NLSF_CB1_iCDF_NB_MB,
@@ -634,7 +634,7 @@ func init() {
 	silk_NLSF_CB_WB = &NLSFCodebook{
 		nVectors:            32,
 		order:               16,
-		quantStepSize_Q16:   int16(0.15*65536 + 0.5),
+		quantStepSize_Q16:   int16(int(0.15*65536 + 0.5)),
 		invQuantStepSize_Q6: int16(1.0/0.15*64 + 0.5),
 		CB1_NLSF_Q8:         silk_NLSF_CB1_WB_Q8,
 		CB1_iCDF:            silk_NLSF_CB1_iCDF_WB,

@@ -159,7 +159,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 		} else {
 			prev := -1
 			for {
-				_chan := get_mono_channel(&this.layout, s, prev)
+				_chan := get_mono_channel(this.layout, s, prev)
 				if _chan == -1 {
 					break
 				}
@@ -197,26 +197,26 @@ func (this *OpusMSDecoder) getBandwidth() OpusBandwidth {
 	if this.decoders == nil || len(this.decoders) == 0 {
 		panic("Decoder not initialized")
 	}
-	return this.decoders[0].getBandwidth()
+	return this.decoders[0].GetBandwidth()
 }
 
 func (this *OpusMSDecoder) getSampleRate() int {
 	if this.decoders == nil || len(this.decoders) == 0 {
 		panic("Decoder not initialized")
 	}
-	return this.decoders[0].getSampleRate()
+	return this.decoders[0].GetSampleRate()
 }
 
 func (this *OpusMSDecoder) getGain() int {
 	if this.decoders == nil || len(this.decoders) == 0 {
 		panic("Decoder not initialized")
 	}
-	return this.decoders[0].getGain()
+	return this.decoders[0].GetGain()
 }
 
 func (this *OpusMSDecoder) setGain(value int) {
 	for s := 0; s < this.layout.nb_streams; s++ {
-		this.decoders[s].setGain(value)
+		this.decoders[s].SetGain(value)
 	}
 }
 
@@ -224,20 +224,20 @@ func (this *OpusMSDecoder) getLastPacketDuration() int {
 	if this.decoders == nil || len(this.decoders) == 0 {
 		return OpusError.OPUS_INVALID_STATE
 	}
-	return this.decoders[0].getLastPacketDuration()
+	return this.decoders[0].GetLastPacketDuration()
 }
 
 func (this *OpusMSDecoder) getFinalRange() int {
 	value := 0
 	for s := 0; s < this.layout.nb_streams; s++ {
-		value ^= this.decoders[s].getFinalRange()
+		value ^= this.decoders[s].GetFinalRange()
 	}
 	return value
 }
 
 func (this *OpusMSDecoder) ResetState() {
 	for s := 0; s < this.layout.nb_streams; s++ {
-		this.decoders[s].resetState()
+		this.decoders[s].ResetState()
 	}
 }
 
