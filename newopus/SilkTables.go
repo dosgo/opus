@@ -645,3 +645,66 @@ func init() {
 		deltaMin_Q15:        silk_NLSF_DELTA_MIN_WB_Q15,
 	}
 }
+
+var SilkTables = struct {
+	Quantization_Offsets_Q10            [][]int16
+	Silk_type_offset_VAD_iCDF           []int16
+	Silk_type_offset_no_VAD_iCDF        []int16
+	Silk_delta_gain_iCDF                []int16
+	Silk_NLSF_EXT_iCDF                  []int16
+	Silk_pitch_delta_iCDF               []int16
+	NLSF_QUANT_MAX_AMPLITUDE            []int16
+	Silk_uniform8_iCDF                  []int16
+	Silk_pitch_lag_iCDF                 []int16
+	Silk_LTP_per_index_iCDF             []int16
+	Silk_LTPscale_iCDF                  []int16
+	Silk_LTP_gain_iCDF_ptrs             [][]int16
+	Silk_NLSF_interpolation_factor_iCDF []int16
+	Silk_stereo_pred_joint_iCDF         []int16
+	Silk_uniform3_iCDF                  []int16
+	Silk_uniform5_iCDF                  []int16
+	Silk_stereo_only_code_mid_iCDF      []int16
+	Silk_stereo_pred_quant_Q13          []int16
+	Silk_LSFCosTab_Q12                  []int16
+	Silk_shell_code_table1              []int16
+	Silk_shell_code_table2              []int16
+	Silk_shell_code_table3              []int16
+	Silk_shell_code_table0              []int16
+	Silk_NLSF_CB_NB_MB                  *NLSFCodebook
+	Silk_NLSF_CB_WB                     *NLSFCodebook
+	Silk_pulses_per_block_BITS_Q5       [][]int16
+	Silk_rate_levels_BITS_Q5            [][]int16
+	Silk_rate_levels_iCDF               [][]int16
+	Silk_pulses_per_block_iCDF          [][]int16
+	Silk_max_pulses_table               []int8
+}{
+	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
+	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
+	Silk_type_offset_no_VAD_iCDF:        silk_type_offset_no_VAD_iCDF,
+	Silk_delta_gain_iCDF:                silk_delta_gain_iCDF,
+	Silk_NLSF_EXT_iCDF:                  silk_NLSF_EXT_iCDF,
+	Silk_pitch_delta_iCDF:               silk_pitch_delta_iCDF,
+	Silk_uniform8_iCDF:                  silk_uniform8_iCDF,
+	Silk_pitch_lag_iCDF:                 silk_pitch_lag_iCDF,
+	Silk_LTP_per_index_iCDF:             silk_LTP_per_index_iCDF,
+	Silk_LTPscale_iCDF:                  silk_LTPscale_iCDF,
+	Silk_LTP_gain_iCDF_ptrs:             silk_LTP_gain_iCDF_ptrs,
+	Silk_NLSF_interpolation_factor_iCDF: silk_NLSF_interpolation_factor_iCDF,
+	Silk_stereo_pred_joint_iCDF:         silk_stereo_pred_joint_iCDF,
+	Silk_uniform3_iCDF:                  silk_uniform3_iCDF,
+	Silk_uniform5_iCDF:                  silk_uniform5_iCDF,
+	Silk_stereo_only_code_mid_iCDF:      silk_stereo_only_code_mid_iCDF,
+	Silk_stereo_pred_quant_Q13:          silk_stereo_pred_quant_Q13,
+	Silk_LSFCosTab_Q12:                  silk_LSFCosTab_Q12,
+	Silk_shell_code_table1:              silk_shell_code_table1,
+	Silk_shell_code_table2:              silk_shell_code_table2,
+	Silk_shell_code_table3:              silk_shell_code_table3,
+	Silk_shell_code_table0:              silk_shell_code_table0,
+	Silk_NLSF_CB_NB_MB:                  silk_NLSF_CB_NB_MB,
+	Silk_NLSF_CB_WB:                     silk_NLSF_CB_WB,
+	Silk_pulses_per_block_BITS_Q5:       silk_pulses_per_block_BITS_Q5,
+	Silk_rate_levels_BITS_Q5:            silk_rate_levels_BITS_Q5,
+	Silk_rate_levels_iCDF:               silk_rate_levels_iCDF,
+	Silk_pulses_per_block_iCDF:          silk_pulses_per_block_iCDF,
+	Silk_max_pulses_table:               silk_max_pulses_table,
+}

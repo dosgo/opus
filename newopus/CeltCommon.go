@@ -341,14 +341,14 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 		}
 	}
 
-	if tf_select_rsv != 0 && CeltTables_tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables_tf_select_table[LM][4*isTransient+2+tf_changed] {
+	if tf_select_rsv != 0 && CeltTables.Tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables.Tf_select_table[LM][4*isTransient+2+tf_changed] {
 		enc.EncBitLogp(tf_select, 1)
 	} else {
 		tf_select = 0
 	}
 
 	for i := start; i < end; i++ {
-		tf_res[i] = CeltTables_tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]]
+		tf_res[i] = CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]]
 	}
 }
 
@@ -362,7 +362,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		sum := 0
 		minXC := 0
 		for i := 0; i < 8; i++ {
-			partial := Kernels_celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
+			partial := celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
 			sum = ADD16(sum, EXTRACT16(SHR32(partial, 18)))
 		}
 		sum = MULT16_16_Q15(int16(1.0/8*32767.5), int16(sum))
@@ -513,7 +513,7 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 		noise_floor[i] = int(MULT16_16(int16(0.0625*float32(1<<CeltConstants.DB_SHIFT)), logN[i])) +
 			int(0.5*float32(1<<CeltConstants.DB_SHIFT)) +
 			(9-lsb_depth)<<CeltConstants.DB_SHIFT -
-			int(CeltTables_eMeans[i])<<6 +
+			int(CeltTables.EMeans[i])<<6 +
 			int(MULT16_16(int16(0.0062*float32(1<<CeltConstants.DB_SHIFT)), int16((i+5)*(i+5))))
 	}
 
@@ -767,12 +767,12 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 		}
 	}
 
-	if tf_select_rsv != 0 && CeltTables_tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables_tf_select_table[LM][4*isTransient+2+tf_changed] {
+	if tf_select_rsv != 0 && CeltTables.Tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables.Tf_select_table[LM][4*isTransient+2+tf_changed] {
 		tf_select = dec.DecBitLogp(1)
 	}
 
 	for i := start; i < end; i++ {
-		tf_res[i] = CeltTables_tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]]
+		tf_res[i] = CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]]
 	}
 }
 

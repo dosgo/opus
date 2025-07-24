@@ -99,9 +99,9 @@ func (d *SilkChannelDecoder) silk_PLC_Reset() {
 func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 	ret := 0
 	OpusAssert(fs_kHz == 8 || fs_kHz == 12 || fs_kHz == 16)
-	OpusAssert(d.nb_subfr == SilkConstants_MAX_NB_SUBFR || d.nb_subfr == SilkConstants_MAX_NB_SUBFR/2)
+	OpusAssert(d.nb_subfr == SilkConstants.MAX_NB_SUBFR || d.nb_subfr == SilkConstants.MAX_NB_SUBFR/2)
 
-	subfr_length := silk_SMULBB(SilkConstants_SUB_FRAME_LENGTH_MS, fs_kHz)
+	subfr_length := silk_SMULBB(SilkConstants.SUB_FRAME_LENGTH_MS, fs_kHz)
 	frame_length := silk_SMULBB(d.nb_subfr, subfr_length)
 
 	if d.fs_kHz != fs_kHz || d.fs_API_hz != fs_API_Hz {
@@ -125,18 +125,18 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 			d.ltp_mem_length = silk_SMULBB(LTP_MEM_LENGTH_MS, fs_kHz)
 			if fs_kHz == 8 || fs_kHz == 12 {
 				d.LPC_order = MIN_LPC_ORDER
-				d.psNLSF_CB = SilkTables_silk_NLSF_CB_NB_MB
+				d.psNLSF_CB = SilkTables.Silk_NLSF_CB_NB_MB
 			} else {
 				d.LPC_order = MAX_LPC_ORDER
-				d.psNLSF_CB = SilkTables_silk_NLSF_CB_WB
+				d.psNLSF_CB = SilkTables.Silk_NLSF_CB_WB
 			}
 			switch fs_kHz {
 			case 16:
-				d.pitch_lag_low_bits_iCDF = SilkTables_silk_uniform8_iCDF
+				d.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform8_iCDF
 			case 12:
-				d.pitch_lag_low_bits_iCDF = SilkTables_silk_uniform6_iCDF
+				d.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform6_iCDF
 			case 8:
-				d.pitch_lag_low_bits_iCDF = SilkTables_silk_uniform4_iCDF
+				d.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform4_iCDF
 			default:
 				OpusAssert(false)
 			}

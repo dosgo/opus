@@ -1022,3 +1022,10 @@ var mdct_twiddles960 = []int16{
 
 var intensity_thresholds = []int32{1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 36, 44, 50, 56, 62, 67, 72, 79, 88, 106, 134}
 var intensity_histeresis = []int32{1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 4, 5, 6, 8, 8}
+var CeltTables = struct {
+	Tf_select_table [][]int8
+	EMeans          []int8
+}{
+	Tf_select_table: tf_select_table,
+	EMeans:          eMeans,
+}

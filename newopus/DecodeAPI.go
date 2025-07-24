@@ -143,9 +143,9 @@ func silk_Decode(
 							}
 						}
 						if i > 0 && (channel_state[n].LBRR_flags[i-1] != 0) {
-							condCoding = CODE_CONDITIONALLY
+							condCoding = SilkConstants.CODE_CONDITIONALLY
 						} else {
-							condCoding = CODE_INDEPENDENTLY
+							condCoding = SilkConstants.CODE_INDEPENDENTLY
 						}
 						silk_decode_indices(channel_state[n], psRangeDec, i, 1, condCoding)
 						silk_decode_pulses(psRangeDec, pulses, channel_state[n].indices.signalType, channel_state[n].indices.quantOffsetType, channel_state[n].frame_length)
@@ -221,12 +221,12 @@ func silk_Decode(
 			FrameIndex := channel_state[0].nFramesDecoded - n
 			condCoding := 0
 			if FrameIndex <= 0 {
-				condCoding = CODE_INDEPENDENTLY
+				condCoding = SilkConstants.CODE_INDEPENDENTLY
 			} else if lostFlag == FLAG_DECODE_LBRR {
 				if channel_state[n].LBRR_flags[FrameIndex-1] != 0 {
-					condCoding = CODE_CONDITIONALLY
+					condCoding = SilkConstants.CODE_CONDITIONALLY
 				} else {
-					condCoding = CODE_INDEPENDENTLY
+					condCoding = SilkConstants.CODE_INDEPENDENTLY
 				}
 			} else if n > 0 && psDec.prev_decode_only_middle != 0 {
 				condCoding = CODE_INDEPENDENTLY_NO_LTP_SCALING

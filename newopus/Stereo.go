@@ -12,18 +12,18 @@ func silk_stereo_decode_pred(
 	}
 	var low_Q13, step_Q13 int
 
-	n = psRangeDec.dec_icdf(SilkTables.silk_stereo_pred_joint_iCDF[:], 8)
+	n = psRangeDec.dec_icdf(SilkTables.Silk_stereo_pred_joint_iCDF[:], 8)
 	ix[0][2] = silk_DIV32_16(n, 5)
 	ix[1][2] = n - 5*ix[0][2]
 	for n = 0; n < 2; n++ {
-		ix[n][0] = psRangeDec.dec_icdf(SilkTables.silk_uniform3_iCDF[:], 8)
-		ix[n][1] = psRangeDec.dec_icdf(SilkTables.silk_uniform5_iCDF[:], 8)
+		ix[n][0] = psRangeDec.dec_icdf(SilkTables.Silk_uniform3_iCDF[:], 8)
+		ix[n][1] = psRangeDec.dec_icdf(SilkTables.Silk_uniform5_iCDF[:], 8)
 	}
 
 	for n = 0; n < 2; n++ {
 		ix[n][0] += 3 * ix[n][2]
-		low_Q13 = SilkTables.silk_stereo_pred_quant_Q13[ix[n][0]]
-		step_Q13 = silk_SMULWB(SilkTables.silk_stereo_pred_quant_Q13[ix[n][0]+1]-low_Q13,
+		low_Q13 = SilkTables.Silk_stereo_pred_quant_Q13[ix[n][0]]
+		step_Q13 = silk_SMULWB(SilkTables.Silk_stereo_pred_quant_Q13[ix[n][0]+1]-low_Q13,
 			((int)((0.5/SilkConstants.STEREO_QUANT_SUB_STEPS)*float64(1<<16) + 0.5)))
 		pred_Q13[n] = silk_SMLABB(low_Q13, step_Q13, 2*ix[n][1]+1)
 	}
@@ -34,7 +34,7 @@ func silk_stereo_decode_pred(
 func silk_stereo_decode_mid_only(
 	psRangeDec *EntropyCoder,
 	decode_only_mid *int) {
-	*decode_only_mid = psRangeDec.dec_icdf(SilkTables.silk_stereo_only_code_mid_iCDF[:], 8)
+	*decode_only_mid = psRangeDec.dec_icdf(SilkTables.Silk_stereo_only_code_mid_iCDF[:], 8)
 }
 
 func silk_stereo_encode_pred(psRangeEnc *EntropyCoder, ix [2][3]byte) {
@@ -42,17 +42,17 @@ func silk_stereo_encode_pred(psRangeEnc *EntropyCoder, ix [2][3]byte) {
 
 	n := 5*int(ix[0][2]) + int(ix[1][2])
 	OpusAssert(n < 25)
-	psRangeEnc.enc_icdf(n, SilkTables.silk_stereo_pred_joint_iCDF[:], 8)
+	psRangeEnc.enc_icdf(n, SilkTables.Silk_stereo_pred_joint_iCDF[:], 8)
 	for n = 0; n < 2; n++ {
 		OpusAssert(int(ix[n][0]) < 3)
 		OpusAssert(int(ix[n][1]) < SilkConstants.STEREO_QUANT_SUB_STEPS)
-		psRangeEnc.enc_icdf(int(ix[n][0]), SilkTables.silk_uniform3_iCDF[:], 8)
-		psRangeEnc.enc_icdf(int(ix[n][1]), SilkTables.silk_uniform5_iCDF[:], 8)
+		psRangeEnc.enc_icdf(int(ix[n][0]), SilkTables.Silk_uniform3_iCDF[:], 8)
+		psRangeEnc.enc_icdf(int(ix[n][1]), SilkTables.Silk_uniform5_iCDF[:], 8)
 	}
 }
 
 func silk_stereo_encode_mid_only(psRangeEnc *EntropyCoder, mid_only_flag byte) {
-	psRangeEnc.enc_icdf(int(mid_only_flag), SilkTables.silk_stereo_only_code_mid_iCDF[:], 8)
+	psRangeEnc.enc_icdf(int(mid_only_flag), SilkTables.Silk_stereo_only_code_mid_iCDF[:], 8)
 }
 
 func silk_stereo_find_predictor(
@@ -340,8 +340,8 @@ func silk_stereo_quant_pred(
 		done := false
 		err_min_Q13 = math.MaxInt32
 		for i = 0; !done && i < SilkConstants.STEREO_QUANT_TAB_SIZE-1; i++ {
-			low_Q13 = SilkTables.silk_stereo_pred_quant_Q13[i]
-			step_Q13 = silk_SMULWB(SilkTables.silk_stereo_pred_quant_Q13[i+1]-low_Q13,
+			low_Q13 = SilkTables.Silk_stereo_pred_quant_Q13[i]
+			step_Q13 = silk_SMULWB(SilkTables.Silk_stereo_pred_quant_Q13[i+1]-low_Q13,
 				int(0.5/SilkConstants.STEREO_QUANT_SUB_STEPS*float64(1<<16)+0.5))
 
 			for j = 0; !done && j < SilkConstants.STEREO_QUANT_SUB_STEPS; j++ {
