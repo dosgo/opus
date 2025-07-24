@@ -1,15 +1,16 @@
 package opus
+
 type SilkEncoder struct {
-	state_Fxx                [ENCODER_NUM_CHANNELS]SilkChannelEncoder
-	sStereo                  StereoEncodeState
-	nBitsUsedLBRR            int
-	nBitsExceeded            int
-	nChannelsAPI             int
-	nChannelsInternal        int
-	nPrevChannelsInternal    int
+	state_Fxx                 [ENCODER_NUM_CHANNELS]SilkChannelEncoder
+	sStereo                   StereoEncodeState
+	nBitsUsedLBRR             int
+	nBitsExceeded             int
+	nChannelsAPI              int
+	nChannelsInternal         int
+	nPrevChannelsInternal     int
 	timeSinceSwitchAllowed_ms int
-	allowBandwidthSwitch     int
-	prev_decode_only_middle  int
+	allowBandwidthSwitch      int
+	prev_decode_only_middle   int
 }
 
 func NewSilkEncoder() *SilkEncoder {
@@ -38,7 +39,7 @@ func (enc *SilkEncoder) Reset() {
 func silk_init_encoder(psEnc *SilkChannelEncoder) int {
 	ret := 0
 	psEnc.Reset()
-	value := int(float64(VARIABLE_HP_MIN_CUTOFF_HZ)*float64(1<<16) + 0.5)
+	value := int(float64(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ)*float64(1<<16) + 0.5)
 	logVal := silk_lin2log(value)
 	psEnc.variable_HP_smth1_Q15 = silk_LSHIFT(logVal-(16<<7), 8)
 	psEnc.variable_HP_smth2_Q15 = psEnc.variable_HP_smth1_Q15

@@ -107,7 +107,7 @@ func (st *OpusEncoder) resetState() {
 	st.first = 1
 	st.mode = MODE_HYBRID
 	st.bandwidth = OPUS_BANDWIDTH_FULLBAND
-	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(VARIABLE_HP_MIN_CUTOFF_HZ), 8)
+	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 }
 
 func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder, error) {
@@ -177,7 +177,7 @@ func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusAppli
 	st.delay_compensation = Fs / 250
 	st.hybrid_stereo_width_Q14 = 1 << 14
 	st.prev_HB_gain = Q15ONE
-	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(VARIABLE_HP_MIN_CUTOFF_HZ), 8)
+	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 	st.first = 1
 	st.mode = MODE_HYBRID
 	st.bandwidth = OPUS_BANDWIDTH_FULLBAND
@@ -544,7 +544,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	copy(pcm_buf[:total_buffer*st.channels], st.delay_buffer[(st.encoder_buffer-total_buffer)*st.channels:(st.encoder_buffer-total_buffer)*st.channels+total_buffer*st.channels])
 	hp_freq_smth1 := 0
 	if st.mode == MODE_CELT_ONLY {
-		hp_freq_smth1 = silk_LSHIFT(silk_lin2log(VARIABLE_HP_MIN_CUTOFF_HZ), 8)
+		hp_freq_smth1 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 	} else {
 		hp_freq_smth1 = silk_enc.State_Fxx[0].Variable_HP_smth1_Q15
 	}

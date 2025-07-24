@@ -10,7 +10,7 @@ func silk_HP_variable_cutoff(state_Fxx []SilkChannelEncoder) {
 		pitch_freq_log_Q7 = silk_lin2log(pitch_freq_Hz_Q16) - (16 << 7)
 
 		quality_Q15 = psEncC1.input_quality_bands_Q15[0]
-		min_cutoff_log_Q7 := silk_lin2log(int32(VARIABLE_HP_MIN_CUTOFF_HZ)) - (16 << 7)
+		min_cutoff_log_Q7 := silk_lin2log(int(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ)) - (16 << 7)
 		pitch_freq_log_Q7 = silk_SMLAWB(pitch_freq_log_Q7, silk_SMULWB(silk_LSHIFT(-quality_Q15, 2), quality_Q15), pitch_freq_log_Q7-min_cutoff_log_Q7)
 
 		delta_freq_Q7 = pitch_freq_log_Q7 - silk_RSHIFT(psEncC1.variable_HP_smth1_Q15, 8)
@@ -18,14 +18,14 @@ func silk_HP_variable_cutoff(state_Fxx []SilkChannelEncoder) {
 			delta_freq_Q7 = silk_MUL(delta_freq_Q7, 3)
 		}
 
-		max_delta_freq_Q7 := int32(VARIABLE_HP_MAX_DELTA_FREQ*(1<<7) + 0.5)
+		max_delta_freq_Q7 := int32(TuningParameters.VARIABLE_HP_MAX_DELTA_FREQ*(1<<7) + 0.5)
 		delta_freq_Q7 = silk_LIMIT_32(delta_freq_Q7, -max_delta_freq_Q7, max_delta_freq_Q7)
 
-		smth_coef1_Q16 := int32(VARIABLE_HP_SMTH_COEF1*(1<<16) + 0.5)
+		smth_coef1_Q16 := int32(TuningParameters.VARIABLE_HP_SMTH_COEF1*(1<<16) + 0.5)
 		psEncC1.variable_HP_smth1_Q15 = silk_SMLAWB(psEncC1.variable_HP_smth1_Q15, silk_SMULBB(psEncC1.speech_activity_Q8, delta_freq_Q7), smth_coef1_Q16)
 
-		min_cutoff_log_Q8 := silk_LSHIFT(silk_lin2log(int32(VARIABLE_HP_MIN_CUTOFF_HZ)), 8)
-		max_cutoff_log_Q8 := silk_LSHIFT(silk_lin2log(int32(VARIABLE_HP_MAX_CUTOFF_HZ)), 8)
+		min_cutoff_log_Q8 := silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
+		max_cutoff_log_Q8 := silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MAX_CUTOFF_HZ), 8)
 		psEncC1.variable_HP_smth1_Q15 = silk_LIMIT_32(psEncC1.variable_HP_smth1_Q15, min_cutoff_log_Q8, max_cutoff_log_Q8)
 	}
 }

@@ -113,7 +113,7 @@ func silk_Encode(
 	if prefillFlag != 0 {
 		if nBlocksOf10ms != 1 {
 			OpusAssert(false)
-			return SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
+			return SilkError.SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
 		}
 		tmp_payloadSize_ms = encControl.payloadSize_ms
 		encControl.payloadSize_ms = 10
@@ -126,11 +126,11 @@ func silk_Encode(
 	} else {
 		if nBlocksOf10ms*encControl.API_sampleRate != 100*nSamplesIn || nSamplesIn < 0 {
 			OpusAssert(false)
-			return SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
+			return SilkError.SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
 		}
 		if 1000*nSamplesIn > encControl.payloadSize_ms*encControl.API_sampleRate {
 			OpusAssert(false)
-			return SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
+			return SilkError.SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES
 		}
 	}
 
@@ -142,7 +142,7 @@ func silk_Encode(
 			force_fs_kHz = psEnc.state_Fxx[0].fs_kHz
 		}
 		ret += psEnc.state_Fxx[n].silk_control_encoder(encControl, TargetRate_bps, psEnc.allowBandwidthSwitch, n, force_fs_kHz)
-		if ret != SILK_NO_ERROR {
+		if ret != SilkError.SILK_NO_ERROR {
 			OpusAssert(false)
 			return ret
 		}

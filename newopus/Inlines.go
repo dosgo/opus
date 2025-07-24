@@ -272,7 +272,7 @@ func MULT16_16_Q13(a, b int16) int16 {
 }
 
 func MULT16_16_Q13Int(a, b int) int {
-	return SHR(MULT16_16(int16(a), int16(b)), 13)
+	return SHR(MULT16_16(a, b), 13)
 }
 
 func MULT16_16_Q14(a, b int16) int16 {

@@ -192,18 +192,18 @@ func silk_ana_filt_bank_1(
 
 	N2 := N >> 1
 	for k := 0; k < N2; k++ {
-		in32 := Inlines_silk_LSHIFT(int32(input[input_ptr+2*k]), 10)
+		in32 := silk_LSHIFT(int32(input[input_ptr+2*k]), 10)
 		Y := in32 - S[0]
-		X := Inlines_silk_SMLAWB(Y, Y, A_fb1_21)
+		X := silk_SMLAWB(Y, Y, A_fb1_21)
 		out_1 := S[0] + X
 		S[0] = in32 + X
-		in32 = Inlines_silk_LSHIFT(int32(input[input_ptr+2*k+1]), 10)
+		in32 = silk_LSHIFT(int32(input[input_ptr+2*k+1]), 10)
 		Y = in32 - S[1]
-		X = Inlines_silk_SMULWB(Y, A_fb1_20)
+		X = silk_SMULWB(Y, A_fb1_20)
 		out_2 := S[1] + X
 		S[1] = in32 + X
-		outL[k] = int16(Inlines_silk_SAT16(Inlines_silk_RSHIFT_ROUND(out_2+out_1, 11)))
-		outH[outH_ptr+k] = int16(Inlines_silk_SAT16(Inlines_silk_RSHIFT_ROUND(out_2-out_1, 11)))
+		outL[k] = int16(silk_SAT16(silk_RSHIFT_ROUND(out_2+out_1, 11)))
+		outH[outH_ptr+k] = int16(silk_SAT16(silk_RSHIFT_ROUND(out_2-out_1, 11)))
 	}
 }
 
@@ -217,13 +217,13 @@ func silk_LP_interpolate_filter_taps(
 		if fac_Q16 > 0 {
 			if fac_Q16 < 32768 {
 				for nb := 0; nb < TRANSITION_NB; nb++ {
-					B_Q28[nb] = Inlines_silk_SMLAWB(
+					B_Q28[nb] = silk_SMLAWB(
 						silk_Transition_LP_B_Q28[ind][nb],
 						silk_Transition_LP_B_Q28[ind+1][nb]-silk_Transition_LP_B_Q28[ind][nb],
 						fac_Q16)
 				}
 				for na := 0; na < TRANSITION_NA; na++ {
-					A_Q28[na] = Inlines_silk_SMLAWB(
+					A_Q28[na] = silk_SMLAWB(
 						silk_Transition_LP_A_Q28[ind][na],
 						silk_Transition_LP_A_Q28[ind+1][na]-silk_Transition_LP_A_Q28[ind][na],
 						fac_Q16)
@@ -231,13 +231,13 @@ func silk_LP_interpolate_filter_taps(
 			} else {
 				fac_Q16_minus_one := fac_Q16 - (1 << 16)
 				for nb := 0; nb < TRANSITION_NB; nb++ {
-					B_Q28[nb] = Inlines_silk_SMLAWB(
+					B_Q28[nb] = silk_SMLAWB(
 						silk_Transition_LP_B_Q28[ind+1][nb],
 						silk_Transition_LP_B_Q28[ind+1][nb]-silk_Transition_LP_B_Q28[ind][nb],
 						fac_Q16_minus_one)
 				}
 				for na := 0; na < TRANSITION_NA; na++ {
-					A_Q28[na] = Inlines_silk_SMLAWB(
+					A_Q28[na] = silk_SMLAWB(
 						silk_Transition_LP_A_Q28[ind+1][na],
 						silk_Transition_LP_A_Q28[ind+1][na]-silk_Transition_LP_A_Q28[ind][na],
 						fac_Q16_minus_one)
@@ -271,7 +271,7 @@ func silk_LPC_analysis_filter(
 	for j := 0; j < d; j++ {
 		mem[j] = input[input_ptr+d-j-1]
 	}
-	Kernels_celt_fir(input[input_ptr+d:], num, output[output_ptr+d:], len-d, d, mem)
+	celt_fir(input[input_ptr+d:], num, output[output_ptr+d:], len-d, d, mem)
 	for j := output_ptr; j < output_ptr+d; j++ {
 		output[j] = 0
 	}

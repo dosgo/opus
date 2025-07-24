@@ -77,10 +77,10 @@ func silk_find_pred_coefs(
 	}
 
 	if psEnc.first_frame_after_reset != 0 {
-		minInvGain_Q30 = int32((1.0/MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*float64(1<<30) + 0.5)
+		minInvGain_Q30 = int32((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*float64(1<<30) + 0.5)
 	} else {
 		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int32(psEncCtrl.LTPredCodGain_Q7), int32((1.0/3.0)*(1<<16)+0.5)))
-		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30, silk_SMULWW(int32(MAX_PREDICTION_POWER_GAIN*(1)+0.5, silk_SMLAWB(int32(0.25*(1<<18)+0.5, int32(0.75*(1<<18)+0.5, psEncCtrl.coding_quality_Q14)), 14))))
+		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30, silk_SMULWW(int32(SilkConstants.MAX_PREDICTION_POWER_GAIN*(1)+0.5, silk_SMLAWB(int32(0.25*(1<<18)+0.5, int32(0.75*(1<<18)+0.5, psEncCtrl.coding_quality_Q14)), 14))))
 	}
 
 	silk_find_LPC(psEnc, NLSF_Q15, LPC_in_pre, minInvGain_Q30)
