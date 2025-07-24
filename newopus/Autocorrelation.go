@@ -159,13 +159,13 @@ func silk_warped_autocorr(corr []int32, scale *int, input []int16, warping_Q16 i
 		for i = 0; i < order; i += 2 {
 			tmp2_QS = silk_SMLAWB(state_QS[i], state_QS[i+1]-tmp1_QS, int32(warping_Q16))
 			state_QS[i] = tmp1_QS
-			corr_QC[i] += silk_RSHIFT64(silk_SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
+			corr_QC[i] += silk_RSHIFT64(silk_SMULL(int(tmp1_QS), int(state_QS[0])), 2*QS-QC)
 			tmp1_QS = silk_SMLAWB(state_QS[i+1], state_QS[i+2]-tmp2_QS, int32(warping_Q16))
 			state_QS[i+1] = tmp2_QS
-			corr_QC[i+1] += silk_RSHIFT64(silk_SMULL(int64(tmp2_QS), int64(state_QS[0])), 2*QS-QC)
+			corr_QC[i+1] += silk_RSHIFT64(silk_SMULL(int(tmp2_QS), int(state_QS[0])), 2*QS-QC)
 		}
 		state_QS[order] = tmp1_QS
-		corr_QC[order] += silk_RSHIFT64(silk_SMULL(int64(tmp1_QS), int64(state_QS[0])), 2*QS-QC)
+		corr_QC[order] += silk_RSHIFT64(silk_SMULL(int(tmp1_QS), int(state_QS[0])), 2*QS-QC)
 	}
 
 	lsh = silk_CLZ64(corr_QC[0]) - 35

@@ -102,7 +102,7 @@ func silk_encode_pulses(
 	minSumBits_Q5 = int(^uint(0) >> 1)
 	for k = 0; k < SilkConstants.N_RATE_LEVELS-1; k++ {
 		nBits_ptr = SilkTables.Silk_pulses_per_block_BITS_Q5[k]
-		sumBits_Q5 = SilkTables.Silk_rate_levels_BITS_Q5[signalType>>1][k]
+		sumBits_Q5 = int(SilkTables.Silk_rate_levels_BITS_Q5[signalType>>1][k])
 		for i = 0; i < iter; i++ {
 			if nRshifts[i] > 0 {
 				sumBits_Q5 += int(nBits_ptr[SilkConstants.SILK_MAX_PULSES+1])
@@ -132,7 +132,7 @@ func silk_encode_pulses(
 
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
-			silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
+			silk_shell_encoder(&psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
 		}
 	}
 
