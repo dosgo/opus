@@ -29,9 +29,9 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 	SA_Q15 := 0
 	pSNR_dB_Q7 := 0
 	input_tilt := 0
-	decimated_framelength1 := RSHIFT(psEncC.frame_length, 1)
-	decimated_framelength2 := RSHIFT(psEncC.frame_length, 2)
-	decimated_framelength := RSHIFT(psEncC.frame_length, 3)
+	decimated_framelength1 := silk_RSHIFT(psEncC.frame_length, 1)
+	decimated_framelength2 := silk_RSHIFT(psEncC.frame_length, 2)
+	decimated_framelength := silk_RSHIFT(psEncC.frame_length, 3)
 
 	X_offset := [4]int{
 		0,
@@ -46,11 +46,11 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 	silk_ana_filt_bank_1(X, 0, psEncC.sVAD.AnaState1, X, X, X_offset[2], decimated_framelength1)
 	silk_ana_filt_bank_1(X, 0, psEncC.sVAD.AnaState2, X, X, X_offset[1], decimated_framelength2)
 
-	X[decimated_framelength-1] = int16(RSHIFT(int(X[decimated_framelength-1]), 1))
+	X[decimated_framelength-1] = int16(silk_RSHIFT(int(X[decimated_framelength-1]), 1))
 	HPstateTmp := X[decimated_framelength-1]
 
 	for i := decimated_framelength - 1; i > 0; i-- {
-		X[i-1] = int16(RSHIFT(int(X[i-1]), 1))
+		X[i-1] = int16(silk_RSHIFT(int(X[i-1]), 1))
 		X[i] -= X[i-1]
 	}
 
@@ -62,8 +62,8 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 
 	for b := 0; b < VAD_N_BANDS; b++ {
 		shift := min_int(VAD_N_BANDS-b, VAD_N_BANDS-1)
-		decimated_framelength = RSHIFT(psEncC.frame_length, shift)
-		dec_subframe_length := RSHIFT(decimated_framelength, VAD_INTERNAL_SUBFRAMES_LOG2)
+		decimated_framelength = silk_RSHIFT(psEncC.frame_length, shift)
+		dec_subframe_length := silk_RSHIFT(decimated_framelength, VAD_INTERNAL_SUBFRAMES_LOG2)
 		dec_subframe_offset := 0
 
 		Xnrg[b] = psEncC.sVAD.XnrgSubfr[b]
@@ -71,7 +71,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 		for s := 0; s < VAD_INTERNAL_SUBFRAMES; s++ {
 			sumSquared = 0
 			for i := 0; i < dec_subframe_length; i++ {
-				x_tmp := RSHIFT(int(X[X_offset[b]+i+dec_subframe_offset]), 3)
+				x_tmp := silk_RSHIFT(int(X[X_offset[b]+i+dec_subframe_offset]), 3)
 				sumSquared = SMLABB(sumSquared, x_tmp, x_tmp)
 				OpusAssert(sumSquared >= 0)
 			}
@@ -79,7 +79,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 			if s < VAD_INTERNAL_SUBFRAMES-1 {
 				Xnrg[b] = ADD_POS_SAT32(Xnrg[b], sumSquared)
 			} else {
-				Xnrg[b] = ADD_POS_SAT32(Xnrg[b], RSHIFT(sumSquared, 1))
+				Xnrg[b] = ADD_POS_SAT32(Xnrg[b], silk_RSHIFT(sumSquared, 1))
 			}
 			dec_subframe_offset += dec_subframe_length
 		}
@@ -93,61 +93,61 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 		speech_nrg := Xnrg[b] - psEncC.sVAD.NL[b]
 		if speech_nrg > 0 {
 			if (Xnrg[b] & 0xFF800000) == 0 {
-				NrgToNoiseRatio_Q8[b] = DIV32(LSHIFT(Xnrg[b], 8), psEncC.sVAD.NL[b]+1)
+				NrgToNoiseRatio_Q8[b] = DIV32(silk_LSHIFT(Xnrg[b], 8), psEncC.sVAD.NL[b]+1)
 			} else {
-				NrgToNoiseRatio_Q8[b] = DIV32(Xnrg[b], RSHIFT(psEncC.sVAD.NL[b], 8)+1)
+				NrgToNoiseRatio_Q8[b] = DIV32(Xnrg[b], silk_RSHIFT(psEncC.sVAD.NL[b], 8)+1)
 			}
 
 			SNR_Q7 := lin2log(NrgToNoiseRatio_Q8[b]) - 8*128
 			sumSquared = SMLABB(sumSquared, SNR_Q7, SNR_Q7)
 
 			if speech_nrg < (1 << 20) {
-				SNR_Q7 = SMULWB(LSHIFT(SQRT_APPROX(speech_nrg), 6), SNR_Q7)
+				SNR_Q7 = silk_SMULWB(silk_LSHIFT(silk_SQRT_APPROX(speech_nrg), 6), SNR_Q7)
 			}
-			input_tilt = SMLAWB(input_tilt, tiltWeights[b], SNR_Q7)
+			input_tilt = silk_SMULWB(input_tilt, tiltWeights[b], SNR_Q7)
 		} else {
 			NrgToNoiseRatio_Q8[b] = 256
 		}
 	}
 
 	sumSquared = DIV32_16(sumSquared, VAD_N_BANDS)
-	pSNR_dB_Q7 = 3 * SQRT_APPROX(sumSquared)
+	pSNR_dB_Q7 = 3 * silk_SQRT_APPROX(sumSquared)
 
-	SA_Q15 = silk_sigm_Q15(SMULWB(VAD_SNR_FACTOR_Q16, int32(pSNR_dB_Q7)) - VAD_NEGATIVE_OFFSET_Q5)
-	psEncC.input_tilt_Q15 = LSHIFT(int(silk_sigm_Q15(int32(input_tilt))-16384, 1))
+	SA_Q15 = silk_sigm_Q15(silk_SMULWB(VAD_SNR_FACTOR_Q16, int32(pSNR_dB_Q7)) - VAD_NEGATIVE_OFFSET_Q5)
+	psEncC.input_tilt_Q15 = silk_LSHIFT(int(silk_sigm_Q15(int32(input_tilt))-16384, 1))
 
 	speech_nrg := 0
 	for b := 0; b < VAD_N_BANDS; b++ {
-		speech_nrg += (b + 1) * RSHIFT(Xnrg[b]-psEncC.sVAD.NL[b], 4)
+		speech_nrg += (b + 1) * silk_RSHIFT(Xnrg[b]-psEncC.sVAD.NL[b], 4)
 	}
 
 	if speech_nrg <= 0 {
-		SA_Q15 = RSHIFT(SA_Q15, 1)
+		SA_Q15 = silk_RSHIFT(SA_Q15, 1)
 	} else if speech_nrg < 32768 {
 		if psEncC.frame_length == 10*psEncC.fs_kHz {
-			speech_nrg = LSHIFT_SAT32(speech_nrg, 16)
+			speech_nrg = silk_LSHIFT_SAT32(speech_nrg, 16)
 		} else {
-			speech_nrg = LSHIFT_SAT32(speech_nrg, 15)
+			speech_nrg = silk_LSHIFT_SAT32(speech_nrg, 15)
 		}
-		speech_nrg = SQRT_APPROX(speech_nrg)
-		SA_Q15 = SMULWB(32768+speech_nrg, int32(SA_Q15))
+		speech_nrg = silk_SQRT_APPROX(speech_nrg)
+		SA_Q15 = silk_SMULWB(32768+speech_nrg, int32(SA_Q15))
 	}
 
 	if SA_Q15 < 0 {
 		SA_Q15 = 0
 	}
-	psEncC.speech_activity_Q8 = min_int(RSHIFT(SA_Q15, 7), 255)
+	psEncC.speech_activity_Q8 = min_int(silk_RSHIFT(SA_Q15, 7), 255)
 
-	smooth_coef_Q16 := int32(SMULWB(VAD_SNR_SMOOTH_COEF_Q18, SMULWB(int32(SA_Q15), int32(SA_Q15))))
+	smooth_coef_Q16 := int32(silk_SMULWB(VAD_SNR_SMOOTH_COEF_Q18, silk_SMULWB(int32(SA_Q15), int32(SA_Q15))))
 	if psEncC.frame_length == 10*psEncC.fs_kHz {
 		smooth_coef_Q16 >>= 1
 	}
 
 	for b := 0; b < VAD_N_BANDS; b++ {
-		psEncC.sVAD.NrgRatioSmth_Q8[b] = SMLAWB(psEncC.sVAD.NrgRatioSmth_Q8[b],
+		psEncC.sVAD.NrgRatioSmth_Q8[b] = silk_SMLAWB(psEncC.sVAD.NrgRatioSmth_Q8[b],
 			NrgToNoiseRatio_Q8[b]-psEncC.sVAD.NrgRatioSmth_Q8[b], int(smooth_coef_Q16))
 		SNR_Q7 := 3 * (lin2log(psEncC.sVAD.NrgRatioSmth_Q8[b]) - 8*128)
-		psEncC.input_quality_bands_Q15[b] = silk_sigm_Q15(RSHIFT(SNR_Q7-16*128, 4))
+		psEncC.input_quality_bands_Q15[b] = silk_sigm_Q15(silk_RSHIFT(SNR_Q7-16*128, 4))
 	}
 
 	return 0
@@ -165,21 +165,21 @@ func silk_VAD_GetNoiseLevels(pX []int, psSilk_VAD *SilkVADState) {
 		OpusAssert(inv_nrg >= 0)
 
 		coef := 0
-		if nrg > LSHIFT(nl, 3) {
+		if nrg > silk_LSHIFT(nl, 3) {
 			coef = VAD_NOISE_LEVEL_SMOOTH_COEF_Q16 >> 3
 		} else if nrg < nl {
 			coef = VAD_NOISE_LEVEL_SMOOTH_COEF_Q16
 		} else {
-			coef = SMULWB(SMULWW(inv_nrg, nl), VAD_NOISE_LEVEL_SMOOTH_COEF_Q16<<1)
+			coef = silk_SMULWB(silk_SMULWW(inv_nrg, nl), VAD_NOISE_LEVEL_SMOOTH_COEF_Q16<<1)
 		}
 
 		min_coef := 0
 		if psSilk_VAD.counter < 1000 {
-			min_coef = DIV32_16(0x7FFF, int16(RSHIFT(psSilk_VAD.counter, 4)+1))
+			min_coef = silk_DIV32_16(0x7FFF, int16(silk_RSHIFT(psSilk_VAD.counter, 4)+1))
 		}
 		coef = max_int(coef, min_coef)
 
-		psSilk_VAD.inv_NL[k] = SMLAWB(psSilk_VAD.inv_NL[k], inv_nrg-psSilk_VAD.inv_NL[k], coef)
+		psSilk_VAD.inv_NL[k] = silk_SMLAWB(psSilk_VAD.inv_NL[k], inv_nrg-psSilk_VAD.inv_NL[k], coef)
 		OpusAssert(psSilk_VAD.inv_NL[k] >= 0)
 
 		nl = DIV32(0x7FFFFFFF, psSilk_VAD.inv_NL[k])
