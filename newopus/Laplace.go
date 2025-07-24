@@ -1,4 +1,5 @@
 package opus
+
 /* Copyright (c) 2007-2008 CSIRO
    Copyright (c) 2007-2011 Xiph.Org Foundation
    Originally written by Jean-Marc Valin, Gregory Maxwell, Koen Vos,
@@ -90,7 +91,7 @@ func (l *Laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 		OpusAssert(fs > 0)
 	}
 
-	enc.encode_bin(uint(fl), uint(fl+fs), 15)
+	enc.encode_bin(uint32(fl), uint32(fl+fs), 15)
 }
 
 func (l *Laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {

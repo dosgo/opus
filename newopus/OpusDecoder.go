@@ -263,7 +263,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	}
 
 	if decode_fec == 0 && mode != MODE_CELT_ONLY && data != nil &&
-		dec.tell()+17+20*Bool2Int(this.mode == MODE_HYBRID) <= 8*len {
+		dec.tell()+17+20*bool2Int(this.mode == MODE_HYBRID) <= 8*len {
 		if mode == MODE_HYBRID {
 			redundancy = dec.dec_bit_logp(12)
 		} else {

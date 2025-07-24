@@ -1,4 +1,5 @@
 package opus
+
 import "math"
 
 var pred_coef = []int{29440, 26112, 21248, 16384}
@@ -111,7 +112,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				qi = -1
 			}
 			error[c][i] = (f >> 7) - (qi << CeltConstants.DB_SHIFT)
-			badness += int(math.Abs(float64(qi0 - qi))
+			badness += int(math.Abs(float64(qi0 - qi)))
 			q := qi << CeltConstants.DB_SHIFT
 			tmp := ((coef * int(oldE)) >> 8) + prev[c] + (q << 7)
 			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {
@@ -295,7 +296,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 				tmp = -(28 << (CeltConstants.DB_SHIFT + 7))
 			}
 			oldEBands[index] = int16(tmp >> 7)
-			prev[c] = prev[c] + (q<<7) - (beta * (q >> 8))
+			prev[c] = prev[c] + (q << 7) - (beta * (q >> 8))
 		}
 	}
 }

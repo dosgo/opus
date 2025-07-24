@@ -228,8 +228,8 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			out1_Q10 += int32(SilkConstants_NLSF_QUANT_LEVEL_ADJ * (1 << 10))
 		}
 
-		out0_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = Inlines_silk_SMULWB(out0_Q10, quant_step_size_Q16)
-		out1_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = Inlines_silk_SMULWB(out1_Q10, quant_step_size_Q16)
+		out0_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out0_Q10, quant_step_size_Q16)
+		out1_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out1_Q10, quant_step_size_Q16)
 	}
 
 	OpusAssert((NLSF_QUANT_DEL_DEC_STATES & (NLSF_QUANT_DEL_DEC_STATES - 1)) == 0)
@@ -244,10 +244,10 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 		in_Q10 = int32(x_Q10[i])
 
 		for j := 0; j < nStates; j++ {
-			pred_Q10 = Inlines_silk_SMULWB(pred_coef_Q16, int32(prev_out_Q10[j]))
+			pred_Q10 = silk_SMULWB(pred_coef_Q16, int32(prev_out_Q10[j]))
 			res_Q10 = in_Q10 - pred_Q10
-			ind_tmp = Inlines_silk_SMULWB(int32(inv_quant_step_size_Q6), res_Q10)
-			ind_tmp = Inlines_silk_LIMIT(ind_tmp, -NLSF_QUANT_MAX_AMPLITUDE_EXT, NLSF_QUANT_MAX_AMPLITUDE_EXT-1)
+			ind_tmp = silk_SMULWB(int32(inv_quant_step_size_Q6), res_Q10)
+			ind_tmp = silk_LIMIT(ind_tmp, -NLSF_QUANT_MAX_AMPLITUDE_EXT, NLSF_QUANT_MAX_AMPLITUDE_EXT-1)
 			ind[j][i] = byte(ind_tmp)
 			rates_Q5 = int32(ec_ix[i]) + ind_tmp
 
@@ -282,9 +282,9 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 
 			RD_tmp_Q25 = RD_Q25[j]
 			diff_Q10 = in_Q10 - out0_Q10
-			RD_Q25[j] = silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate0_Q5)
+			RD_Q25[j] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate0_Q5)
 			diff_Q10 = in_Q10 - out1_Q10
-			RD_Q25[j+nStates] = silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate1_Q5)
+			RD_Q25[j+nStates] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate1_Q5)
 		}
 
 		if nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1) {
@@ -411,12 +411,12 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 
 		silk_NLSF_VQ_weights_laroia(W_tmp_QW, NLSF_tmp_Q15, psNLSF_CB.order)
 		for i := 0; i < psNLSF_CB.order; i++ {
-			W_tmp_Q9 = Inlines_silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants_NLSF_W_Q))
-			res_Q10[i] = int16(Inlines_silk_RSHIFT(int32(Inlines_silk_SMULBB(int32(res_Q15[i]), int16(W_tmp_Q9)), 14)))
+			W_tmp_Q9 = silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants_NLSF_W_Q))
+			res_Q10[i] = int16(silk_RSHIFT(int32(silk_SMULBB(int32(res_Q15[i]), int16(W_tmp_Q9)), 14)))
 		}
 
 		for i := 0; i < psNLSF_CB.order; i++ {
-			W_adj_Q5[i] = int16(Inlines_silk_DIV32_16(int32(pW_QW[i])<<5, int16(W_tmp_QW[i])))
+			W_adj_Q5[i] = int16(silk_DIV32_16(int32(pW_QW[i])<<5, int16(W_tmp_QW[i])))
 		}
 
 		silk_NLSF_unpack(ec_ix, pred_Q8, psNLSF_CB, ind1)
@@ -559,17 +559,17 @@ func silk_A2NLSF_eval_poly(p []int32, x int32, dd int) int32 {
 	x_Q16 := x << 4
 	y32 := p[dd]
 	if dd == 8 {
-		y32 = Inlines_silk_SMLAWW(p[7], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[6], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[5], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[4], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[3], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[2], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[1], y32, x_Q16)
-		y32 = Inlines_silk_SMLAWW(p[0], y32, x_Q16)
+		y32 = silk_SMLAWW(p[7], y32, x_Q16)
+		y32 = silk_SMLAWW(p[6], y32, x_Q16)
+		y32 = silk_SMLAWW(p[5], y32, x_Q16)
+		y32 = silk_SMLAWW(p[4], y32, x_Q16)
+		y32 = silk_SMLAWW(p[3], y32, x_Q16)
+		y32 = silk_SMLAWW(p[2], y32, x_Q16)
+		y32 = silk_SMLAWW(p[1], y32, x_Q16)
+		y32 = silk_SMLAWW(p[0], y32, x_Q16)
 	} else {
 		for n := dd - 1; n >= 0; n-- {
-			y32 = Inlines_silk_SMLAWW(p[n], y32, x_Q16)
+			y32 = silk_SMLAWW(p[n], y32, x_Q16)
 		}
 	}
 	return y32
@@ -642,7 +642,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
 				}
 			}
 
-			if Inlines_silk_abs(int32(ylo)) < 65536 {
+			if silk_abs(int32(ylo)) < 65536 {
 				den := ylo - yhi
 				nom := (ylo << (8 - BIN_DIV_STEPS_A2NLSF)) + den/2
 				if den != 0 {
@@ -652,8 +652,8 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
 				ffrac += int(ylo / ((ylo - yhi) >> (8 - BIN_DIV_STEPS_A2NLSF)))
 			}
 
-			NLSF[root_ix] = int16(Inlines_silk_min_32(int32(k)<<8+int32(ffrac), math.MaxInt16))
-			Inlines_OpusAssert(int(NLSF[root_ix]) >= 0)
+			NLSF[root_ix] = int16(silk_min_32(int32(k)<<8+int32(ffrac), math.MaxInt16))
+			OpusAssert(int(NLSF[root_ix]) >= 0)
 
 			root_ix++
 			if root_ix >= d {
@@ -710,28 +710,28 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 	pNLSFW_QW := make([]int16, MAX_LPC_ORDER)
 	pNLSFW0_temp_QW := make([]int16, MAX_LPC_ORDER)
 
-	Inlines_OpusAssert(psEncC.speech_activity_Q8 >= 0)
-	Inlines_OpusAssert(psEncC.speech_activity_Q8 <= 256)
-	Inlines_OpusAssert(psEncC.useInterpolatedNLSFs == 1 || psEncC.indices.NLSFInterpCoef_Q2 == 4)
+	OpusAssert(psEncC.speech_activity_Q8 >= 0)
+	OpusAssert(psEncC.speech_activity_Q8 <= 256)
+	OpusAssert(psEncC.useInterpolatedNLSFs == 1 || psEncC.indices.NLSFInterpCoef_Q2 == 4)
 
-	NLSF_mu_Q20 = Inlines_silk_SMLAWB(31457, -26843, int32(psEncC.speech_activity_Q8))
+	NLSF_mu_Q20 = silk_SMLAWB(31457, -26843, int32(psEncC.speech_activity_Q8))
 	if psEncC.nb_subfr == 2 {
 		NLSF_mu_Q20 += NLSF_mu_Q20 >> 1
 	}
 
-	Inlines_OpusAssert(NLSF_mu_Q20 > 0)
-	Inlines_OpusAssert(NLSF_mu_Q20 <= 52428)
+	OpusAssert(NLSF_mu_Q20 > 0)
+	OpusAssert(NLSF_mu_Q20 <= 52428)
 
 	silk_NLSF_VQ_weights_laroia(pNLSFW_QW, pNLSF_Q15, psEncC.predictLPCOrder)
 
 	doInterpolate = (psEncC.useInterpolatedNLSFs == 1) && (psEncC.indices.NLSFInterpCoef_Q2 < 4)
 	if doInterpolate {
-		Inlines_silk_interpolate(pNLSF0_temp_Q15, prev_NLSFq_Q15, pNLSF_Q15, psEncC.indices.NLSFInterpCoef_Q2, psEncC.predictLPCOrder)
+		silk_interpolate(pNLSF0_temp_Q15, prev_NLSFq_Q15, pNLSF_Q15, psEncC.indices.NLSFInterpCoef_Q2, psEncC.predictLPCOrder)
 		silk_NLSF_VQ_weights_laroia(pNLSFW0_temp_QW, pNLSF0_temp_Q15, psEncC.predictLPCOrder)
 		i_sqr_Q15 = int32(psEncC.indices.NLSFInterpCoef_Q2*psEncC.indices.NLSFInterpCoef_Q2) << 11
 		for i := 0; i < psEncC.predictLPCOrder; i++ {
-			pNLSFW_QW[i] = int16(Inlines_silk_SMLAWB(int32(pNLSFW_QW[i])>>1, int32(pNLSFW0_temp_QW[i]), i_sqr_Q15))
-			Inlines_OpusAssert(pNLSFW_QW[i] > 0)
+			pNLSFW_QW[i] = int16(silk_SMLAWB(int32(pNLSFW_QW[i])>>1, int32(pNLSFW0_temp_QW[i]), i_sqr_Q15))
+			OpusAssert(pNLSFW_QW[i] > 0)
 		}
 	}
 
@@ -743,7 +743,7 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 	silk_NLSF2A(PredCoef_Q12[1], pNLSF_Q15, psEncC.predictLPCOrder)
 
 	if doInterpolate {
-		Inlines_silk_interpolate(pNLSF0_temp_Q15, prev_NLSFq_Q15, pNLSF_Q15, psEncC.indices.NLSFInterpCoef_Q2, psEncC.predictLPCOrder)
+		silk_interpolate(pNLSF0_temp_Q15, prev_NLSFq_Q15, pNLSF_Q15, psEncC.indices.NLSFInterpCoef_Q2, psEncC.predictLPCOrder)
 		silk_NLSF2A(PredCoef_Q12[0], pNLSF0_temp_Q15, psEncC.predictLPCOrder)
 	} else {
 		copy(PredCoef_Q12[0], PredCoef_Q12[1][:psEncC.predictLPCOrder])

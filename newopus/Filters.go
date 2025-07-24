@@ -14,23 +14,23 @@ func silk_warped_LPC_analysis_filter(
 	order int) {
 
 	for n := 0; n < length; n++ {
-		tmp2 := Inlines_silk_SMLAWB(state[0], state[1], int32(lambda_Q16))
-		state[0] = Inlines_silk_LSHIFT(int32(input[input_ptr+n]), 14)
-		tmp1 := Inlines_silk_SMLAWB(state[1], state[2]-tmp2, int32(lambda_Q16))
+		tmp2 := silk_SMLAWB(state[0], state[1], int32(lambda_Q16))
+		state[0] = silk_LSHIFT(int32(input[input_ptr+n]), 14)
+		tmp1 := silk_SMLAWB(state[1], state[2]-tmp2, int32(lambda_Q16))
 		state[1] = tmp2
 		acc_Q11 := int32(order >> 1)
-		acc_Q11 = Inlines_silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr]))
+		acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr]))
 		for i := 2; i < order; i += 2 {
-			tmp2 = Inlines_silk_SMLAWB(state[i], state[i+1]-tmp1, int32(lambda_Q16))
+			tmp2 = silk_SMLAWB(state[i], state[i+1]-tmp1, int32(lambda_Q16))
 			state[i] = tmp1
-			acc_Q11 = Inlines_silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+i-1]))
-			tmp1 = Inlines_silk_SMLAWB(state[i+1], state[i+2]-tmp2, int32(lambda_Q16))
+			acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+i-1]))
+			tmp1 = silk_SMLAWB(state[i+1], state[i+2]-tmp2, int32(lambda_Q16))
 			state[i+1] = tmp2
-			acc_Q11 = Inlines_silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr+i]))
+			acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr+i]))
 		}
 		state[order] = tmp1
-		acc_Q11 = Inlines_silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+order-1]))
-		res_Q2[n] = Inlines_silk_LSHIFT(int32(input[input_ptr+n]), 2) - Inlines_silk_RSHIFT_ROUND(acc_Q11, 9)
+		acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+order-1]))
+		res_Q2[n] = silk_LSHIFT(int32(input[input_ptr+n]), 2) - silk_RSHIFT_ROUND(acc_Q11, 9)
 	}
 }
 
@@ -52,22 +52,22 @@ func silk_prefilter(
 		if psEnc.indices.signalType == TYPE_VOICED {
 			lag = psEncCtrl.pitchL[k]
 		}
-		HarmShapeGain_Q12 := Inlines_silk_SMULWB(int32(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int32(psEncCtrl.HarmBoost_Q14[k]))
-		HarmShapeFIRPacked_Q12 := Inlines_silk_RSHIFT(HarmShapeGain_Q12, 2)
-		HarmShapeFIRPacked_Q12 |= Inlines_silk_LSHIFT(int32(Inlines_silk_RSHIFT(HarmShapeGain_Q12, 1)), 16)
+		HarmShapeGain_Q12 := silk_SMULWB(int32(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int32(psEncCtrl.HarmBoost_Q14[k]))
+		HarmShapeFIRPacked_Q12 := silk_RSHIFT(HarmShapeGain_Q12, 2)
+		HarmShapeFIRPacked_Q12 |= silk_LSHIFT(int32(silk_RSHIFT(HarmShapeGain_Q12, 1)), 16)
 		Tilt_Q14 := psEncCtrl.Tilt_Q14[k]
 		LF_shp_Q14 := psEncCtrl.LF_shp_Q14[k]
 		AR1_shp_Q13 := k * MAX_SHAPE_LPC_ORDER
 		silk_warped_LPC_analysis_filter(P.sAR_shp[:], st_res_Q2, psEncCtrl.AR1_Q13[:], AR1_shp_Q13, x, px, int16(psEnc.warping_Q16), psEnc.subfr_length, psEnc.shapingLPCOrder)
-		B_Q10 := [2]int16{int16(Inlines_silk_RSHIFT_ROUND(int32(psEncCtrl.GainsPre_Q14[k]), 4)), 0}
-		tmp_32 := Inlines_silk_SMLABB(INPUT_TILT_Q26, int32(psEncCtrl.HarmBoost_Q14[k]), HarmShapeGain_Q12)
-		tmp_32 = Inlines_silk_SMLABB(tmp_32, int32(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
-		tmp_32 = Inlines_silk_SMULWB(tmp_32, -int32(psEncCtrl.GainsPre_Q14[k]))
-		tmp_32 = Inlines_silk_RSHIFT_ROUND(tmp_32, 14)
-		B_Q10[1] = int16(Inlines_silk_SAT16(tmp_32))
-		x_filt_Q12[0] = Inlines_silk_MLA(Inlines_silk_MUL(st_res_Q2[0], int32(B_Q10[0])), int32(P.sHarmHP_Q2), int32(B_Q10[1]))
+		B_Q10 := [2]int16{int16(silk_RSHIFT_ROUND(int32(psEncCtrl.GainsPre_Q14[k]), 4)), 0}
+		tmp_32 := silk_SMLABB(INPUT_TILT_Q26, int32(psEncCtrl.HarmBoost_Q14[k]), HarmShapeGain_Q12)
+		tmp_32 = silk_SMLABB(tmp_32, int32(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
+		tmp_32 = silk_SMULWB(tmp_32, -int32(psEncCtrl.GainsPre_Q14[k]))
+		tmp_32 = silk_RSHIFT_ROUND(tmp_32, 14)
+		B_Q10[1] = int16(silk_SAT16(tmp_32))
+		x_filt_Q12[0] = silk_MLA(silk_MUL(st_res_Q2[0], int32(B_Q10[0])), int32(P.sHarmHP_Q2), int32(B_Q10[1]))
 		for j := 1; j < psEnc.subfr_length; j++ {
-			x_filt_Q12[j] = Inlines_silk_MLA(Inlines_silk_MUL(st_res_Q2[j], int32(B_Q10[0])), st_res_Q2[j-1], int32(B_Q10[1]))
+			x_filt_Q12[j] = silk_MLA(silk_MUL(st_res_Q2[j], int32(B_Q10[0])), st_res_Q2[j-1], int32(B_Q10[1]))
 		}
 		P.sHarmHP_Q2 = int16(st_res_Q2[psEnc.subfr_length-1])
 		silk_prefilt(P, x_filt_Q12, xw_Q3, pxw_Q3, HarmShapeFIRPacked_Q12, Tilt_Q14, LF_shp_Q14, lag, psEnc.subfr_length)
@@ -96,19 +96,19 @@ func silk_prefilt(
 	for i := 0; i < length; i++ {
 		if lag > 0 {
 			idx := lag + LTP_shp_buf_idx
-			n_LTP_Q12 = Inlines_silk_SMULBB(int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2-1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
-			n_LTP_Q12 = Inlines_silk_SMLABT(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2)&LTP_MASK]), HarmShapeFIRPacked_Q12)
-			n_LTP_Q12 = Inlines_silk_SMLABB(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2+1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMULBB(int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2-1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMLABT(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMLABB(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2+1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
 		} else {
 			n_LTP_Q12 = 0
 		}
-		n_Tilt_Q10 = Inlines_silk_SMULWB(sLF_AR_shp_Q12, Tilt_Q14)
-		n_LF_Q10 = Inlines_silk_SMLAWB(Inlines_silk_SMULWT(sLF_AR_shp_Q12, LF_shp_Q14), sLF_MA_shp_Q12, LF_shp_Q14)
-		sLF_AR_shp_Q12 = st_res_Q12[i] - Inlines_silk_LSHIFT(n_Tilt_Q10, 2)
-		sLF_MA_shp_Q12 = sLF_AR_shp_Q12 - Inlines_silk_LSHIFT(n_LF_Q10, 2)
+		n_Tilt_Q10 = silk_SMULWB(sLF_AR_shp_Q12, Tilt_Q14)
+		n_LF_Q10 = silk_SMLAWB(silk_SMULWT(sLF_AR_shp_Q12, LF_shp_Q14), sLF_MA_shp_Q12, LF_shp_Q14)
+		sLF_AR_shp_Q12 = st_res_Q12[i] - silk_LSHIFT(n_Tilt_Q10, 2)
+		sLF_MA_shp_Q12 = sLF_AR_shp_Q12 - silk_LSHIFT(n_LF_Q10, 2)
 		LTP_shp_buf_idx = (LTP_shp_buf_idx - 1) & LTP_MASK
-		LTP_shp_buf[LTP_shp_buf_idx] = int16(Inlines_silk_SAT16(Inlines_silk_RSHIFT_ROUND(sLF_MA_shp_Q12, 12)))
-		xw_Q3[xw_Q3_ptr+i] = Inlines_silk_RSHIFT_ROUND(sLF_MA_shp_Q12-n_LTP_Q12, 9)
+		LTP_shp_buf[LTP_shp_buf_idx] = int16(silk_SAT16(silk_RSHIFT_ROUND(sLF_MA_shp_Q12, 12)))
+		xw_Q3[xw_Q3_ptr+i] = silk_RSHIFT_ROUND(sLF_MA_shp_Q12-n_LTP_Q12, 9)
 	}
 	P.sLF_AR_shp_Q12 = sLF_AR_shp_Q12
 	P.sLF_MA_shp_Q12 = sLF_MA_shp_Q12

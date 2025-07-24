@@ -129,47 +129,47 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 		mem0 := 0
 		mem1 := 0
 		for i := 0; i < len; i++ {
-			x := Inlines_SHR32(input[c][i], CeltConstants_SIG_SHIFT)
-			y := Inlines_ADD32(mem0, x)
-			mem0 = mem1 + y - Inlines_SHL32(x, 1)
-			mem1 = x - Inlines_SHR32(y, 1)
-			tmp[i] = Inlines_EXTRACT16(Inlines_SHR32(y, 2))
+			x := SHR32(input[c][i], CeltConstants_SIG_SHIFT)
+			y := ADD32(mem0, x)
+			mem0 = mem1 + y - SHL32(x, 1)
+			mem1 = x - SHR32(y, 1)
+			tmp[i] = EXTRACT16(SHR32(y, 2))
 		}
 		for i := 0; i < 12; i++ {
 			tmp[i] = 0
 		}
 
-		shift := 14 - Inlines_celt_ilog2(1+Inlines_celt_maxabs32(tmp, 0, len))
+		shift := 14 - celt_ilog2(1+celt_maxabs32(tmp, 0, len))
 		if shift != 0 {
 			for i := 0; i < len; i++ {
-				tmp[i] = Inlines_SHL16(tmp[i], shift)
+				tmp[i] = SHL16(tmp[i], shift)
 			}
 		}
 
 		mean := 0
 		mem0 = 0
 		for i := 0; i < len2; i++ {
-			x2 := Inlines_PSHR32(Inlines_ADD32(Inlines_MULT16_16(tmp[2*i], tmp[2*i]), Inlines_MULT16_16(tmp[2*i+1], tmp[2*i+1])), 16)
+			x2 := PSHR32(ADD32(MULT16_16(tmp[2*i], tmp[2*i]), MULT16_16(tmp[2*i+1], tmp[2*i+1])), 16)
 			mean += x2
-			tmp[i] = mem0 + Inlines_PSHR32(x2-mem0, 4)
+			tmp[i] = mem0 + PSHR32(x2-mem0, 4)
 			mem0 = tmp[i]
 		}
 
 		mem0 = 0
 		maxE := 0
 		for i := len2 - 1; i >= 0; i-- {
-			tmp[i] = mem0 + Inlines_PSHR32(tmp[i]-mem0, 3)
+			tmp[i] = mem0 + PSHR32(tmp[i]-mem0, 3)
 			mem0 = tmp[i]
 			if mem0 > maxE {
 				maxE = mem0
 			}
 		}
 
-		mean = Inlines_MULT16_16(Inlines_celt_sqrt(mean), Inlines_celt_sqrt(Inlines_MULT16_16(maxE, len2>>1)))
-		norm := (len2 << (6 + 14)) / (CeltConstants_EPSILON + Inlines_SHR32(mean, 1))
+		mean = MULT16_16(celt_sqrt(mean), celt_sqrt(MULT16_16(maxE, len2>>1)))
+		norm := (len2 << (6 + 14)) / (CeltConstants_EPSILON + SHR32(mean, 1))
 
 		for i := 12; i < len2-5; i += 4 {
-			id := Inlines_MAX32(0, Inlines_MIN32(127, Inlines_MULT16_32_Q15(int16(tmp[i]+CeltConstants_EPSILON), int32(norm))))
+			id := MAX32(0, MIN32(127, MULT16_32_Q15(int16(tmp[i]+CeltConstants_EPSILON), int32(norm))))
 			unmask += int(inv_table[id])
 		}
 		unmask = 64 * unmask * 4 / (6 * (len2 - 17))
@@ -183,9 +183,9 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 		is_transient = 1
 	}
 
-	tf_max := Inlines_MAX16(0, int16(Inlines_celt_sqrt(27*float32(mask_metric))-42))
+	tf_max := MAX16(0, int16(celt_sqrt(27*float32(mask_metric))-42))
 	tf_estimate_val := int16(0.0069 * 16384.5)
-	tf_estimate.Val = int(Inlines_celt_sqrt(Inlines_MAX32(0, Inlines_SHL32(Inlines_MULT16_16(tf_estimate_val, int16(Inlines_MIN16(163, tf_max))), 14)-int32(0.139*268435455.5))))
+	tf_estimate.Val = int(celt_sqrt(MAX32(0, SHL32(MULT16_16(tf_estimate_val, int16(MIN16(163, tf_max))), 14)-int32(0.139*268435455.5))))
 	return is_transient
 }
 
@@ -196,29 +196,29 @@ func patch_transient_decision(newE [][]int, oldE [][]int, nbEBands int, start in
 	if C == 1 {
 		spread_old[start] = oldE[0][start]
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = Inlines_MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)), oldE[0][i])
+			spread_old[i] = MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)), oldE[0][i])
 		}
 	} else {
-		spread_old[start] = Inlines_MAX16(oldE[0][start], oldE[1][start])
+		spread_old[start] = MAX16(oldE[0][start], oldE[1][start])
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = Inlines_MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)), Inlines_MAX16(oldE[0][i], oldE[1][i]))
+			spread_old[i] = MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)), MAX16(oldE[0][i], oldE[1][i]))
 		}
 	}
 
 	for i := end - 2; i >= start; i-- {
-		spread_old[i] = Inlines_MAX16(spread_old[i], spread_old[i+1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)))
+		spread_old[i] = MAX16(spread_old[i], spread_old[i+1]-int16(1.0*float32(1<<CeltConstants_DB_SHIFT)))
 	}
 
 	for c := 0; c < C; c++ {
-		for i := Inlines_IMAX(2, start); i < end-1; i++ {
-			x1 := Inlines_MAX16(0, newE[c][i])
-			x2 := Inlines_MAX16(0, spread_old[i])
-			diff := Inlines_MAX16(0, x1-x2)
+		for i := IMAX(2, start); i < end-1; i++ {
+			x1 := MAX16(0, newE[c][i])
+			x2 := MAX16(0, spread_old[i])
+			diff := MAX16(0, x1-x2)
 			mean_diff += int(diff)
 		}
 	}
 
-	mean_diff /= C * (end - 1 - Inlines_IMAX(2, start))
+	mean_diff /= C * (end - 1 - IMAX(2, start))
 	if mean_diff > int(1.0*float32(1<<CeltConstants_DB_SHIFT)) {
 		return 1
 	}
@@ -248,7 +248,7 @@ func compute_mdcts(mode *CeltMode, shortBlocks int, input [][]int, output [][]in
 
 	if CC == 2 && C == 1 {
 		for i := 0; i < B*N; i++ {
-			output[0][i] = Inlines_ADD32(Inlines_HALF32(output[0][i]), Inlines_HALF32(output[1][i]))
+			output[0][i] = ADD32(HALF32(output[0][i]), HALF32(output[1][i]))
 		}
 	}
 
@@ -272,8 +272,8 @@ func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int,
 	if coef[1] == 0 && upsample == 1 && clip == 0 {
 		for i := 0; i < N; i++ {
 			x := int(pcmp[pcmp_ptr+CC*i])
-			inp[inp_ptr+i] = Inlines_SHL32(x, CeltConstants_SIG_SHIFT) - m
-			m = Inlines_SHR32(Inlines_MULT16_16(int16(coef0), int16(x)), 15-CeltConstants_SIG_SHIFT)
+			inp[inp_ptr+i] = SHL32(x, CeltConstants_SIG_SHIFT) - m
+			m = SHR32(MULT16_16(int16(coef0), int16(x)), 15-CeltConstants_SIG_SHIFT)
 		}
 		mem.Val = m
 		return
@@ -291,8 +291,8 @@ func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int,
 
 	for i := 0; i < N; i++ {
 		x := inp[inp_ptr+i]
-		inp[inp_ptr+i] = Inlines_SHL32(x, CeltConstants_SIG_SHIFT) - m
-		m = Inlines_SHR32(Inlines_MULT16_16(int16(coef0), int16(x)), 15-CeltConstants_SIG_SHIFT)
+		inp[inp_ptr+i] = SHL32(x, CeltConstants_SIG_SHIFT) - m
+		m = SHR32(MULT16_16(int16(coef0), int16(x)), 15-CeltConstants_SIG_SHIFT)
 	}
 	mem.Val = m
 }
@@ -300,9 +300,9 @@ func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int,
 func l1_metric(tmp []int, N int, LM int, bias int) int {
 	L1 := 0
 	for i := 0; i < N; i++ {
-		L1 += Inlines_EXTEND32(Inlines_ABS32(tmp[i]))
+		L1 += EXTEND32(ABS32(tmp[i]))
 	}
-	L1 += Inlines_MAC16_32_Q15(L1, int16(LM*bias), int32(L1))
+	L1 += MAC16_32_Q15(L1, int16(LM*bias), int32(L1))
 	return L1
 }
 
@@ -363,9 +363,9 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		minXC := 0
 		for i := 0; i < 8; i++ {
 			partial := Kernels_celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
-			sum = Inlines_ADD16(sum, Inlines_EXTRACT16(Inlines_SHR32(partial, 18)))
+			sum = ADD16(sum, EXTRACT16(SHR32(partial, 18)))
 		}
-		sum = Inlines_MULT16_16_Q15(int16(1.0/8*32767.5), int16(sum))
+		sum = MULT16_16_Q15(int16(1.0/8*32767.5), int16(sum))
 		if sum > 1024 {
 			sum = 1024
 		} else if sum < -1024 {
@@ -374,16 +374,16 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		minXC = sum
 		for i := 8; i < intensity; i++ {
 			partial := Kernels_celt_inner_prod(X[0], m.eBands[i]<<LM, X[1], m.eBands[i]<<LM, (m.eBands[i+1]-m.eBands[i])<<LM)
-			absPartial := Inlines_ABS16(Inlines_EXTRACT16(Inlines_SHR32(partial, 18)))
+			absPartial := ABS16(EXTRACT16(SHR32(partial, 18)))
 			if absPartial < minXC {
 				minXC = absPartial
 			}
 		}
-		logXC = Inlines_celt_log2(1074791424 - Inlines_MULT16_16(int16(sum), int16(sum)))
-		logXC2 = Inlines_MAX16(logXC/2, Inlines_celt_log2(1074791424-Inlines_MULT16_16(int16(minXC), int16(minXC))))
+		logXC = celt_log2(1074791424 - MULT16_16(int16(sum), int16(sum)))
+		logXC2 = MAX16(logXC/2, celt_log2(1074791424-MULT16_16(int16(minXC), int16(minXC))))
 		logXC = (logXC - int(6.0*float32(1<<CeltConstants_DB_SHIFT))) >> (CeltConstants_DB_SHIFT - 8)
 		logXC2 = (logXC2 - int(6.0*float32(1<<CeltConstants_DB_SHIFT))) >> (CeltConstants_DB_SHIFT - 8)
-		trim += Inlines_MAX16(-1024, Inlines_MULT16_16_Q15(int16(0.75*32767.5), int16(logXC)))
+		trim += MAX16(-1024, MULT16_16_Q15(int16(0.75*32767.5), int16(logXC)))
 		if stereo_saving.Val+64 < -logXC2/2 {
 			stereo_saving.Val = -logXC2/2 - 64
 		} else {
@@ -397,7 +397,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		}
 	}
 	diff /= C * (end - 1)
-	trim -= Inlines_MAX16(-512, Inlines_MIN16(512, (diff+int(1.0*float32(1<<CeltConstants_DB_SHIFT)))/(6*(1<<(CeltConstants_DB_SHIFT-8)))))
+	trim -= MAX16(-512, MIN16(512, (diff+int(1.0*float32(1<<CeltConstants_DB_SHIFT)))/(6*(1<<(CeltConstants_DB_SHIFT-8)))))
 	trim -= surround_trim >> (CeltConstants_DB_SHIFT - 8)
 	trim -= 2 * (tf_estimate >> (14 - 8))
 
@@ -427,22 +427,22 @@ func stereo_analysis(m *CeltMode, X [][]int, LM int) int {
 
 	for i := 0; i < 13; i++ {
 		for j := m.eBands[i] << LM; j < m.eBands[i+1]<<LM; j++ {
-			L := Inlines_EXTEND32(X[0][j])
-			R := Inlines_EXTEND32(X[1][j])
-			M := Inlines_ADD32(L, R)
-			S := Inlines_SUB32(L, R)
-			sumLR = Inlines_ADD32(sumLR, Inlines_ADD32(Inlines_ABS32(L), Inlines_ABS32(R)))
-			sumMS = Inlines_ADD32(sumMS, Inlines_ADD32(Inlines_ABS32(M), Inlines_ABS32(S)))
+			L := EXTEND32(X[0][j])
+			R := EXTEND32(X[1][j])
+			M := ADD32(L, R)
+			S := SUB32(L, R)
+			sumLR = ADD32(sumLR, ADD32(ABS32(L), ABS32(R)))
+			sumMS = ADD32(sumMS, ADD32(ABS32(M), ABS32(S)))
 		}
 	}
-	sumMS = Inlines_MULT16_32_Q15(int16(0.707107*32767.5), sumMS)
+	sumMS = MULT16_32_Q15(int16(0.707107*32767.5), sumMS)
 	thetas = 13
 	if LM <= 1 {
 		thetas -= 8
 	}
 
-	left := Inlines_MULT16_32_Q15(int16((m.eBands[13]<<(LM+1))+thetas), sumMS)
-	right := Inlines_MULT16_32_Q15(int16(m.eBands[13]<<(LM+1)), sumLR)
+	left := MULT16_32_Q15(int16((m.eBands[13]<<(LM+1))+thetas), sumMS)
+	right := MULT16_32_Q15(int16(m.eBands[13]<<(LM+1)), sumLR)
 	if left > right {
 		return 1
 	}
@@ -510,11 +510,11 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 	}
 
 	for i := 0; i < end; i++ {
-		noise_floor[i] = int(Inlines_MULT16_16(int16(0.0625*float32(1<<CeltConstants_DB_SHIFT)), logN[i])) +
+		noise_floor[i] = int(MULT16_16(int16(0.0625*float32(1<<CeltConstants_DB_SHIFT)), logN[i])) +
 			int(0.5*float32(1<<CeltConstants_DB_SHIFT)) +
 			(9-lsb_depth)<<CeltConstants_DB_SHIFT -
 			int(CeltTables_eMeans[i])<<6 +
-			int(Inlines_MULT16_16(int16(0.0062*float32(1<<CeltConstants_DB_SHIFT)), int16((i+5)*(i+5))))
+			int(MULT16_16(int16(0.0062*float32(1<<CeltConstants_DB_SHIFT)), int16((i+5)*(i+5))))
 	}
 
 	for c := 0; c < C; c++ {
@@ -535,10 +535,10 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 				if bandLogE2[c][i] > bandLogE2[c][i-1]+int(0.5*float32(1<<CeltConstants_DB_SHIFT)) {
 					last = i
 				}
-				f[i] = Inlines_MIN16(f[i-1]+int(1.5*float32(1<<CeltConstants_DB_SHIFT)), bandLogE2[c][i])
+				f[i] = MIN16(f[i-1]+int(1.5*float32(1<<CeltConstants_DB_SHIFT)), bandLogE2[c][i])
 			}
 			for i := last - 1; i >= 0; i-- {
-				f[i] = Inlines_MIN16(f[i], Inlines_MIN16(f[i+1]+int(2.0*float32(1<<CeltConstants_DB_SHIFT)), bandLogE2[c][i]))
+				f[i] = MIN16(f[i], MIN16(f[i+1]+int(2.0*float32(1<<CeltConstants_DB_SHIFT)), bandLogE2[c][i]))
 			}
 			offset := int(1.0 * float32(1<<CeltConstants_DB_SHIFT))
 			for i := 2; i < end-2; i++ {
@@ -578,11 +578,11 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 				if f0 < f1-int(4.0*float32(1<<CeltConstants_DB_SHIFT)) {
 					f0 = f1 - int(4.0*float32(1<<CeltConstants_DB_SHIFT))
 				}
-				follower[0][i] = (Inlines_MAX16(0, bandLogE[0][i]-f0) + Inlines_MAX16(0, bandLogE[1][i]-f1)) / 2
+				follower[0][i] = (MAX16(0, bandLogE[0][i]-f0) + MAX16(0, bandLogE[1][i]-f1)) / 2
 			}
 		} else {
 			for i := start; i < end; i++ {
-				follower[0][i] = Inlines_MAX16(0, bandLogE[0][i]-follower[0][i])
+				follower[0][i] = MAX16(0, bandLogE[0][i]-follower[0][i])
 			}
 		}
 
@@ -652,19 +652,19 @@ func deemphasis(input [][]int, input_ptrs []int, pcm []int16, pcm_ptr int, N int
 		if downsample > 1 {
 			for j := 0; j < N; j++ {
 				tmp := x[x_ptr+j] + m_val + CeltConstants_VERY_SMALL
-				m_val = Inlines_MULT16_32_Q15(int16(coef[0]), tmp)
+				m_val = MULT16_32_Q15(int16(coef[0]), tmp)
 				scratch[j] = tmp
 			}
 			for j := 0; j < Nd; j++ {
 				idx := y_ptr + j*C
-				pcm[idx] = Inlines_SIG2WORD16(scratch[j*downsample])
+				pcm[idx] = SIG2WORD16(scratch[j*downsample])
 			}
 		} else if accum != 0 {
 			for j := 0; j < N; j++ {
 				tmp := x[x_ptr+j] + m_val + CeltConstants_VERY_SMALL
-				m_val = Inlines_MULT16_32_Q15(int16(coef[0]), tmp)
+				m_val = MULT16_32_Q15(int16(coef[0]), tmp)
 				idx := y_ptr + j*C
-				pcm[idx] = Inlines_SAT16(Inlines_ADD32(int32(pcm[idx]), Inlines_SIG2WORD16(tmp)))
+				pcm[idx] = SAT16(ADD32(int32(pcm[idx]), SIG2WORD16(tmp)))
 			}
 		} else {
 			for j := 0; j < N; j++ {
@@ -673,9 +673,9 @@ func deemphasis(input [][]int, input_ptrs []int, pcm []int16, pcm_ptr int, N int
 					tmp = math.MaxInt32
 					m_val = math.MaxInt32
 				} else {
-					m_val = Inlines_MULT16_32_Q15(int16(coef[0]), tmp)
+					m_val = MULT16_32_Q15(int16(coef[0]), tmp)
 				}
-				pcm[y_ptr+j*C] = Inlines_SIG2WORD16(tmp)
+				pcm[y_ptr+j*C] = SIG2WORD16(tmp)
 			}
 		}
 		mem[c] = m_val
@@ -810,9 +810,9 @@ func comb_filter_const(y []int, y_ptr int, x []int, x_ptr int, T int, N int, g10
 	for i := 0; i < N; i++ {
 		x0 := x[xpt+i+2]
 		y[y_ptr+i] = x[x_ptr+i] +
-			Inlines_MULT16_32_Q15(int16(g10), x2) +
-			Inlines_MULT16_32_Q15(int16(g11), Inlines_ADD32(x1, x3)) +
-			Inlines_MULT16_32_Q15(int16(g12), Inlines_ADD32(x0, x4))
+			MULT16_32_Q15(int16(g10), x2) +
+			MULT16_32_Q15(int16(g11), ADD32(x1, x3)) +
+			MULT16_32_Q15(int16(g12), ADD32(x0, x4))
 		x4 = x3
 		x3 = x2
 		x2 = x1
@@ -832,12 +832,12 @@ func comb_filter(y []int, y_ptr int, x []int, x_ptr int, T0 int, T1 int, N int, 
 		return
 	}
 
-	g00 := Inlines_MULT16_16_P15(int16(g0), gains[tapset0][0])
-	g01 := Inlines_MULT16_16_P15(int16(g0), gains[tapset0][1])
-	g02 := Inlines_MULT16_16_P15(int16(g0), gains[tapset0][2])
-	g10 := Inlines_MULT16_16_P15(int16(g1), gains[tapset1][0])
-	g11 := Inlines_MULT16_16_P15(int16(g1), gains[tapset1][1])
-	g12 := Inlines_MULT16_16_P15(int16(g1), gains[tapset1][2])
+	g00 := MULT16_16_P15(int16(g0), gains[tapset0][0])
+	g01 := MULT16_16_P15(int16(g0), gains[tapset0][1])
+	g02 := MULT16_16_P15(int16(g0), gains[tapset0][2])
+	g10 := MULT16_16_P15(int16(g1), gains[tapset1][0])
+	g11 := MULT16_16_P15(int16(g1), gains[tapset1][1])
+	g12 := MULT16_16_P15(int16(g1), gains[tapset1][2])
 
 	x1 := x[x_ptr-T1+1]
 	x2 := x[x_ptr-T1]
@@ -850,14 +850,14 @@ func comb_filter(y []int, y_ptr int, x []int, x_ptr int, T0 int, T1 int, N int, 
 
 	for i := 0; i < overlap; i++ {
 		x0 := x[x_ptr+i-T1+2]
-		f := Inlines_MULT16_16_Q15(int16(window[i]), int16(window[i]))
+		f := MULT16_16_Q15(int16(window[i]), int16(window[i]))
 		inv_f := 32768 - int(f)
-		term1 := Inlines_MULT16_32_Q15(int16(inv_f), g00*int32(x[x_ptr+i-T0]))
-		term2 := Inlines_MULT16_32_Q15(int16(inv_f), g01*int32(Inlines_ADD32(x[x_ptr+i-T0+1], x[x_ptr+i-T0-1])))
-		term3 := Inlines_MULT16_32_Q15(int16(inv_f), g02*int32(Inlines_ADD32(x[x_ptr+i-T0+2], x[x_ptr+i-T0-2])))
-		term4 := Inlines_MULT16_32_Q15(int16(f), g10*int32(x2))
-		term5 := Inlines_MULT16_32_Q15(int16(f), g11*int32(Inlines_ADD32(x1, x3)))
-		term6 := Inlines_MULT16_32_Q15(int16(f), g12*int32(Inlines_ADD32(x0, x4)))
+		term1 := MULT16_32_Q15(int16(inv_f), g00*int32(x[x_ptr+i-T0]))
+		term2 := MULT16_32_Q15(int16(inv_f), g01*int32(ADD32(x[x_ptr+i-T0+1], x[x_ptr+i-T0-1])))
+		term3 := MULT16_32_Q15(int16(inv_f), g02*int32(ADD32(x[x_ptr+i-T0+2], x[x_ptr+i-T0-2])))
+		term4 := MULT16_32_Q15(int16(f), g10*int32(x2))
+		term5 := MULT16_32_Q15(int16(f), g11*int32(ADD32(x1, x3)))
+		term6 := MULT16_32_Q15(int16(f), g12*int32(ADD32(x0, x4)))
 		y[y_ptr+i] = x[x_ptr+i] + int(term1+term2+term3+term4+term5+term6)
 		x4 = x3
 		x3 = x2

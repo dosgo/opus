@@ -239,14 +239,14 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int32) int32 {
 			old_buf_samples := int32(0)
 			buf_length_ms := int32(0)
 
-			buf_length_ms = Inlines.Silk_LSHIFT(s.nb_subfr*5, 1) + SilkConstants.LA_SHAPE_MS
+			buf_length_ms = silk_LSHIFT(s.nb_subfr*5, 1) + SilkConstants.LA_SHAPE_MS
 			old_buf_samples = buf_length_ms * s.fs_kHz
 			temp_resampler_state.Reset()
-			ret += Resampler.Silk_resampler_init(&temp_resampler_state, Inlines.Silk_SMULBB(s.fs_kHz, 1000), s.API_fs_Hz, 0)
-			api_buf_samples = buf_length_ms * Inlines.Silk_DIV32_16(s.API_fs_Hz, 1000)
+			ret += Resampler.Silk_resampler_init(&temp_resampler_state, Silk_SMULBB(s.fs_kHz, 1000), s.API_fs_Hz, 0)
+			api_buf_samples = buf_length_ms * Silk_DIV32_16(s.API_fs_Hz, 1000)
 			x_buf_API_fs_Hz = make([]int16, api_buf_samples)
 			ret += Resampler.Silk_resampler(&temp_resampler_state, x_buf_API_fs_Hz, 0, s.x_buf[:], 0, old_buf_samples)
-			ret += Resampler.Silk_resampler_init(&s.resampler_state, s.API_fs_Hz, Inlines.Silk_SMULBB(fs_kHz, 1000), 1)
+			ret += Resampler.Silk_resampler_init(&s.resampler_state, s.API_fs_Hz, Silk_SMULBB(fs_kHz, 1000), 1)
 			ret += Resampler.Silk_resampler(&s.resampler_state, s.x_buf[:], 0, x_buf_API_fs_Hz, 0, api_buf_samples)
 		}
 	}
@@ -371,7 +371,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int32) int32 {
 		s.warping_Q16 = 0
 	} else if Complexity < 4 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MID_COMPLEX
-		s.pitchEstimationThreshold_Q16 = Inlines.Silk_SMULWB(0.76, 1<<16)
+		s.pitchEstimationThreshold_Q16 = Silk_SMULWB(0.76, 1<<16)
 		s.pitchEstimationLPCOrder = 8
 		s.shapingLPCOrder = 10
 		s.la_shape = 5 * s.fs_kHz
@@ -382,7 +382,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int32) int32 {
 		s.warping_Q16 = 0
 	} else if Complexity < 6 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MID_COMPLEX
-		s.pitchEstimationThreshold_Q16 = Inlines.Silk_SMULWB(0.74, 1<<16)
+		s.pitchEstimationThreshold_Q16 = Silk_SMULWB(0.74, 1<<16)
 		s.pitchEstimationLPCOrder = 10
 		s.shapingLPCOrder = 12
 		s.la_shape = 5 * s.fs_kHz
@@ -672,7 +672,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int32, psRangeEnc *En
 				break
 			}
 			if (found_lower & found_upper) == 0 {
-				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + Inlines.Silk_SMULWB(16, 1<<7))
+				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + Silk_SMULWB(16, 1<<7))
 				if gain_factor_Q16 > silk_SMULWB(2, 1<<16) {
 					gain_factor_Q16 = silk_SMULWB(2, 1<<16)
 				}
@@ -694,7 +694,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int32, psRangeEnc *En
 				sEncCtrl.Gains_Q16[i] = silk_LSHIFT_SAT32(silk_SMULWB(sEncCtrl.GainsUnq_Q16[i], int32(gainMult_Q8)), 8)
 			}
 			s.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev
-			GainQuantization.Silk_gains_quant(s.indices.GainsIndices[:], sEncCtrl.Gains_Q16[:], &s.sShape.LastGainIndex, Inlines.Silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+			GainQuantization.Silk_gains_quant(s.indices.GainsIndices[:], sEncCtrl.Gains_Q16[:], &s.sShape.LastGainIndex, Silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
 			gainsID = GainQuantization.Silk_gains_ID(s.indices.GainsIndices[:], s.nb_subfr)
 		}
 	}
@@ -711,7 +711,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int32, psRangeEnc *En
 }
 
 func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_Q3 []int32, condCoding int32) {
-	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > Inlines.Silk_SMULWB(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES, 1<<8) {
+	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > Silk_SMULWB(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES, 1<<8) {
 		s.LBRR_flags[s.nFramesEncoded] = 1
 		psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
 		sNSQ_LBRR := &SilkNSQState{}
@@ -720,10 +720,10 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 		TempGains_Q16 := make([]int32, s.nb_subfr)
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
-			psIndices_LBRR.GainsIndices[0] = byte(Inlines.Silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
+			psIndices_LBRR.GainsIndices[0] = byte(Silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
 		}
 		gainIndex := s.LBRRprevLastGainIndex
-		GainQuantization.Silk_gains_dequant(thisCtrl.Gains_Q16[:], psIndices_LBRR.GainsIndices[:], &gainIndex, Inlines.Silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+		GainQuantization.Silk_gains_dequant(thisCtrl.Gains_Q16[:], psIndices_LBRR.GainsIndices[:], &gainIndex, Silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
 		s.LBRRprevLastGainIndex = gainIndex
 		if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
 			sNSQ_LBRR.Silk_NSQ_del_dec(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded][:], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)

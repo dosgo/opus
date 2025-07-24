@@ -276,19 +276,19 @@ func MULT16_16_Q13Int(a, b int) int {
 }
 
 func MULT16_16_Q14(a, b int16) int16 {
-	return int16(SHR(MULT16_16(a, b), 14))
+	return int16(SHR(MULT16_16(int(a), int(b)), 14))
 }
 
 func MULT16_16_Q14Int(a, b int) int {
-	return SHR(MULT16_16(int16(a), int16(b)), 14)
+	return SHR(MULT16_16(a, b), 14)
 }
 
 func MULT16_16_Q15(a, b int16) int16 {
-	return int16(SHR(MULT16_16(a, b), 15))
+	return int16(SHR(MULT16_16(int(a), int(b)), 15))
 }
 
 func MULT16_16_Q15Int(a, b int) int {
-	return SHR(MULT16_16(int16(a), int16(b)), 15)
+	return SHR(MULT16_16(a, b), 15)
 }
 
 func MULT16_16_P13(a, b int16) int16 {
@@ -304,7 +304,7 @@ func MULT16_16_P14(a, b int16) int16 {
 }
 
 func MULT16_16_P14Int(a, b int) int {
-	return SHR(ADD32(8192, MULT16_16(int16(a), int16(b))), 14)
+	return SHR(ADD32(8192, MULT16_16(a, b)), 14)
 }
 
 func MULT16_16_P15(a, b int16) int16 {
@@ -312,7 +312,7 @@ func MULT16_16_P15(a, b int16) int16 {
 }
 
 func MULT16_16_P15Int(a, b int) int {
-	return SHR(ADD32(16384, MULT16_16(int16(a), int16(b))), 15)
+	return SHR(ADD32(16384, MULT16_16(a, b)), 15)
 }
 
 func DIV32_16(a int, b int16) int16 {

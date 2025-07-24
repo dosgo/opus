@@ -78,7 +78,7 @@ func (d *SilkChannelDecoder) silk_init_decoder() int {
 }
 
 func (d *SilkChannelDecoder) silk_CNG_Reset() {
-	NLSF_step_Q15 := Inlines_silk_DIV32_16(32767, d.LPC_order+1)
+	NLSF_step_Q15 := silk_DIV32_16(32767, d.LPC_order+1)
 	NLSF_acc_Q15 := 0
 	for i := 0; i < d.LPC_order; i++ {
 		NLSF_acc_Q15 += NLSF_step_Q15
@@ -89,7 +89,7 @@ func (d *SilkChannelDecoder) silk_CNG_Reset() {
 }
 
 func (d *SilkChannelDecoder) silk_PLC_Reset() {
-	d.sPLC.pitchL_Q8 = Inlines_silk_LSHIFT(d.frame_length, 8-1)
+	d.sPLC.pitchL_Q8 = silk_LSHIFT(d.frame_length, 8-1)
 	d.sPLC.prevGain_Q16[0] = 1 << 16
 	d.sPLC.prevGain_Q16[1] = 1 << 16
 	d.sPLC.subfr_length = 20
@@ -98,14 +98,14 @@ func (d *SilkChannelDecoder) silk_PLC_Reset() {
 
 func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 	ret := 0
-	Inlines_OpusAssert(fs_kHz == 8 || fs_kHz == 12 || fs_kHz == 16)
-	Inlines_OpusAssert(d.nb_subfr == SilkConstants_MAX_NB_SUBFR || d.nb_subfr == SilkConstants_MAX_NB_SUBFR/2)
+	OpusAssert(fs_kHz == 8 || fs_kHz == 12 || fs_kHz == 16)
+	OpusAssert(d.nb_subfr == SilkConstants_MAX_NB_SUBFR || d.nb_subfr == SilkConstants_MAX_NB_SUBFR/2)
 
-	subfr_length := Inlines_silk_SMULBB(SilkConstants_SUB_FRAME_LENGTH_MS, fs_kHz)
-	frame_length := Inlines_silk_SMULBB(d.nb_subfr, subfr_length)
+	subfr_length := silk_SMULBB(SilkConstants_SUB_FRAME_LENGTH_MS, fs_kHz)
+	frame_length := silk_SMULBB(d.nb_subfr, subfr_length)
 
 	if d.fs_kHz != fs_kHz || d.fs_API_hz != fs_API_Hz {
-		ret += Resampler_silk_resampler_init(&d.resampler_state, Inlines_silk_SMULBB(fs_kHz, 1000), fs_API_Hz, 0)
+		ret += Resampler_silk_resampler_init(&d.resampler_state, silk_SMULBB(fs_kHz, 1000), fs_API_Hz, 0)
 		d.fs_API_hz = fs_API_Hz
 	}
 
@@ -122,7 +122,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 			d.pitch_contour_iCDF = silk_pitch_contour_10_ms_iCDF
 		}
 		if d.fs_kHz != fs_kHz {
-			d.ltp_mem_length = Inlines_silk_SMULBB(LTP_MEM_LENGTH_MS, fs_kHz)
+			d.ltp_mem_length = silk_SMULBB(LTP_MEM_LENGTH_MS, fs_kHz)
 			if fs_kHz == 8 || fs_kHz == 12 {
 				d.LPC_order = MIN_LPC_ORDER
 				d.psNLSF_CB = SilkTables_silk_NLSF_CB_NB_MB
@@ -138,7 +138,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 			case 8:
 				d.pitch_lag_low_bits_iCDF = SilkTables_silk_uniform4_iCDF
 			default:
-				Inlines_OpusAssert(false)
+				OpusAssert(false)
 			}
 			d.first_frame_after_reset = 1
 			d.lagPrev = 100
@@ -152,7 +152,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 		d.subfr_length = subfr_length
 	}
 
-	Inlines_OpusAssert(d.frame_length > 0 && d.frame_length <= MAX_FRAME_LENGTH)
+	OpusAssert(d.frame_length > 0 && d.frame_length <= MAX_FRAME_LENGTH)
 	return ret
 }
 
@@ -161,7 +161,7 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 	L := d.frame_length
 	thisCtrl.LTP_scale_Q14 = 0
 
-	Inlines_OpusAssert(L > 0 && L <= MAX_FRAME_LENGTH)
+	OpusAssert(L > 0 && L <= MAX_FRAME_LENGTH)
 	ret := 0
 
 	if lostFlag == DecoderAPIFlag_FLAG_DECODE_NORMAL || (lostFlag == DecoderAPIFlag_FLAG_DECODE_LBRR && d.LBRR_flags[d.nFramesDecoded] == 1) {
@@ -173,7 +173,7 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 		PLC_silk_PLC(d, &thisCtrl, pOut, pOut_ptr, 0)
 		d.lossCnt = 0
 		d.prevSignalType = d.indices.signalType
-		Inlines_OpusAssert(d.prevSignalType >= 0 && d.prevSignalType <= 2)
+		OpusAssert(d.prevSignalType >= 0 && d.prevSignalType <= 2)
 		d.first_frame_after_reset = 0
 	} else {
 		PLC_silk_PLC(d, &thisCtrl, pOut, pOut_ptr, 1)
