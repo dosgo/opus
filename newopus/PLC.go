@@ -165,7 +165,7 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	}
 
 	//silk_bwexpander(psPLC.prevLPC_Q12[:], psDec.LPC_order, BWE_COEF_Q16)
-    silk_bwexpander(psPLC.prevLPC_Q12, psDec.LPC_order, ((int) ((SilkConstants.BWE_COEF) * ((long) 1 << (16)) + 0.5))/*Inlines.SILK_CONST(SilkConstants.BWE_COEF, 16)*/);
+	silk_bwexpander(psPLC.prevLPC_Q12, psDec.LPC_order, ((int)((SilkConstants.BWE_COEF)*(int(1<<(16))) + 0.5)) /*Inlines.SILK_CONST(SilkConstants.BWE_COEF, 16)*/)
 
 	if psDec.lossCnt == 0 {
 		rand_scale_Q14 = 1 << 14

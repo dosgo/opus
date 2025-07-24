@@ -85,7 +85,7 @@ func cwrsi(_n, _k int, _i int64, _y []int) int {
 			val = int16((k0 - _k + s) ^ s)
 			_y[y_ptr] = int(val)
 			y_ptr++
-			yy = MAC16_16(yy, val, val)
+			yy = MAC16_16Int(yy, val, val)
 		} else {
 			p = CELT_PVQ_U_DATA[CELT_PVQ_U_ROW[_k]+_n]
 			q := CELT_PVQ_U_DATA[CELT_PVQ_U_ROW[_k+1]+_n]
@@ -114,7 +114,7 @@ func cwrsi(_n, _k int, _i int64, _y []int) int {
 				val = int16((k0 - _k + s) ^ s)
 				_y[y_ptr] = int(val)
 				y_ptr++
-				yy = MAC16_16(yy, val, val)
+				yy = MAC16_16Int(yy, val, val)
 			}
 		}
 		_n--
@@ -137,12 +137,12 @@ func cwrsi(_n, _k int, _i int64, _y []int) int {
 	val = int16((k0 - _k + s) ^ s)
 	_y[y_ptr] = int(val)
 	y_ptr++
-	yy = MAC16_16(yy, val, val)
+	yy = MAC16_16Int(yy, val, val)
 
 	s = -int(_i)
 	val = int16((_k + s) ^ s)
 	_y[y_ptr] = int(val)
-	yy = MAC16_16(yy, val, val)
+	yy = MAC16_16Int(yy, val, val)
 	return yy
 }
 
