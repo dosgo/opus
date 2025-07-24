@@ -87,7 +87,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				if pi > 40 {
 					pi = 40
 				}
-				qi = Laplace.EcLaplaceEncode(enc, qi, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				qi = Laplace.ec_laplace_encode(*enc, qi, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 			} else if budget-tell >= 2 {
 				if qi < -1 {
 					qi = -1
@@ -256,7 +256,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 	prob_model := CeltTables.E_prob_model[LM][intra]
 	prev := [2]int{0, 0}
 	var coef, beta int
-	budget := dec.storage() * 8
+	budget := dec.storage * 8
 
 	if intra != 0 {
 		coef = 0
@@ -275,7 +275,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 				if pi > 40 {
 					pi = 40
 				}
-				qi = Laplace.EcLaplaceDecode(dec, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				qi = Laplace.ec_laplace_decode(*dec, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 			} else if budget-tell >= 2 {
 				val := dec.dec_icdf(small_energy_icdf, 2)
 				qi = (val >> 1)

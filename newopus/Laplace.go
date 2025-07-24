@@ -35,7 +35,9 @@ package opus
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-type Laplace struct{}
+type laplace struct{}
+
+var Laplace laplace
 
 const (
 	LAPLACE_LOG_MINP = 0
@@ -43,12 +45,12 @@ const (
 	LAPLACE_NMIN     = 16
 )
 
-func (l *Laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
+func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
 	ft := CapToUInt32(32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
 	return CapToUInt32(ft*(16384-int64(decay))) >> 15
 }
 
-func (l *Laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
+func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
 	var fl int64
 	val := value.Val
 	fl = 0
@@ -94,16 +96,16 @@ func (l *Laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 	enc.encode_bin(uint32(fl), uint32(fl+fs), 15)
 }
 
-func (l *Laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
+func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
 	val := 0
 	fm := dec.decode_bin(15)
 	fl := int64(0)
 
-	if fm >= uint(fs) {
+	if fm >= uint32(fs) {
 		val++
 		fl = fs
 		fs = l.ec_laplace_get_freq1(fs, decay) + LAPLACE_MINP
-		for fs > LAPLACE_MINP && fm >= uint(fl+2*fs) {
+		for fs > LAPLACE_MINP && fm >= uint32(fl+2*fs) {
 			fs *= 2
 			fl = CapToUInt32(fl + fs)
 			fs = CapToUInt32((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
@@ -114,7 +116,7 @@ func (l *Laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
 			val += di
 			fl = CapToUInt32(fl + int64(2*di*LAPLACE_MINP))
 		}
-		if fm < uint(fl+fs) {
+		if fm < uint32(fl+fs) {
 			val = -val
 		} else {
 			fl = CapToUInt32(fl + fs)

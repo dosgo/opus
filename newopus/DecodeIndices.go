@@ -26,7 +26,7 @@ func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec EntropyCoder, Fra
 		psDec.indices.GainsIndices[i] = byte(psRangeDec.dec_icdf(SilkTables.Silk_delta_gain_iCDF, 8))
 	}
 
-	psDec.indices.NLSFIndices[0] = byte(psRangeDec.dec_icdf_offset(psDec.psNLSF_CB.CB1_iCDF, (int(psDec.indices.signalType) >> 1 * psDec.psNLSF_CB.nVectors), 8))
+	psDec.indices.NLSFIndices[0] = byte(psRangeDec.dec_icdf_offset(psDec.psNLSF_CB.CB1_iCDF, (int(psDec.indices.signalType) >> 1 * int(psDec.psNLSF_CB.nVectors)), 8))
 	silk_NLSF_unpack(ec_ix, pred_Q8, psDec.psNLSF_CB, int(psDec.indices.NLSFIndices[0]))
 	if psDec.psNLSF_CB.order != int16(psDec.LPC_order) {
 		panic("assertion failed: psDec.psNLSF_CB.order == psDec.LPC_order")
