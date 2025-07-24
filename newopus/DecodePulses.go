@@ -29,9 +29,10 @@ func silk_decode_pulses(
 			nLshifts[i]++
 			table := SilkTables.Silk_pulses_per_block_iCDF[SilkConstants.N_RATE_LEVELS-1]
 			if nLshifts[i] == 10 {
-				sum_pulses[i] = psRangeDec.dec_icdf(table, 1, 8)
+				sum_pulses[i] = psRangeDec.dec_icdf_offset(table, 1, 8)
+
 			} else {
-				sum_pulses[i] = psRangeDec.dec_icdf(table, 8)
+				sum_pulses[i] = psRangeDec.dec_icdf_offset(table, 0, 8)
 			}
 		}
 	}
@@ -64,5 +65,5 @@ func silk_decode_pulses(
 		}
 	}
 
-	silk_decode_signs(psRangeDec, pulses, frame_length, signalType, quantOffsetType, sum_pulses[:])
+	silk_decode_signs(*psRangeDec, pulses, frame_length, signalType, quantOffsetType, sum_pulses[:])
 }

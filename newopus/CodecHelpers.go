@@ -233,7 +233,7 @@ func optimize_framesize(x []int16, x_ptr int, len int, C int, Fs int, bitrate in
 	for i := 0; i < N; i++ {
 		tmp := CeltConstants.EPSILON
 		var tmpx int
-		Downmix_downmix_int(x, x_ptr, sub, 0, subframe, i*subframe+offset, 0, -2, C)
+		downmix_int(x, x_ptr, sub, 0, subframe, i*subframe+offset, 0, -2, C)
 		if i == 0 {
 			memx = sub[0]
 		}

@@ -189,7 +189,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int32, LTPredCodGain_Q7 *int32, r_lpc [
 
 func silk_fit_LTP(LTP_coefs_Q16 []int32, LTP_coefs_Q14 []int16, LTP_coefs_Q14_ptr int) {
 	for i := 0; i < LTP_ORDER; i++ {
-		val := silk_RSHIFT_ROUND(LTP_coefs_Q16[i], 2)
+		val := silk_RSHIFT_ROUND(int(LTP_coefs_Q16[i]), 2)
 		if val < -32768 {
 			val = -32768
 		} else if val > 32767 {
