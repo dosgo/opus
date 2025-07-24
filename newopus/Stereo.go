@@ -70,8 +70,8 @@ func silk_stereo_find_predictor(
 	scale2 := new(int)
 	var corr, pred_Q13, pred2_Q10 int
 
-	SumSqrShift.silk_sum_sqr_shift(nrgx, scale1, x, length)
-	SumSqrShift.silk_sum_sqr_shift(nrgy, scale2, y, length)
+	silk_sum_sqr_shift4(nrgx, scale1, x, length)
+	silk_sum_sqr_shift4(nrgy, scale2, y, length)
 	scale = silk_max_int(*scale1, *scale2)
 	scale = scale + (scale & 1)
 	*nrgy = silk_RSHIFT32(*nrgy, scale-*scale2)

@@ -71,18 +71,18 @@ var mode48000_960_120 *CeltMode = &CeltMode{
 	mdct: &MDCTLookup{
 		n:        1920,
 		maxshift: 3,
-		kfft: []*FFTState{
-			CeltTables.fft_state48000_960_0,
-			CeltTables.fft_state48000_960_1,
-			CeltTables.fft_state48000_960_2,
-			CeltTables.fft_state48000_960_3,
+		kfft: [4]*FFTState{
+			CeltTables.Fft_state48000_960_0,
+			CeltTables.Fft_state48000_960_1,
+			CeltTables.Fft_state48000_960_2,
+			CeltTables.Fft_state48000_960_3,
 		},
-		trig: CeltTables.mdct_twiddles960,
+		trig: CeltTables.Mdct_twiddles960,
 	},
 	cache: &PulseCache{
 		size:  392,
-		index: CeltTables.cache_index50,
-		bits:  CeltTables.cache_bits50,
-		caps:  CeltTables.cache_caps50,
+		index: CeltTables.Cache_index50,
+		bits:  CeltTables.Cache_bits50,
+		caps:  CeltTables.Cache_caps50,
 	},
 }

@@ -16,7 +16,7 @@ func kf_bfly2(Fout []int, fout_ptr int, m int, N int) {
 	{
 		var tw int16
 		tw = int16(0.5 + 0.7071067812*float32(1<<15))
-		OpusAssert(m == 4, "")
+		OpusAssertMsg(m == 4, "")
 		for i = 0; i < N; i++ {
 			var t_r, t_i int
 			Fout2 = fout_ptr + 8
@@ -318,7 +318,7 @@ func opus_fft(st *FFTState, fin []int, fout []int) {
 	scale_shift := st.scale_shift - 1
 	scale := int16(st.scale)
 
-	OpusAssert(!(fin != nil && fout != nil && &fin[0] == &fout[0]), "In-place FFT not supported")
+	OpusAssertMsg(!(fin != nil && fout != nil && &fin[0] == &fout[0]), "In-place FFT not supported")
 
 	for i = 0; i < st.nfft; i++ {
 		rev := st.bitrev[i]

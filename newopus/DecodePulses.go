@@ -8,8 +8,8 @@ func silk_decode_pulses(
 	frame_length int) {
 
 	var i, j, k, iter, abs_q, nLS, RateLevelIndex int
-	var sum_pulses [SilkConstants.MAX_NB_SHELL_BLOCKS]int
-	var nLshifts [SilkConstants.MAX_NB_SHELL_BLOCKS]int
+	var sum_pulses [MAX_NB_SHELL_BLOCKS]int
+	var nLshifts [MAX_NB_SHELL_BLOCKS]int
 	var pulses_ptr int
 
 	RateLevelIndex = psRangeDec.dec_icdf(SilkTables.Silk_rate_levels_iCDF[signalType>>1], 8)
@@ -38,7 +38,7 @@ func silk_decode_pulses(
 
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
-			ShellCoder.Silk_shell_decoder(pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH, psRangeDec, sum_pulses[i])
+			silk_shell_decoder(pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH, psRangeDec, sum_pulses[i])
 		} else {
 			start := i * SilkConstants.SHELL_CODEC_FRAME_LENGTH
 			end := start + SilkConstants.SHELL_CODEC_FRAME_LENGTH

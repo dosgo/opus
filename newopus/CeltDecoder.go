@@ -163,7 +163,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 					seed = celt_lcg_rand(seed)
 					X[c][boffs+j] = int(seed) >> 20
 				}
-				renormalise_vector(X[c], boffs, blen, Q15ONE)
+				renormalise_vector(X[c], boffs, blen, CeltConstants.Q15ONE)
 			}
 		}
 		this.rng = seed
@@ -174,7 +174,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 		celt_synthesis(mode, X, out_syn, out_syn_ptrs, this.oldEBands, this.start, effEnd, C, C, 0, LM, this.downsample, 0)
 	} else {
-		fade := Q15ONE
+		fade := Q15ONEQ15ONE
 		pitch_index := 0
 		if this.loss_count == 0 {
 			this.last_pitch_index = celt_plc_pitch_search(this.decode_mem, C)
@@ -260,7 +260,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			} else if S1 < S2 {
 				ratio := celt_sqrt(frac_div32(SHR32(S1, 1)+1, S2+1))
 				for i := 0; i < overlap; i++ {
-					tmp_g := CeltConstants.Q15ONE - MULT16_16_Q15(window[i], Q15ONE-ratio)
+					tmp_g := CeltConstants.Q15ONE - MULT16_16_Q15(window[i], CeltConstants.Q15ONE-ratio)
 					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(tmp_g, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
 				}
 				for i := overlap; i < extrapolation_len; i++ {

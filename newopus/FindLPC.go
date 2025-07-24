@@ -95,7 +95,7 @@ func silk_find_LPC(
 			if isInterpLower == 1 {
 				res_nrg = res_nrg_interp
 				res_nrg_Q = res_nrg_interp_Q
-				psEncC.indices.NLSFInterpCoef_Q2 = int8(k)
+				psEncC.indices.NLSFInterpCoef_Q2 = byte(k)
 			}
 		}
 	}

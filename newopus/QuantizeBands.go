@@ -28,7 +28,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 	var coef, beta int
 
 	if tell+3 <= budget {
-		enc.EncBitLogp(intra, 3)
+		enc.enc_bit_logp(intra, 3)
 	}
 
 	if intra != 0 {
@@ -59,7 +59,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				}
 			}
 			qi0 := qi
-			tell = enc.Tell()
+			tell = enc.tell()
 			bits_left := budget - tell - 3*C*(end-i)
 			if i != start && bits_left < 30 {
 				if bits_left < 24 {
@@ -98,15 +98,16 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				if qi < 0 {
 					val = -val
 				}
-				enc.EncIcdf(val, small_energy_icdf, 2)
+				enc.enc_icdf(val, small_energy_icdf, 2)
 			} else if budget-tell >= 1 {
 				if qi > 0 {
 					qi = 0
 				}
 				if qi < 0 {
-					enc.EncBitLogp(1, 1)
+					enc.enc_bit_logp(1, 1)
+
 				} else {
-					enc.EncBitLogp(0, 1)
+					enc.enc_bit_logp(0, 1)
 				}
 			} else {
 				qi = -1
@@ -136,7 +137,7 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 	intra_bias := (budget * delayedIntra.Val * loss_rate) / (C * 512)
 	new_distortion := loss_distortion(eBands, oldEBands, start, effEnd, m.nbEBands, C)
 
-	tell := enc.Tell()
+	tell := enc.tell()
 	if tell+3 > budget {
 		two_pass = 0
 		intra = 0
@@ -151,7 +152,7 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 	if lfe != 0 {
 		max_decay = 3 << CeltConstants.DB_SHIFT
 	}
-	enc_start_state := enc.Copy()
+	enc_start_state := enc.copy()
 
 	oldEBands_intra := make([][]int16, C)
 	error_intra := make([][]int, C)
@@ -168,7 +169,7 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 
 	if intra == 0 {
 		enc_intra_state := enc.Copy()
-		tell_intra := enc.TellFrac()
+		tell_intra := enc.tell_frac()
 		nstart_bytes := enc_start_state.RangeBytes()
 		nintra_bytes := enc_intra_state.RangeBytes()
 		intra_buf := nstart_bytes
@@ -182,10 +183,10 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 		enc.Assign(enc_start_state)
 		badness2 := quant_coarse_energy_impl(m, start, end, eBands, oldEBands, budget, tell, CeltTables.E_prob_model[LM][0], error, enc, C, LM, 0, max_decay, lfe)
 
-		if two_pass != 0 && (badness1 < badness2 || (badness1 == badness2 && enc.TellFrac()+intra_bias > tell_intra)) {
+		if two_pass != 0 && (badness1 < badness2 || (badness1 == badness2 && enc.tell_frac()+intra_bias > tell_intra)) {
 			enc.Assign(enc_intra_state)
 			if save_bytes > 0 {
-				enc.WriteBuffer(intra_bits, intra_buf, save_bytes)
+				enc.write_buffer(intra_bits, intra_buf, save_bytes)
 			}
 			for c := 0; c < C; c++ {
 				copy(oldEBands[c], oldEBands_intra[c])
@@ -222,7 +223,7 @@ func quant_fine_energy(m *CeltMode, start int, end int, oldEBands [][]int16, err
 			if q2 < 0 {
 				q2 = 0
 			}
-			enc.EncBits(uint32(q2), fine_quant[i])
+			enc.enc_bits(uint32(q2), fine_quant[i])
 			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (CeltConstants.DB_SHIFT - 1))) >> fine_quant[i]
 			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
 			oldEBands[c][i] += int16(offset)
@@ -242,7 +243,7 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int16,
 				if error[c][i] >= 0 {
 					q2 = 1
 				}
-				enc.EncBits(uint32(q2), 1)
+				enc.enc_bits(uint32(q2), 1)
 				offset := (q2<<CeltConstants.DB_SHIFT - (1 << (CeltConstants.DB_SHIFT - 1))) >> (fine_quant[i] + 1)
 				oldEBands[c][i] += int16(offset)
 				bits_left--
@@ -255,7 +256,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 	prob_model := CeltTables.E_prob_model[LM][intra]
 	prev := [2]int{0, 0}
 	var coef, beta int
-	budget := dec.Storage() * 8
+	budget := dec.storage() * 8
 
 	if intra != 0 {
 		coef = 0
@@ -267,7 +268,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 
 	for i := start; i < end; i++ {
 		for c := 0; c < C; c++ {
-			tell := dec.Tell()
+			tell := dec.tell()
 			var qi int
 			if budget-tell >= 15 {
 				pi := 2 * i
@@ -276,13 +277,13 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 				}
 				qi = Laplace.EcLaplaceDecode(dec, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 			} else if budget-tell >= 2 {
-				val := dec.DecIcdf(small_energy_icdf, 2)
+				val := dec.dec_icdf(small_energy_icdf, 2)
 				qi = (val >> 1)
 				if (val & 1) != 0 {
 					qi = -qi
 				}
 			} else if budget-tell >= 1 {
-				qi = -dec.DecBitLogp(1)
+				qi = -dec.dec_bit_logp(1)
 			} else {
 				qi = -1
 			}
@@ -307,7 +308,7 @@ func unquant_fine_energy(m *CeltMode, start int, end int, oldEBands []int16, fin
 			continue
 		}
 		for c := 0; c < C; c++ {
-			q2 := dec.DecBits(fine_quant[i])
+			q2 := dec.dec_bits(fine_quant[i])
 			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (fine_quant[i] - 1))) >> fine_quant[i]
 			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
 			index := i + c*m.nbEBands
@@ -323,7 +324,7 @@ func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16,
 				continue
 			}
 			for c := 0; c < C; c++ {
-				q2 := dec.DecBits(1)
+				q2 := dec.dec_bits(1)
 				offset := (q2<<CeltConstants.DB_SHIFT - (1 << (CeltConstants.DB_SHIFT - 1))) >> (fine_quant[i] + 1)
 				index := i + c*m.nbEBands
 				oldEBands[index] += int16(offset)
@@ -336,7 +337,7 @@ func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16,
 func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]int16, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[c][i] = int16(CeltLog2(int32(bandE[c][i])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[c][i] = int16(celt_log2(int32(bandE[c][i])<<2) - int16(CeltTables.EMeans[i])<<6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[c][i] = -(14 << CeltConstants.DB_SHIFT)
@@ -347,7 +348,7 @@ func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]in
 func amp2Log2Ptr(m *CeltMode, effEnd int, end int, bandE []int16, bandLogE []int16, bandLogEPtr int, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(CeltLog2(int32(bandE[i+c*m.nbEBands])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(celt_log2((bandE[i+c*m.nbEBands])<<2) - int16(CeltTables.EMeans[i])<<6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[bandLogEPtr+c*m.nbEBands+i] = -(14 << CeltConstants.DB_SHIFT)

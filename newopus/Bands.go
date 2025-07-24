@@ -216,7 +216,7 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 				}
 			}
 			if renormalize != 0 {
-				renormalise_vector(X_[c], X, N0<<LM, Q15ONE)
+				renormalise_vector(X_[c], X, N0<<LM, CeltConstants.Q15ONE)
 			}
 		}
 	}
@@ -1112,8 +1112,8 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		}
 
 		if dual_stereo != 0 {
-			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
-			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, effective_lowband, norm2+lowband_ptr, LM, last, norm2+lowband_out_ptr, Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
+			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
+			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, effective_lowband, norm2+lowband_ptr, LM, last, norm2+lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
 		} else {
 			if Y != nil {
 				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N, b, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, lowband_scratch, lowband_scratch_ptr, int(x_cm|y_cm)))

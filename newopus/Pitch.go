@@ -8,7 +8,7 @@ func find_best_pitch(xcorr []int, y []int, len int, max_pitch int, best_pitch []
 	best_den_1 := 0
 	best_pitch[0] = 0
 	best_pitch[1] = 1
-	xshift := Celt_ilog2(maxcorr) - 14
+	xshift := celt_ilog2(maxcorr) - 14
 
 	for j := 0; j < len; j++ {
 		Syy = ADD32(Syy, SHR32(MULT16_16(y[j], y[j]), yshift))
@@ -74,7 +74,7 @@ func celt_fir5(x []int, num []int, y []int, N int, mem []int) {
 
 func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	ac := make([]int, 5)
-	tmp := Q15ONE
+	tmp := CeltConstants.Q15ONE
 	lpc := make([]int, 4)
 	mem := []int{0, 0, 0, 0, 0}
 	lpc2 := make([]int, 5)
@@ -88,7 +88,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	if maxabs < 1 {
 		maxabs = 1
 	}
-	shift := Celt_ilog2(maxabs) - 10
+	shift := celt_ilog2(maxabs) - 10
 	if shift < 0 {
 		shift = 0
 	}
@@ -149,7 +149,7 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 
 	xmax := celt_maxabs32(x_lp4, 0, len>>2)
 	ymax := celt_maxabs32(y_lp4, 0, lag>>2)
-	shift := Celt_ilog2(MAX32(1, MAX32(xmax, ymax))) - 11
+	shift := celt_ilog2(MAX32(1, MAX32(xmax, ymax))) - 11
 	if shift > 0 {
 		for j := 0; j < len>>2; j++ {
 			x_lp4[j] = SHR16(x_lp4[j], shift)
@@ -228,7 +228,7 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 	best_yy := yy
 
 	x2y2 := 1 + HALF32(MULT32_32_Q31(xx, yy))
-	sh := Celt_ilog2(x2y2) >> 1
+	sh := celt_ilog2(x2y2) >> 1
 	t := VSHR32(x2y2, 2*(sh-7))
 	g := VSHR32(MULT16_32_Q15(celt_rsqrt_norm(t), xy), sh+1)
 	g0 := g
@@ -254,7 +254,7 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 		yy = yy_lookup[T1] + yy_lookup[T1b]
 
 		x2y2 = 1 + MULT32_32_Q31(xx, yy)
-		sh = Celt_ilog2(x2y2) >> 1
+		sh = celt_ilog2(x2y2) >> 1
 		t = VSHR32(x2y2, 2*(sh-7))
 		g1 := VSHR32(MULT16_32_Q15(celt_rsqrt_norm(t), xy), sh+1)
 
@@ -280,7 +280,7 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 	}
 
 	best_xy = MAX32(0, best_xy)
-	pg := Q15ONE
+	pg := CeltConstants.Q15ONE
 	if best_yy > best_xy {
 		pg = SHR32(frac_div32(best_xy, best_yy+1), 16)
 	}

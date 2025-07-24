@@ -1023,17 +1023,35 @@ var mdct_twiddles960 = []int16{
 var intensity_thresholds = []int32{1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 36, 44, 50, 56, 62, 67, 72, 79, 88, 106, 134}
 var intensity_histeresis = []int32{1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 4, 5, 6, 8, 8}
 var CeltTables = struct {
-	Tf_select_table [][]int8
-	EMeans          []int8
-	Eband5ms        []int16
-	Band_allocation []int16
-	LogN400         []int16
-	Window120       []int32
+	Tf_select_table      [][]int8
+	EMeans               []int8
+	Eband5ms             []int16
+	Band_allocation      []int16
+	LogN400              []int16
+	Window120            []int32
+	Cache_index50        []int16
+	Cache_bits50         []int16
+	Cache_caps50         []int16
+	Fft_state48000_960_0 *FFTState
+	Fft_state48000_960_1 *FFTState
+	Fft_state48000_960_2 *FFTState
+	Fft_state48000_960_3 *FFTState
+	Mdct_twiddles960     []int16
+	E_prob_model         [][][]int16
 }{
-	Tf_select_table: tf_select_table,
-	EMeans:          eMeans,
-	Eband5ms:        eband5ms,
-	Band_allocation: band_allocation,
-	LogN400:         logN400,
-	Window120:       window120,
+	Tf_select_table:      tf_select_table,
+	EMeans:               eMeans,
+	Eband5ms:             eband5ms,
+	Band_allocation:      band_allocation,
+	LogN400:              logN400,
+	Window120:            window120,
+	Cache_index50:        cache_index50,
+	Cache_bits50:         cache_bits50,
+	Cache_caps50:         cache_caps50,
+	Fft_state48000_960_0: fft_state48000_960_0,
+	Fft_state48000_960_1: fft_state48000_960_1,
+	Fft_state48000_960_2: fft_state48000_960_2,
+	Fft_state48000_960_3: fft_state48000_960_3,
+	Mdct_twiddles960:     mdct_twiddles960,
+	E_prob_model:         e_prob_model,
 }

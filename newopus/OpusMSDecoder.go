@@ -30,7 +30,7 @@ func (this *OpusMSDecoder) opus_multistream_decoder_init(Fs int, channels int, s
 	for i := 0; i < this.layout.nb_channels; i++ {
 		this.layout.mapping[i] = mapping[i]
 	}
-	if OpusMultistream_validate_layout(&this.layout) == 0 {
+	if validate_layout(this.layout) == 0 {
 		return OpusError.OPUS_BAD_ARG
 	}
 
@@ -79,12 +79,12 @@ func opus_multistream_packet_validate(data []byte, data_ptr int, len int, nb_str
 			return OpusError.OPUS_INVALID_PACKET
 		}
 
-		count := OpusPacketInfo_opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), toc, nil, 0, size, 0, dummy, packet_offset)
+		count := opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), toc, nil, 0, size, 0, dummy, packet_offset)
 		if count < 0 {
 			return count
 		}
 
-		tmp_samples := OpusPacketInfo_getNumSamples(data, data_ptr, packet_offset.Val, Fs)
+		tmp_samples := GetNumSamples(data, data_ptr, packet_offset.Val, Fs)
 		if s != 0 && samples != tmp_samples {
 			return OpusError.OPUS_INVALID_PACKET
 		}
@@ -140,7 +140,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 		if s < this.layout.nb_coupled_streams {
 			prev := -1
 			for {
-				_chan := OpusMultistream_get_left_channel(&this.layout, s, prev)
+				_chan := get_left_channel(this.layout, s, prev)
 				if _chan == -1 {
 					break
 				}
@@ -149,7 +149,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 			}
 			prev = -1
 			for {
-				_chan := get_right_channel(&this.layout, s, prev)
+				_chan := get_right_channel(this.layout, s, prev)
 				if _chan == -1 {
 					break
 				}

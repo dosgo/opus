@@ -1,21 +1,21 @@
 package opus
 
 func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
-	ret := SILK_NO_ERROR
+	ret := SilkError.SILK_NO_ERROR
 	encState.Reset()
 	for n := 0; n < ENCODER_NUM_CHANNELS; n++ {
 		ret += silk_init_encoder(encState.state_Fxx[n])
-		OpusAssert(ret == SILK_NO_ERROR)
+		OpusAssert(ret == SilkError.SILK_NO_ERROR)
 	}
 	encState.nChannelsAPI = 1
 	encState.nChannelsInternal = 1
 	ret += silk_QueryEncoder(encState, encStatus)
-	OpusAssert(ret == SILK_NO_ERROR)
+	OpusAssert(ret == SilkError.SILK_NO_ERROR)
 	return ret
 }
 
 func silk_QueryEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
-	ret := SILK_NO_ERROR
+	ret := SilkError.SILK_NO_ERROR
 	state_Fxx := encState.state_Fxx[0]
 	encStatus.Reset()
 	encStatus.nChannelsAPI = encState.nChannelsAPI
@@ -49,7 +49,7 @@ func silk_Encode(
 	psRangeEnc *EntropyCoder,
 	nBytesOut *int,
 	prefillFlag int) int {
-	ret := SILK_NO_ERROR
+	ret := SilkError.SILK_NO_ERROR
 	var n, i, nBits, flags, tmp_payloadSize_ms, tmp_complexity int
 	var nSamplesToBuffer, nSamplesToBufferMax, nBlocksOf10ms int
 	var nSamplesFromInput, nSamplesFromInputMax int
@@ -68,7 +68,7 @@ func silk_Encode(
 	psEnc.state_Fxx[1].nFramesEncoded = 0
 
 	ret += encControl.check_control_input()
-	if ret != SILK_NO_ERROR {
+	if ret != SilkError.SILK_NO_ERROR {
 		OpusAssert(false)
 		return ret
 	}
@@ -418,7 +418,7 @@ func silk_Encode(
 					}
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)
-					OpusAssert(ret == SILK_NO_ERROR)
+					OpusAssert(ret == SilkError.SILK_NO_ERROR)
 				}
 
 				psEnc.state_Fxx[n].controlled_since_last_payload = 0

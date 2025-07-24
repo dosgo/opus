@@ -222,7 +222,7 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 	st.application = application
 	st.variable_duration = OPUS_FRAMESIZE_ARG
 	copy(st.layout.mapping[:], mapping)
-	if validate_layout(&st.layout) == 0 || validate_encoder_layout(&st.layout) == 0 {
+	if validate_layout(st.layout) == 0 || validate_encoder_layout(&st.layout) == 0 {
 		return OpusError.OPUS_BAD_ARG
 	}
 
@@ -511,7 +511,7 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 			}
 			c1, c2 = left, right
 		} else {
-			_chan := get_mono_channel(&st.layout, s, -1)
+			_chan := get_mono_channel(st.layout, s, -1)
 			opus_copy_channel_in_short(buf, 0, 1, pcm, pcm_ptr, st.layout.nb_channels, _chan, frame_size)
 			encoder_ptr++
 			if st.surround != 0 {

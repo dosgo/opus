@@ -450,10 +450,10 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 		return OpusError.OPUS_BAD_ARG
 	}
 
-	packet_mode = getEncoderMode(data, data_ptr)
-	packet_bandwidth = getBandwidth(data, data_ptr)
+	packet_mode = GetEncoderMode(data, data_ptr)
+	packet_bandwidth = GetBandwidth(data, data_ptr)
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
-	packet_stream_channels = getNumEncodedChannels(data, data_ptr)
+	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
 
 	var toc byte
 	count = opus_packet_parse_impl(data, data_ptr, len, self_delimited, &toc, nil, 0, size, 0, &offset, packet_offset)

@@ -108,7 +108,7 @@ func (this *CeltEncoder) ResetState() {
 	this.PartialReset()
 
 	this.in_mem = InitTwoDimensionalArrayInt(this.channels, this.mode.overlap)
-	this.prefilter_mem = InitTwoDimensionalArrayInt(this.channels, COMBFILTER_MAXPERIOD)
+	this.prefilter_mem = InitTwoDimensionalArrayInt(this.channels, CeltConstants.COMBFILTER_MAXPERIOD)
 	this.oldBandE = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
 	this.oldLogE = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
 	this.oldLogE2 = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
@@ -255,9 +255,9 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		}
 		copy(input[c][:overlap], this.in_mem[c])
 		if offset != 0 {
-			CeltCommon_comb_filter(input[c][:overlap], overlap, pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], CeltConstants.COMBFILTER_MAXPERIOD, this.prefilter_period, this.prefilter_period, offset, -this.prefilter_gain, -this.prefilter_gain, this.prefilter_tapset, this.prefilter_tapset, nil, 0)
+			comb_filter(input[c][:overlap], overlap, pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], CeltConstants.COMBFILTER_MAXPERIOD, this.prefilter_period, this.prefilter_period, offset, -this.prefilter_gain, -this.prefilter_gain, this.prefilter_tapset, this.prefilter_tapset, nil, 0)
 		}
-		CeltCommon_comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][CeltConstants.COMBFILTER_MAXPERIOD+offset:], COMBFILTER_MAXPERIOD+offset, this.prefilter_period, *pitch, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
+		comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][CeltConstants.COMBFILTER_MAXPERIOD+offset:], COMBFILTER_MAXPERIOD+offset, this.prefilter_period, *pitch, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
 		copy(this.in_mem[c], input[c][N:N+overlap])
 		if N > CeltConstants.COMBFILTER_MAXPERIOD {
 			copy(prefilter_mem[c], pre[c][N:N+CeltConstants.COMBFILTER_MAXPERIOD])

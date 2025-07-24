@@ -680,6 +680,8 @@ var SilkTables = struct {
 	Silk_uniform6_iCDF                  []int16
 	Silk_uniform4_iCDF                  []int16
 	Silk_shell_code_table_offsets       []int16
+	Silk_lsb_iCDF                       []int16
+	Silk_gain_iCDF                      [][]int16
 }{
 	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
@@ -713,4 +715,6 @@ var SilkTables = struct {
 	Silk_uniform6_iCDF:                  silk_uniform6_iCDF,
 	Silk_uniform4_iCDF:                  silk_uniform4_iCDF,
 	Silk_shell_code_table_offsets:       silk_shell_code_table_offsets,
+	Silk_lsb_iCDF:                       silk_lsb_iCDF,
+	Silk_gain_iCDF:                      silk_gain_iCDF,
 }

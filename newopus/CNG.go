@@ -96,7 +96,7 @@ func silk_CNG(
 		psCNG.rand_seed = seed
 
 		A_Q12 := make([]int16, psDec.LPC_order)
-		NLSF_silk_NLSF2A(A_Q12, psCNG.CNG_smth_NLSF_Q15, psDec.LPC_order)
+		silk_NLSF2A(A_Q12, psCNG.CNG_smth_NLSF_Q15, psDec.LPC_order)
 
 		copy(CNG_sig_Q10[0:MAX_LPC_ORDER], psCNG.CNG_synth_state)
 

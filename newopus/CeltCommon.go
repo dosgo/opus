@@ -317,7 +317,7 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 		logp = 4
 	}
 	budget := enc.storage * 8
-	tell := enc.Tell()
+	tell := enc.tell()
 	if LM > 0 && tell+logp+1 <= budget {
 		tf_select_rsv = 1
 	}
@@ -325,8 +325,8 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 
 	for i := start; i < end; i++ {
 		if tell+logp <= budget {
-			enc.EncBitLogp(tf_res[i]^curr, logp)
-			tell = enc.Tell()
+			enc.enc_bit_logp(tf_res[i]^curr, logp)
+			tell = enc.tell()
 			curr = tf_res[i]
 			if curr != 0 {
 				tf_changed = 1
@@ -342,7 +342,7 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 	}
 
 	if tf_select_rsv != 0 && CeltTables.Tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables.Tf_select_table[LM][4*isTransient+2+tf_changed] {
-		enc.EncBitLogp(tf_select, 1)
+		enc.enc_bit_logp(tf_select, 1)
 	} else {
 		tf_select = 0
 	}
@@ -614,18 +614,18 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 
 			if width < 6 {
 				boost = follower[0][i] >> CeltConstants.DB_SHIFT
-				boost_bits = boost * width << EntropyCoder_BITRES
+				boost_bits = boost * width << BITRES
 			} else if width > 48 {
 				boost = (follower[0][i] * 8) >> CeltConstants.DB_SHIFT
-				boost_bits = (boost * width << EntropyCoder_BITRES) / 8
+				boost_bits = (boost * width << BITRES) / 8
 			} else {
 				boost = (follower[0][i] * width) / (6 << CeltConstants.DB_SHIFT)
-				boost_bits = boost * 6 << EntropyCoder_BITRES
+				boost_bits = boost * 6 << BITRES
 			}
 
 			if (vbr == 0 || (constrained_vbr != 0 && isTransient == 0)) && (tot_boost+boost_bits)>>(EntropyCoder_BITRES+3) > effectiveBytes/4 {
-				cap := (effectiveBytes / 4) << (EntropyCoder_BITRES + 3)
-				offsets[i] = (cap - tot_boost) >> EntropyCoder_BITRES
+				cap := (effectiveBytes / 4) << (BITRES + 3)
+				offsets[i] = (cap - tot_boost) >> BITRES
 				tot_boost = cap
 				break
 			} else {
@@ -703,7 +703,7 @@ func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []i
 	}
 
 	if CC == 2 && C == 1 {
-		Bands_denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
+		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
 		freq2 := out_syn_ptrs[1] + overlap/2
 		copy(out_syn[1][freq2:freq2+N], freq)
 		for b := 0; b < B; b++ {
@@ -714,19 +714,19 @@ func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []i
 		}
 	} else if CC == 1 && C == 2 {
 		freq2 := out_syn_ptrs[0] + overlap/2
-		Bands_denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
-		Bands_denormalise_bands(mode, X[1], out_syn[0], freq2, oldBandE, nbEBands, start, effEnd, M, downsample, silence)
+		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
+		denormalise_bands(mode, X[1], out_syn[0], freq2, oldBandE, nbEBands, start, effEnd, M, downsample, silence)
 		for i := 0; i < N; i++ {
 			freq[i] = (freq[i] + out_syn[0][freq2+i]) / 2
 		}
 		for b := 0; b < B; b++ {
-			MDCT_clt_mdct_backward(mode.mdct, freq, b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
+			clt_mdct_backward(mode.mdct, freq, b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
 		}
 	} else {
 		for c := 0; c < CC; c++ {
-			Bands_denormalise_bands(mode, X[c], freq, 0, oldBandE, c*nbEBands, start, effEnd, M, downsample, silence)
+			denormalise_bands(mode, X[c], freq, 0, oldBandE, c*nbEBands, start, effEnd, M, downsample, silence)
 			for b := 0; b < B; b++ {
-				MDCT_clt_mdct_backward(mode.mdct, freq, b, out_syn[c], out_syn_ptrs[c]+NB*b, mode.window, overlap, shift, B)
+				clt_mdct_backward(mode.mdct, freq, b, out_syn[c], out_syn_ptrs[c]+NB*b, mode.window, overlap, shift, B)
 			}
 		}
 	}
@@ -744,7 +744,7 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 		logp = 4
 	}
 	budget := dec.storage * 8
-	tell := dec.Tell()
+	tell := dec.tell()
 	if LM > 0 && tell+logp+1 <= budget {
 		tf_select_rsv = 1
 	}
@@ -752,12 +752,12 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 
 	for i := start; i < end; i++ {
 		if tell+logp <= budget {
-			bit := dec.DecBitLogp(logp)
+			bit := dec.dec_bit_logp(logp)
 			curr ^= bit
 			if bit != 0 {
 				tf_changed = 1
 			}
-			tell = dec.Tell()
+			tell = dec.tell()
 		}
 		tf_res[i] = curr
 		if isTransient != 0 {
@@ -768,7 +768,7 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 	}
 
 	if tf_select_rsv != 0 && CeltTables.Tf_select_table[LM][4*isTransient+0+tf_changed] != CeltTables.Tf_select_table[LM][4*isTransient+2+tf_changed] {
-		tf_select = dec.DecBitLogp(1)
+		tf_select = dec.dec_bit_logp(1)
 	}
 
 	for i := start; i < end; i++ {

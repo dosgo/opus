@@ -116,7 +116,7 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 	}
 
 	copy(delayBufPtr[:S.inputDelay], input[input_ptr+inLen-S.inputDelay:input_ptr+inLen])
-	return SILK_NO_ERROR
+	return SilkError.SILK_NO_ERROR
 }
 
 func silk_resampler_down2(S []int32, output []int16, input []int16, inLen int) {

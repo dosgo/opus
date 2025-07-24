@@ -34,7 +34,7 @@ func silk_encode_pulses(
 	}
 
 	OpusAssert(1<<SilkConstants.LOG2_SHELL_CODEC_FRAME_LENGTH == SilkConstants.SHELL_CODEC_FRAME_LENGTH)
-	iter = int(silk_RSHIFT(int32(frame_length), int32(SilkConstants.LOG2_SHELL_CODEC_FRAME_LENGTH)))
+	iter = int(silk_RSHIFT(int(frame_length), int(SilkConstants.LOG2_SHELL_CODEC_FRAME_LENGTH)))
 	if iter*SilkConstants.SHELL_CODEC_FRAME_LENGTH < frame_length {
 		OpusAssert(frame_length == 12*10)
 		iter++
@@ -90,7 +90,7 @@ func silk_encode_pulses(
 			if scale_down != 0 {
 				nRshifts[i]++
 				for k = abs_pulses_ptr; k < abs_pulses_ptr+SilkConstants.SHELL_CODEC_FRAME_LENGTH; k++ {
-					abs_pulses[k] = int(silk_RSHIFT(int32(abs_pulses[k]), 1))
+					abs_pulses[k] = int(silk_RSHIFT((abs_pulses[k]), 1))
 				}
 			} else {
 				break
@@ -132,7 +132,7 @@ func silk_encode_pulses(
 
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
-			ShellCoder_silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
+			silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
 		}
 	}
 
@@ -149,13 +149,13 @@ func silk_encode_pulses(
 				}
 				for j = nLS; j > 0; j-- {
 					bit = (abs_q >> j) & 1
-					psRangeEnc.enc_icdf(bit, SilkTables_silk_lsb_iCDF, 8)
+					psRangeEnc.enc_icdf(bit, SilkTables.Silk_lsb_iCDF, 8)
 				}
 				bit = abs_q & 1
-				psRangeEnc.enc_icdf(bit, SilkTables_silk_lsb_iCDF, 8)
+				psRangeEnc.enc_icdf(bit, SilkTables.Silk_lsb_iCDF, 8)
 			}
 		}
 	}
 
-	CodeSigns_silk_encode_signs(psRangeEnc, pulses, frame_length, signalType, quantOffsetType, sum_pulses)
+	silk_encode_signs(psRangeEnc, pulses, frame_length, signalType, quantOffsetType, sum_pulses)
 }

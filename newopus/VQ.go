@@ -57,7 +57,7 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 }
 
 func normalise_residual(iy []int, X []int, X_ptr int, N int, Ryy int, gain int) {
-	k := Celt_ilog2(Ryy) >> 1
+	k := celt_ilog2(Ryy) >> 1
 	t := VSHR32(Ryy, 2*(k-7))
 	g := MULT16_16_P15(Celt_rsqrt_norm(t), gain)
 	for i := 0; i < N; i++ {
@@ -148,7 +148,7 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 		best_id := 0
 		best_num := -CeltConstants.VERY_LARGE16
 		best_den := 0
-		rshift := 1 + Celt_ilog2(K-pulsesLeft+i+1)
+		rshift := 1 + celt_ilog2(K-pulsesLeft+i+1)
 		yy = ADD16(yy, 1)
 		for j := 0; j < N; j++ {
 			Rxy := EXTRACT16(SHR32(ADD32(xy, EXTEND32(X[X_ptr+j])), rshift))
