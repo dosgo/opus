@@ -489,104 +489,6 @@ func silk_P_Ana_calc_energy_st3(energies_st3 []*silk_pe_stage3_vals, frame []int
 	}
 }
 
-// Helper functions (from Inlines, Resampler, CeltPitchXCorr, etc.)
-func silk_ADD_SAT32(a, b int32) int32 {
-	if int64(a)+int64(b) > 0x7FFFFFFF {
-		return 0x7FFFFFFF
-	} else if int64(a)+int64(b) < -0x80000000 {
-		return -0x80000000
-	}
-	return a + b
-}
-
-func silk_RSHIFT(a, shift int) int {
-	if shift > 0 {
-		return a >> uint(shift)
-	}
-	return a
-}
-
-func silk_LSHIFT(a, shift int) int {
-	return a << uint(shift)
-}
-
-func silk_SMULBB(a, b int) int {
-	return int(int16(a)) * int(int16(b))
-}
-
-func silk_inner_prod_self(buf []int16, start, len int) int32 {
-	var sum int64
-	for i := 0; i < len; i++ {
-		sum += int64(buf[start+i]) * int64(buf[start+i])
-	}
-	return int32(silk_SAT32(sum))
-}
-
-func silk_inner_prod(buf1 []int16, start1 int, buf2 []int16, start2 int, len int) int32 {
-	var sum int64
-	for i := 0; i < len; i++ {
-		sum += int64(buf1[start1+i]) * int64(buf2[start2+i])
-	}
-	return int32(silk_SAT32(sum))
-}
-
-func silk_SAT32(a int64) int64 {
-	if a > 0x7FFFFFFF {
-		return 0x7FFFFFFF
-	} else if a < -0x80000000 {
-		return -0x80000000
-	}
-	return a
-}
-
-func silk_ADD32(a, b int32) int32 {
-	return a + b
-}
-
-func silk_DIV32_16(a int32, b int16) int32 {
-	return a / int32(b)
-}
-
-func silk_lin2log(lag int) int {
-	return 0
-}
-
-func silk_LIMIT(a, min, max int) int {
-	if a < min {
-		return min
-	} else if a > max {
-		return max
-	}
-	return a
-}
-
-func silk_LIMIT_int(a, min, max int) int {
-	if a < min {
-		return min
-	} else if a > max {
-		return max
-	}
-	return a
-}
-
-func silk_max_int(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func silk_min_int(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func silk_MUL(a, b int) int {
-	return a * b
-}
-
 func pitch_xcorr(target []int16, t_start int, basis []int16, b_start int, xcorr []int32, len int, max_lag int) {
 	for lag := 0; lag < max_lag; lag++ {
 		var sum int64
@@ -594,21 +496,6 @@ func pitch_xcorr(target []int16, t_start int, basis []int16, b_start int, xcorr 
 			sum += int64(target[t_start+i]) * int64(basis[b_start+i-lag])
 		}
 		xcorr[lag] = int32(silk_SAT32(sum))
-	}
-}
-
-func silk_insertion_sort_decreasing_int16(a []int16, idx []int, stride, len int) {
-	for i := 1; i < len; i++ {
-		value := a[i*stride]
-		pos := idx[i]
-		j := i - 1
-		for j >= 0 && a[j*stride] < value {
-			a[(j+1)*stride] = a[j*stride]
-			idx[j+1] = idx[j]
-			j--
-		}
-		a[(j+1)*stride] = value
-		idx[j+1] = pos
 	}
 }
 

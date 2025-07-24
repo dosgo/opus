@@ -52,7 +52,7 @@ func (c *CorrelateMatrix) silk_corrMatrix(
 
 	boxed_energy := &BoxedValueInt{Val: 0}
 	boxed_rshifts_local := &BoxedValueInt{Val: 0}
-	silk_sum_sqr_shift5(boxed_energy, boxed_rshifts_local, x, x_ptr, L+order-1)
+	silk_sum_sqr_shift(boxed_energy, boxed_rshifts_local, x, x_ptr, L+order-1)
 	energy = boxed_energy.Val
 	rshifts_local = boxed_rshifts_local.Val
 

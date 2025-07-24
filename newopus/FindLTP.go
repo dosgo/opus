@@ -25,7 +25,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int32, LTPredCodGain_Q7 *int32, r_lpc [
 		lag_ptr := r_ptr - int(lag[k]) - LTP_ORDER/2
 		var rr_val int32
 		var rr_shift int32
-		silk_sum_sqr_shift4(&rr_val, &rr_shift, r_lpc[r_ptr:], subfr_length)
+		silk_sum_sqr_shift(&rr_val, &rr_shift, r_lpc[r_ptr:], subfr_length)
 		rr[k] = rr_val
 		rr_shifts = int(rr_shift)
 
