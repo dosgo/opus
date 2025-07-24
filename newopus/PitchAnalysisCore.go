@@ -240,7 +240,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		prevLag_log2_Q7 = 0
 	}
 
-	var Lag_CB_ptr [][]byte
+	var Lag_CB_ptr [][]int8
 	nb_cbk_search := 0
 	if nb_subfr == PE_MAX_NB_SUBFR {
 		Lag_CB_ptr = silk_CB_lags_stage2
@@ -488,24 +488,3 @@ func silk_P_Ana_calc_energy_st3(energies_st3 []*silk_pe_stage3_vals, frame []int
 		target_ptr += sf_length
 	}
 }
-
-func pitch_xcorr(target []int16, t_start int, basis []int16, b_start int, xcorr []int32, len int, max_lag int) {
-	for lag := 0; lag < max_lag; lag++ {
-		var sum int64
-		for i := 0; i < len; i++ {
-			sum += int64(target[t_start+i]) * int64(basis[b_start+i-lag])
-		}
-		xcorr[lag] = int32(silk_SAT32(sum))
-	}
-}
-
-func silk_resampler_down2(state []int32, out, in []int16, len int)   {}
-func silk_resampler_down2_3(state []int32, out, in []int16, len int) {}
-
-var silk_CB_lags_stage2 = [][]byte{}
-var silk_CB_lags_stage2_10_ms = [][]byte{}
-var silk_nb_cbk_searchs_stage3 = []byte{}
-var silk_CB_lags_stage3 = [][]byte{}
-var silk_CB_lags_stage3_10_ms = [][]byte{}
-var silk_Lag_range_stage3 = [][][]byte{}
-var silk_Lag_range_stage3_10_ms = [][][]byte{}

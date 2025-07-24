@@ -22,7 +22,7 @@ products derived from this software without specific prior written
 permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+“AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
 OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
@@ -34,6 +34,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package opus
+
 type OpusFramesize int
 
 const (
@@ -57,11 +58,11 @@ const (
 	OPUS_FRAMESIZE_VARIABLE
 )
 
-type OpusFramesizeHelpers struct{}
+type opusFramesizeHelpers struct{}
 
-var OpusFramesizeHelpers = &OpusFramesizeHelpers{}
+var OpusFramesizeHelpers = &opusFramesizeHelpers{}
 
-func (o *OpusFramesizeHelpers) GetOrdinal(size OpusFramesize) int {
+func (o *opusFramesizeHelpers) GetOrdinal(size OpusFramesize) int {
 	switch size {
 	case OPUS_FRAMESIZE_ARG:
 		return 1

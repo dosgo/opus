@@ -1,4 +1,5 @@
 package opus
+
 type EncControlState struct {
 	nChannelsAPI              int
 	nChannelsInternal         int
@@ -69,46 +70,46 @@ func (s *EncControlState) check_control_input() int {
 		(s.minInternalSampleRate > s.desiredInternalSampleRate) ||
 		(s.maxInternalSampleRate < s.desiredInternalSampleRate) ||
 		(s.minInternalSampleRate > s.maxInternalSampleRate) {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_FS_NOT_SUPPORTED
 	}
 	if s.payloadSize_ms != 10 &&
 		s.payloadSize_ms != 20 &&
 		s.payloadSize_ms != 40 &&
 		s.payloadSize_ms != 60 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_PACKET_SIZE_NOT_SUPPORTED
 	}
 	if s.packetLossPercentage < 0 || s.packetLossPercentage > 100 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_LOSS_RATE
 	}
 	if s.useDTX < 0 || s.useDTX > 1 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_DTX_SETTING
 	}
 	if s.useCBR < 0 || s.useCBR > 1 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_CBR_SETTING
 	}
 	if s.useInBandFEC < 0 || s.useInBandFEC > 1 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_INBAND_FEC_SETTING
 	}
 	if s.nChannelsAPI < 1 || s.nChannelsAPI > SilkConstants.ENCODER_NUM_CHANNELS {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_NUMBER_OF_CHANNELS_ERROR
 	}
 	if s.nChannelsInternal < 1 || s.nChannelsInternal > SilkConstants.ENCODER_NUM_CHANNELS {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_NUMBER_OF_CHANNELS_ERROR
 	}
 	if s.nChannelsInternal > s.nChannelsAPI {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_NUMBER_OF_CHANNELS_ERROR
 	}
 	if s.complexity < 0 || s.complexity > 10 {
-		Inlines.OpusAssert(false)
+		OpusAssert(false)
 		return SilkError.SILK_ENC_INVALID_COMPLEXITY_SETTING
 	}
 

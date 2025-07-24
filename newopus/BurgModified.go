@@ -221,13 +221,3 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 		*res_nrg_Q = int32(-rshifts)
 	}
 }
-
-func pitch_xcorr(x []int16, x_offset int, y []int16, y_offset int, xcorr []int32, len int, max_pitch int) {
-	for k := 0; k < max_pitch; k++ {
-		sum := int64(0)
-		for i := 0; i < len; i++ {
-			sum += int64(x[x_offset+i]) * int64(y[y_offset+k+i])
-		}
-		xcorr[k] = int32(sum)
-	}
-}

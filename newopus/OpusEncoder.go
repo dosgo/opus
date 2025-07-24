@@ -5,48 +5,6 @@ import (
 	"math"
 )
 
-type OpusFramesize int
-
-const (
-	OPUS_FRAMESIZE_UNKNOWN OpusFramesize = iota
-	OPUS_FRAMESIZE_ARG
-	OPUS_FRAMESIZE_2_5_MS
-	OPUS_FRAMESIZE_5_MS
-	OPUS_FRAMESIZE_10_MS
-	OPUS_FRAMESIZE_20_MS
-	OPUS_FRAMESIZE_40_MS
-	OPUS_FRAMESIZE_60_MS
-	OPUS_FRAMESIZE_VARIABLE
-)
-
-type EncControlState struct {
-	nChannelsAPI              int
-	nChannelsInternal         int
-	API_sampleRate            int
-	maxInternalSampleRate     int
-	minInternalSampleRate     int
-	desiredInternalSampleRate int
-	payloadSize_ms            int
-	bitRate                   int
-	packetLossPercentage      int
-	complexity                int
-	useInBandFEC              int
-	useDTX                    int
-	useCBR                    int
-	reducedDependency         int
-	allowBandwidthSwitch      int
-	opusCanSwitch             int
-	internalSampleRate        int
-	toMono                    int
-	stereoWidth_Q14           int
-	inWBmodeWithoutVariableLP int
-	switchReady               int
-}
-
-func (e *EncControlState) Reset() {
-	*e = EncControlState{}
-}
-
 type OpusEncoder struct {
 	silk_mode               EncControlState
 	application             OpusApplication

@@ -35,39 +35,39 @@ func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	var A_Q28 [2]int32
 	var Fc_Q19, r_Q28, r_Q22 int32
 
-	Inlines_OpusAssert(cutoff_Hz <= 2147483647/((int32)((1.5*3.14159/1000)*(1<<19)+0.5)))
-	Fc_Q19 = Inlines_silk_DIV32_16(Inlines_silk_SMULBB((int32)((1.5*3.14159/1000)*(1<<19)+0.5, int32(cutoff_Hz)), int32(Fs/1000)))
-	Inlines_OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
+	OpusAssert(cutoff_Hz <= 2147483647/((int32)((1.5*3.14159/1000)*(1<<19)+0.5)))
+	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int32)((1.5*3.14159/1000)*(1<<19)+0.5, int32(cutoff_Hz)), int32(Fs/1000)))
+	OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
 
-	r_Q28 = (int32)((1.0)*(1<<28)+0.5) - Inlines_silk_MUL((int32)((0.92)*(1<<9)+0.5), Fc_Q19)
+	r_Q28 = (int32)((1.0)*(1<<28)+0.5) - silk_MUL((int32)((0.92)*(1<<9)+0.5), Fc_Q19)
 
 	B_Q28[0] = r_Q28
-	B_Q28[1] = Inlines_silk_LSHIFT(-r_Q28, 1)
+	B_Q28[1] = silk_LSHIFT(-r_Q28, 1)
 	B_Q28[2] = r_Q28
 
-	r_Q22 = Inlines_silk_RSHIFT(r_Q28, 6)
-	A_Q28[0] = Inlines_silk_SMULWW(r_Q22, Inlines_silk_SMULWW(Fc_Q19, Fc_Q19)-(int32)((2.0)*(1<<22)+0.5))
-	A_Q28[1] = Inlines_silk_SMULWW(r_Q22, r_Q22)
+	r_Q22 = silk_RSHIFT(r_Q28, 6)
+	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-(int32)((2.0)*(1<<22)+0.5))
+	A_Q28[1] = silk_SMULWW(r_Q22, r_Q22)
 
-	Filters_silk_biquad_alt(input, input_ptr, B_Q28[:], A_Q28[:], hp_mem, 0, output, output_ptr, len, channels)
+	silk_biquad_alt(input, input_ptr, B_Q28[:], A_Q28[:], hp_mem, 0, output, output_ptr, len, channels)
 	if channels == 2 {
-		Filters_silk_biquad_alt(input, input_ptr+1, B_Q28[:], A_Q28[:], hp_mem, 2, output, output_ptr+1, len, channels)
+		silk_biquad_alt(input, input_ptr+1, B_Q28[:], A_Q28[:], hp_mem, 2, output, output_ptr+1, len, channels)
 	}
 }
 
 func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int32, len int, channels int, Fs int) {
 	var shift int
 
-	shift = Inlines_celt_ilog2(Fs / (cutoff_Hz * 3))
+	shift = celt_ilog2(Fs / (cutoff_Hz * 3))
 	for c := 0; c < channels; c++ {
 		for i := 0; i < len; i++ {
 			var x, tmp, y int32
-			x = Inlines_SHL32(Inlines_EXTEND32(int32(input[channels*i+c+input_ptr])), 15)
+			x = SHL32(EXTEND32(int32(input[channels*i+c+input_ptr])), 15)
 			tmp = x - hp_mem[2*c]
-			hp_mem[2*c] = hp_mem[2*c] + Inlines_PSHR32(x-hp_mem[2*c], shift)
+			hp_mem[2*c] = hp_mem[2*c] + PSHR32(x-hp_mem[2*c], shift)
 			y = tmp - hp_mem[2*c+1]
-			hp_mem[2*c+1] = hp_mem[2*c+1] + Inlines_PSHR32(tmp-hp_mem[2*c+1], shift)
-			output[channels*i+c+output_ptr] = int16(Inlines_EXTRACT16(Inlines_SATURATE(Inlines_PSHR32(y, 15), 32767)))
+			hp_mem[2*c+1] = hp_mem[2*c+1] + PSHR32(tmp-hp_mem[2*c+1], shift)
+			output[channels*i+c+output_ptr] = int16(EXTRACT16(SATURATE(PSHR32(y, 15), 32767)))
 		}
 	}
 }
@@ -268,9 +268,9 @@ func frame_size_select(frame_size int, variable_duration OpusFramesize, Fs int) 
 		new_size = frame_size
 	} else if variable_duration == OPUS_FRAMESIZE_VARIABLE {
 		new_size = Fs / 50
-	} else if OpusFramesizeHelpers_GetOrdinal(variable_duration) >= OpusFramesizeHelpers_GetOrdinal(OPUS_FRAMESIZE_2_5_MS) &&
-		OpusFramesizeHelpers_GetOrdinal(variable_duration) <= OpusFramesizeHelpers_GetOrdinal(OPUS_FRAMESIZE_60_MS) {
-		new_size = Inlines_IMIN(3*Fs/50, (Fs/400)<<(OpusFramesizeHelpers_GetOrdinal(variable_duration)-OpusFramesizeHelpers_GetOrdinal(OPUS_FRAMESIZE_2_5_MS)))
+	} else if OpusFramesizeHelpers.GetOrdinal(variable_duration) >= OpusFramesizeHelpers.GetOrdinal(OPUS_FRAMESIZE_2_5_MS) &&
+		OpusFramesizeHelpers.GetOrdinal(variable_duration) <= OpusFramesizeHelpers.GetOrdinal(OPUS_FRAMESIZE_60_MS) {
+		new_size = IMIN(3*Fs/50, (Fs/400)<<(OpusFramesizeHelpers.GetOrdinal(variable_duration)-OpusFramesizeHelpers.GetOrdinal(OPUS_FRAMESIZE_2_5_MS)))
 	} else {
 		return -1
 	}
@@ -330,13 +330,13 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 
 		x = int32(pcm[p2i+6])
 		y = int32(pcm[p2i+7])
-		pxx += Inlines_SHR32(Inlines_MULT16_16(x, x), 2)
-		pxy += Inlines_SHR32(Inlines_MULT16_16(x, y), 2)
-		pyy += Inlines_SHR32(Inlines_MULT16_16(y, y), 2)
+		pxx += SHR32(Inlines_MULT16_16(x, x), 2)
+		pxy += SHR32(Inlines_MULT16_16(x, y), 2)
+		pyy += SHR32(Inlines_MULT16_16(y, y), 2)
 
-		xx += Inlines_SHR32(pxx, 10)
-		xy += Inlines_SHR32(pxy, 10)
-		yy += Inlines_SHR32(pyy, 10)
+		xx += SHR32(pxx, 10)
+		xy += SHR32(pxy, 10)
+		yy += SHR32(pyy, 10)
 	}
 
 	mem.XX += Inlines_MULT16_32_Q15(int32(short_alpha), xx-mem.XX)
