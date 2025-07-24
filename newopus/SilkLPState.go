@@ -14,8 +14,8 @@ func (s *SilkLPState) Reset() {
 }
 
 func (s *SilkLPState) silk_LP_variable_cutoff(frame []int16, frame_ptr int, frame_length int) {
-	var B_Q28 []int
-	var A_Q28 []int
+	var B_Q28 []int32
+	var A_Q28 []int32
 	fac_Q16 := 0
 	ind := 0
 
@@ -29,8 +29,8 @@ func (s *SilkLPState) silk_LP_variable_cutoff(frame []int16, frame_ptr int, fram
 		OpusAssert(ind >= 0)
 		OpusAssert(ind < TRANSITION_INT_NUM)
 
-		B_Q28 = make([]int, TRANSITION_NB)
-		A_Q28 = make([]int, TRANSITION_NA)
+		B_Q28 = make([]int32, TRANSITION_NB)
+		A_Q28 = make([]int32, TRANSITION_NA)
 		silk_LP_interpolate_filter_taps(B_Q28, A_Q28, ind, fac_Q16)
 
 		s.transition_frame_no = silk_LIMIT(s.transition_frame_no+s.mode, 0, TRANSITION_FRAMES)

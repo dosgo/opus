@@ -7,7 +7,7 @@ type SilkChannelEncoder struct {
 	sLP                           SilkLPState
 	sVAD                          SilkVADState
 	sNSQ                          SilkNSQState
-	prev_NLSFq_Q15                [SilkConstants.MAX_LPC_ORDER]int16
+	prev_NLSFq_Q15                [MAX_LPC_ORDER]int16
 	speech_activity_Q8            int32
 	allow_bandwidth_switch        int32
 	LBRRprevLastGainIndex         byte
@@ -52,15 +52,15 @@ type SilkChannelEncoder struct {
 	pitch_lag_low_bits_iCDF       []int16
 	pitch_contour_iCDF            []int16
 	psNLSF_CB                     *NLSFCodebook
-	input_quality_bands_Q15       [SilkConstants.VAD_N_BANDS]int32
+	input_quality_bands_Q15       [VAD_N_BANDS]int32
 	input_tilt_Q15                int32
 	SNR_dB_Q7                     int32
-	VAD_flags                     [SilkConstants.MAX_FRAMES_PER_PACKET]byte
+	VAD_flags                     [MAX_FRAMES_PER_PACKET]byte
 	LBRR_flag                     byte
-	LBRR_flags                    [SilkConstants.MAX_FRAMES_PER_PACKET]int32
+	LBRR_flags                    [MAX_FRAMES_PER_PACKET]int32
 	indices                       SideInfoIndices
-	pulses                        [SilkConstants.MAX_FRAME_LENGTH]byte
-	inputBuf                      [SilkConstants.MAX_FRAME_LENGTH + 2]int16
+	pulses                        [MAX_FRAME_LENGTH]byte
+	inputBuf                      [MAX_FRAME_LENGTH + 2]int16
 	inputBufIx                    int32
 	nFramesPerPacket              int32
 	nFramesEncoded                int32
@@ -77,11 +77,11 @@ type SilkChannelEncoder struct {
 	useInBandFEC                  int32
 	LBRR_enabled                  int32
 	LBRR_GainIncreases            int32
-	indices_LBRR                  [SilkConstants.MAX_FRAMES_PER_PACKET]*SideInfoIndices
-	pulses_LBRR                   [SilkConstants.MAX_FRAMES_PER_PACKET][SilkConstants.MAX_FRAME_LENGTH]byte
+	indices_LBRR                  [MAX_FRAMES_PER_PACKET]*SideInfoIndices
+	pulses_LBRR                   [MAX_FRAMES_PER_PACKET][MAX_FRAME_LENGTH]byte
 	sShape                        SilkShapeState
 	sPrefilt                      SilkPrefilterState
-	x_buf                         [2*SilkConstants.MAX_FRAME_LENGTH + SilkConstants.LA_SHAPE_MAX]int16
+	x_buf                         [2*MAX_FRAME_LENGTH + LA_SHAPE_MAX]int16
 	LTPCorr_Q15                   int32
 }
 
@@ -711,7 +711,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int32, psRangeEnc *En
 }
 
 func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_Q3 []int32, condCoding int32) {
-	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > Silk_SMULWB(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES, 1<<8) {
+	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > silk_SMULWB(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES, 1<<8) {
 		s.LBRR_flags[s.nFramesEncoded] = 1
 		psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
 		sNSQ_LBRR := &SilkNSQState{}

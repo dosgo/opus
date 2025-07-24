@@ -1025,7 +1025,15 @@ var intensity_histeresis = []int32{1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 
 var CeltTables = struct {
 	Tf_select_table [][]int8
 	EMeans          []int8
+	Eband5ms        []int16
+	Band_allocation []int16
+	LogN400         []int16
+	Window120       []int32
 }{
 	Tf_select_table: tf_select_table,
 	EMeans:          eMeans,
+	Eband5ms:        eband5ms,
+	Band_allocation: band_allocation,
+	LogN400:         logN400,
+	Window120:       window120,
 }
