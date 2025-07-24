@@ -84,13 +84,13 @@ func channel_pos(channels int, pos *[8]int) {
 var diff_table = [17]int16{
 	int16(0.5 + 0.5000000*float32(1<<CeltConstants.DB_SHIFT)),
 	int16(0.5 + 0.2924813*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.1609640*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0849625*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0437314*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0221971*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0111839*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0056136*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.0028123*float32(1<<DB_SHIFT)),
+	int16(0.5 + 0.1609640*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0849625*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0437314*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0221971*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0111839*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0056136*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0028123*float32(1<<CeltConstants.DB_SHIFT)),
 	0, 0, 0, 0, 0, 0, 0, 0,
 }
 
@@ -103,11 +103,11 @@ func logSum(a, b int) int {
 		max = b
 		diff = SUB32(EXTEND32(b), EXTEND32(a))
 	}
-	if diff >= int(QCONST16(8.0, DB_SHIFT)) {
+	if diff >= int(QCONST16(8.0, CeltConstants.DB_SHIFT)) {
 		return max
 	}
-	low := SHR32(diff, DB_SHIFT-1)
-	frac := SHL16(diff-SHL16(low, DB_SHIFT-1), 16-DB_SHIFT)
+	low := SHR32(diff, CeltConstants.DB_SHIFT-1)
+	frac := SHL16(diff-SHL16(low, CeltConstants.DB_SHIFT-1), 16-CeltConstants.DB_SHIFT)
 	return max + int(diff_table[low]) + MULT16_16_Q15(frac, SUB16(diff_table[low+1], diff_table[low]))
 }
 
@@ -134,7 +134,7 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 	for i := range maskLogE {
 		maskLogE[i] = make([]int, 21)
 		for j := range maskLogE[i] {
-			maskLogE[i][j] = -int(QCONST16(28.0, DB_SHIFT))
+			maskLogE[i][j] = -int(QCONST16(28.0, CeltConstants.DB_SHIFT))
 		}
 	}
 
@@ -161,10 +161,10 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		compute_band_energies(celt_mode, freq, bandE, 21, 1, LM)
 		amp2Log2(celt_mode, 21, 21, bandE[0], bandLogE, 21*c, 1)
 		for i := 1; i < 21; i++ {
-			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i-1]-int(QCONST16(1.0, DB_SHIFT)))
+			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i-1]-int(QCONST16(1.0, CeltConstants.DB_SHIFT)))
 		}
 		for i := 19; i >= 0; i-- {
-			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i+1]-int(QCONST16(2.0, DB_SHIFT)))
+			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i+1]-int(QCONST16(2.0, CeltConstants.DB_SHIFT)))
 		}
 		if pos[c] == 1 {
 			for i := 0; i < 21; i++ {
@@ -176,8 +176,8 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 			}
 		} else if pos[c] == 2 {
 			for i := 0; i < 21; i++ {
-				maskLogE[0][i] = logSum(maskLogE[0][i], bandLogE[21*c+i]-int(QCONST16(0.5, DB_SHIFT)))
-				maskLogE[2][i] = logSum(maskLogE[2][i], bandLogE[21*c+i]-int(QCONST16(0.5, DB_SHIFT)))
+				maskLogE[0][i] = logSum(maskLogE[0][i], bandLogE[21*c+i]-int(QCONST16(0.5, CeltConstants.DB_SHIFT)))
+				maskLogE[2][i] = logSum(maskLogE[2][i], bandLogE[21*c+i]-int(QCONST16(0.5, CeltConstants.DB_SHIFT)))
 			}
 		}
 		copy(mem[c*overlap:(c*overlap)+overlap], input[frame_size:frame_size+overlap])
