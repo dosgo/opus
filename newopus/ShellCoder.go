@@ -41,7 +41,7 @@ func silk_shell_encoder(psRangeEnc *EntropyCoder, pulses0 []int, pulses0_ptr int
 	pulses3 := make([]int, 2)
 	pulses4 := make([]int, 1)
 
-	Inlines.OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16)
+	OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16)
 
 	combine_pulses(pulses1, pulses0[pulses0_ptr:], 8)
 	combine_pulses(pulses2, pulses1, 4)
@@ -75,7 +75,7 @@ func silk_shell_decoder(
 	pulses2 := make([]int16, 4)
 	pulses3 := make([]int16, 2)
 
-	Inlines.OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16)
+	OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16)
 
 	decode_split(pulses3, 0, pulses3, 1, psRangeDec, pulses4, SilkTables.silk_shell_code_table3)
 	decode_split(pulses2, 0, pulses2, 1, psRangeDec, int(pulses3[0]), SilkTables.silk_shell_code_table2)

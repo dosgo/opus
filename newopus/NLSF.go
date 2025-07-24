@@ -264,7 +264,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 					rate0_Q5 = int32(ec_rates_Q5[rates_Q5+NLSF_QUANT_MAX_AMPLITUDE])
 					rate1_Q5 = 280
 				} else {
-					rate0_Q5 = Inlines_silk_SMLABB(280-(43*NLSF_QUANT_MAX_AMPLITUDE), 43, ind_tmp)
+					rate0_Q5 = silk_SMLABB(280-(43*NLSF_QUANT_MAX_AMPLITUDE), 43, ind_tmp)
 					rate1_Q5 = rate0_Q5 + 43
 				}
 			} else if ind_tmp <= -NLSF_QUANT_MAX_AMPLITUDE {
@@ -272,7 +272,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 					rate0_Q5 = 280
 					rate1_Q5 = int32(ec_rates_Q5[rates_Q5+1+NLSF_QUANT_MAX_AMPLITUDE])
 				} else {
-					rate0_Q5 = Inlines_silk_SMLABB(280-43*NLSF_QUANT_MAX_AMPLITUDE, -43, ind_tmp)
+					rate0_Q5 = silk_SMLABB(280-43*NLSF_QUANT_MAX_AMPLITUDE, -43, ind_tmp)
 					rate1_Q5 = rate0_Q5 - 43
 				}
 			} else {
@@ -282,9 +282,9 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 
 			RD_tmp_Q25 = RD_Q25[j]
 			diff_Q10 = in_Q10 - out0_Q10
-			RD_Q25[j] = Inlines_silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate0_Q5)
+			RD_Q25[j] = silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate0_Q5)
 			diff_Q10 = in_Q10 - out1_Q10
-			RD_Q25[j+nStates] = Inlines_silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate1_Q5)
+			RD_Q25[j+nStates] = silk_SMLABB(Inlines_silk_MLA(RD_tmp_Q25, Inlines_silk_SMULBB(diff_Q10, diff_Q10), int32(w_Q5[i])), mu_Q20, rate1_Q5)
 		}
 
 		if nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1) {

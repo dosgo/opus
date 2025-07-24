@@ -335,7 +335,7 @@ func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16,
 func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]int16, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[c][i] = int16(Inlines.CeltLog2(int32(bandE[c][i])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[c][i] = int16(CeltLog2(int32(bandE[c][i])<<2) - int16(CeltTables.EMeans[i])<<6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[c][i] = -(14 << CeltConstants.DB_SHIFT)
@@ -346,7 +346,7 @@ func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]in
 func amp2Log2Ptr(m *CeltMode, effEnd int, end int, bandE []int16, bandLogE []int16, bandLogEPtr int, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(Inlines.CeltLog2(int32(bandE[i+c*m.nbEBands])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(CeltLog2(int32(bandE[i+c*m.nbEBands])<<2) - int16(CeltTables.EMeans[i])<<6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[bandLogEPtr+c*m.nbEBands+i] = -(14 << CeltConstants.DB_SHIFT)

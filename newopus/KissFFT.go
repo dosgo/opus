@@ -3,7 +3,7 @@ package opus
 const MAXFACTORS = 8
 
 func S_MUL(a, b int) int {
-	return Inlines.MULT16_32_Q15(int16(b), a)
+	return MULT16_32_Q15(int16(b), a)
 }
 
 func HALF_OF(x int) int {
@@ -16,7 +16,7 @@ func kf_bfly2(Fout []int, fout_ptr int, m int, N int) {
 	{
 		var tw int16
 		tw = int16(0.5 + 0.7071067812*float32(1<<15))
-		Inlines.OpusAssert(m == 4, "")
+		OpusAssert(m == 4, "")
 		for i = 0; i < N; i++ {
 			var t_r, t_i int
 			Fout2 = fout_ptr + 8

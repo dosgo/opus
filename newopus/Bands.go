@@ -85,9 +85,9 @@ func compute_band_energies(m *CeltMode, X [][]int, bandE [][]int, end int, C int
 						j++
 					}
 				}
-				bandE[c][i] = EPSILON + VSHR32(celt_sqrt(sum), -shift)
+				bandE[c][i] = CeltConstants.EPSILON + VSHR32(celt_sqrt(sum), -shift)
 			} else {
-				bandE[c][i] = EPSILON
+				bandE[c][i] = CeltConstants.EPSILON
 			}
 		}
 	}
@@ -227,7 +227,7 @@ func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE
 	shift := celt_zlog2(MAX32(bandE[0][i], bandE[1][i])) - 13
 	left := VSHR32(bandE[0][i], shift)
 	right := VSHR32(bandE[1][i], shift)
-	norm := EPSILON + celt_sqrt(EPSILON+MULT16_16(left, left)+MULT16_16(right, right))
+	norm := CeltConstants.EPSILON + celt_sqrt(CeltConstants.EPSILON+MULT16_16(left, left)+MULT16_16(right, right))
 	a1 := DIV32_16(SHL32(left, 14), norm)
 	a2 := DIV32_16(SHL32(right, 14), norm)
 	for j := 0; j < N; j++ {
@@ -947,7 +947,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 			}
 		}
 		sign = 1 - 2*sign
-		cm = quant_band(ctx, x2, x2_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, Q15ONE, lowband_scratch, lowband_scratch_ptr, orig_fill)
+		cm = quant_band(ctx, x2, x2_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, orig_fill)
 
 		y2[y2_ptr] = -sign * x2[x2_ptr+1]
 		y2[y2_ptr+1] = sign * x2[x2_ptr]
@@ -971,7 +971,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 
 		rebalance := ctx.remaining_bits
 		if mbits >= sbits {
-			cm = quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
+			cm = quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
 			rebalance = mbits - (rebalance - ctx.remaining_bits)
 			if rebalance > 3<<BITRES && itheta != 0 {
 				sbits += rebalance - (3 << BITRES)
@@ -983,7 +983,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 			if rebalance > 3<<BITRES && itheta != 16384 {
 				mbits += rebalance - (3 << BITRES)
 			}
-			cm |= quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
+			cm |= quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
 		}
 	}
 

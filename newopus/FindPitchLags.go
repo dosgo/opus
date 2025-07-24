@@ -25,10 +25,10 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	Wsig_ptr += psEnc.la_pitch
 	x_buf_ptr += psEnc.la_pitch
-	copy(Wsig[Wsig_ptr:], x[x_buf_ptr:x_buf_ptr+(psEnc.pitch_LPC_win_length-Inlines.Silk_LSHIFT(psEnc.la_pitch, 1))])
+	copy(Wsig[Wsig_ptr:], x[x_buf_ptr:x_buf_ptr+(psEnc.pitch_LPC_win_length-Silk_LSHIFT(psEnc.la_pitch, 1))])
 
-	Wsig_ptr += psEnc.pitch_LPC_win_length - Inlines.Silk_LSHIFT(psEnc.la_pitch, 1)
-	x_buf_ptr += psEnc.pitch_LPC_win_length - Inlines.Silk_LSHIFT(psEnc.la_pitch, 1)
+	Wsig_ptr += psEnc.pitch_LPC_win_length - Silk_LSHIFT(psEnc.la_pitch, 1)
+	x_buf_ptr += psEnc.pitch_LPC_win_length - Silk_LSHIFT(psEnc.la_pitch, 1)
 	ApplySineWindow.Silk_apply_sine_window(Wsig, Wsig_ptr, x, x_buf_ptr, 2, psEnc.la_pitch)
 
 	boxed_scale := new(int)
@@ -36,19 +36,19 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	Autocorrelation.Silk_autocorr(auto_corr[:], boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
 	scale = *boxed_scale
 
-	auto_corr[0] = Inlines.Silk_SMLAWB(auto_corr[0], auto_corr[0], int32((TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*(1<<16)+0.5)) + 1
+	auto_corr[0] = Silk_SMLAWB(auto_corr[0], auto_corr[0], int32((TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*(1<<16)+0.5)) + 1
 
 	res_nrg = Schur.Silk_schur(rc_Q15[:], auto_corr[:], psEnc.pitchEstimationLPCOrder)
 
 	if res_nrg < 1 {
 		res_nrg = 1
 	}
-	psEncCtrl.predGain_Q16 = Inlines.Silk_DIV32_varQ(auto_corr[0], int32(res_nrg), 16)
+	psEncCtrl.predGain_Q16 = Silk_DIV32_varQ(auto_corr[0], int32(res_nrg), 16)
 
 	K2A.Silk_k2a(A_Q24[:], rc_Q15[:], psEnc.pitchEstimationLPCOrder)
 
 	for i = 0; i < psEnc.pitchEstimationLPCOrder; i++ {
-		A_Q12[i] = int16(Inlines.Silk_SAT16(int32(Inlines.Silk_RSHIFT_ROUND(A_Q24[i], 12))))
+		A_Q12[i] = int16(Silk_SAT16(int32(Silk_RSHIFT_ROUND(A_Q24[i], 12))))
 	}
 
 	BWExpander.Silk_bwexpander(A_Q12[:], psEnc.pitchEstimationLPCOrder, int32((TuningParameters.FIND_PITCH_BANDWIDTH_EXPANSION)*(1<<16)+0.5))
@@ -57,11 +57,11 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	if psEnc.indices.signalType != SilkConstants.TYPE_NO_VOICE_ACTIVITY && psEnc.first_frame_after_reset == 0 {
 		thrhld_Q13 = int((0.6 * (1 << 13)) + 0.5)
-		thrhld_Q13 = Inlines.Silk_SMLABB(int32(thrhld_Q13), int32((-0.004*(1<<13))+0.5, int32(psEnc.pitchEstimationLPCOrder)))
-		thrhld_Q13 = int(Inlines.Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<21))+0.5, int32(psEnc.speech_activity_Q8))))
-		thrhld_Q13 = Inlines.Silk_SMLABB(int32(thrhld_Q13), int32((-0.15*(1<<13))+0.5, int32(Inlines.Silk_RSHIFT(int32(psEnc.prevSignalType), 1))))
-		thrhld_Q13 = int(Inlines.Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<14))+0.5, int32(psEnc.input_tilt_Q15))))
-		thrhld_Q13 = int(Inlines.Silk_SAT16(int32(thrhld_Q13)))
+		thrhld_Q13 = Silk_SMLABB(int32(thrhld_Q13), int32((-0.004*(1<<13))+0.5, int32(psEnc.pitchEstimationLPCOrder)))
+		thrhld_Q13 = int(Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<21))+0.5, int32(psEnc.speech_activity_Q8))))
+		thrhld_Q13 = Silk_SMLABB(int32(thrhld_Q13), int32((-0.15*(1<<13))+0.5, int32(Silk_RSHIFT(int32(psEnc.prevSignalType), 1))))
+		thrhld_Q13 = int(Silk_SMLAWB(int32(thrhld_Q13), int32((-0.1*(1<<14))+0.5, int32(psEnc.input_tilt_Q15))))
+		thrhld_Q13 = int(Silk_SAT16(int32(thrhld_Q13)))
 
 		lagIndex := psEnc.indices.lagIndex
 		contourIndex := psEnc.indices.contourIndex

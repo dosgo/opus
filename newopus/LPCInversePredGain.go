@@ -30,20 +30,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-const A_LIMIT = int32(0.99975*float64(int32(1)<<QA) + 0.5)
-
-func silk_SMMUL(a, b int32) int32 {
-	return int32((int64(a) * int64(b)) >> 32)
-}
-
-func silk_abs(x int32) int32 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int32, order int) int32 {
+	const A_LIMIT = int32(0.99975*float64(int32(1)<<QA) + 0.5)
+
 	var k, n, mult2Q int
 	var invGain_Q30, rc_Q31, rc_mult1_Q30, rc_mult2, tmp_QA int32
 	currentRowIndex := order & 1
