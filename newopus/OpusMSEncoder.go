@@ -82,8 +82,8 @@ func channel_pos(channels int, pos *[8]int) {
 }
 
 var diff_table = [17]int16{
-	int16(0.5 + 0.5000000*float32(1<<DB_SHIFT)),
-	int16(0.5 + 0.2924813*float32(1<<DB_SHIFT)),
+	int16(0.5 + 0.5000000*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.2924813*float32(1<<CeltConstants.DB_SHIFT)),
 	int16(0.5 + 0.1609640*float32(1<<DB_SHIFT)),
 	int16(0.5 + 0.0849625*float32(1<<DB_SHIFT)),
 	int16(0.5 + 0.0437314*float32(1<<DB_SHIFT)),

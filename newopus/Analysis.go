@@ -167,7 +167,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 		return
 	}
 
-	info = &tonal.info[tonal.write_pos]
+	info = tonal.info[tonal.write_pos]
 	tonal.write_pos++
 	if tonal.write_pos >= DETECT_SIZE {
 		tonal.write_pos -= DETECT_SIZE
@@ -203,12 +203,12 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 		d2_angle2 := d_angle2 - d_angle
 
 		mod1 := d2_angle - float32(math.Floor(float64(0.5+d2_angle)))
-		noisiness[i] = ABS16(mod1)
+		noisiness[i] = ABS16Float(mod1)
 		mod1 *= mod1
 		mod1 *= mod1
 
 		mod2 := d2_angle2 - float32(math.Floor(float64(0.5+d2_angle2)))
-		noisiness[i] += ABS16(mod2)
+		noisiness[i] += ABS16Float(mod2)
 		mod2 *= mod2
 		mod2 *= mod2
 
@@ -252,8 +252,8 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 
 		frame_loudness += float32(math.Sqrt(float64(E + 1e-10)))
 		logE[b] = float32(math.Log(float64(E + 1e-10)))
-		tonal.lowE[b] = MIN32(logE[b], tonal.lowE[b]+0.01)
-		tonal.highE[b] = MAX32(logE[b], tonal.highE[b]-0.1)
+		tonal.lowE[b] = MIN32Float(logE[b], tonal.lowE[b]+0.01)
+		tonal.highE[b] = MAX32Float(logE[b], tonal.highE[b]-0.1)
 		if tonal.highE[b] < tonal.lowE[b]+1.0 {
 			tonal.highE[b] += 0.5
 			tonal.lowE[b] -= 0.5
@@ -267,16 +267,16 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 			L2 += tonal.E[i][b]
 		}
 
-		stationarity := MIN16(0.99, L1/float32(math.Sqrt(1e-15+float64(NB_FRAMES)*float64(L2))))
+		stationarity := MIN16Float(0.99, L1/float32(math.Sqrt(1e-15+float64(NB_FRAMES)*float64(L2))))
 		stationarity *= stationarity
 		stationarity *= stationarity
 		frame_stationarity += stationarity
-		band_tonality[b] = MAX16(tE/(1e-15+E), stationarity*tonal.prev_band_tonality[b])
+		band_tonality[b] = MAX16Float(tE/(1e-15+E), stationarity*tonal.prev_band_tonality[b])
 		frame_tonality += band_tonality[b]
 		if b >= NB_TBANDS-NB_TONAL_SKIP_BANDS {
 			frame_tonality -= band_tonality[b-NB_TBANDS+NB_TONAL_SKIP_BANDS]
 		}
-		max_frame_tonality = MAX16(max_frame_tonality, (1.0+0.03*float32(b-NB_TBANDS))*frame_tonality)
+		max_frame_tonality = MAX16Float(max_frame_tonality, (1.0+0.03*float32(b-NB_TBANDS))*frame_tonality)
 		slope += band_tonality[b] * float32(b-8)
 		tonal.prev_band_tonality[b] = band_tonality[b]
 	}
@@ -296,10 +296,10 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 				float32(output[2*i+1])*float32(output[2*i+1]) + float32(output[2*(N-i)+1])*float32(output[2*(N-i)+1])
 			E += binE
 		}
-		maxE = MAX32(maxE, E)
-		tonal.meanE[b] = MAX32((1-alphaE2)*tonal.meanE[b], E)
-		E = MAX32(E, tonal.meanE[b])
-		bandwidth_mask = MAX32(0.05*bandwidth_mask, E)
+		maxE = MAX32Float(maxE, E)
+		tonal.meanE[b] = MAX32Float((1-alphaE2)*tonal.meanE[b], E)
+		E = MAX32Float(E, tonal.meanE[b])
+		bandwidth_mask = MAX32Float(0.05*bandwidth_mask, E)
 		if E > 0.1*bandwidth_mask && E*1e9 > maxE && E > noise_floor*float32(band_end-band_start) {
 			bandwidth = b
 		}
@@ -308,7 +308,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 		bandwidth = 20
 	}
 	frame_loudness = 20 * float32(math.Log10(float64(frame_loudness)))
-	tonal.Etracker = MAX32(tonal.Etracker-0.03, frame_loudness)
+	tonal.Etracker = MAX32Float(tonal.Etracker-0.03, frame_loudness)
 	tonal.lowECount *= (1 - alphaE)
 	if frame_loudness < tonal.Etracker-30 {
 		tonal.lowECount += alphaE
@@ -330,7 +330,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	frame_noisiness /= NB_TBANDS
 	info.activity = frame_noisiness + (1-frame_noisiness)*relativeE
 	frame_tonality = max_frame_tonality / float32(NB_TBANDS-NB_TONAL_SKIP_BANDS)
-	frame_tonality = MAX16(frame_tonality, tonal.prev_tonality*0.8)
+	frame_tonality = MAX16Float(frame_tonality, tonal.prev_tonality*0.8)
 	tonal.prev_tonality = frame_tonality
 
 	slope /= 8 * 8
@@ -387,9 +387,9 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 			tau := 0.00005 * frame_probs[1]
 			beta := float32(0.05)
 			{
-				p := MAX16(0.05, MIN16(0.95, frame_probs[0]))
-				q := MAX16(0.05, MIN16(0.95, tonal.music_prob))
-				beta = 0.01 + 0.05*ABS16(p-q)/(p*(1-q)+q*(1-p))
+				p := MAX16Float(0.05, MIN16Float(0.95, frame_probs[0]))
+				q := MAX16Float(0.05, MIN16Float(0.95, tonal.music_prob))
+				beta = 0.01 + 0.05*ABS16Float(p-q)/(p*(1-q)+q*(1-p))
 			}
 			p0 := (1-tonal.music_prob)*(1-tau) + tonal.music_prob*tau
 			p1 := tonal.music_prob*(1-tau) + (1-tonal.music_prob)*tau
@@ -433,12 +433,12 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 				if tonal.music_prob > 0.9 {
 					adapt := 1.0 / float32(tonal.music_confidence_count+1)
 					tonal.music_confidence_count = IMIN(tonal.music_confidence_count, 500)
-					tonal.music_confidence += adapt * MAX16(-0.2, frame_probs[0]-tonal.music_confidence)
+					tonal.music_confidence += adapt * MAX16Float(-0.2, frame_probs[0]-tonal.music_confidence)
 				}
 				if tonal.music_prob < 0.1 {
 					adapt := 1.0 / float32(tonal.speech_confidence_count+1)
 					tonal.speech_confidence_count = IMIN(tonal.speech_confidence_count, 500)
-					tonal.speech_confidence += adapt * MIN16(0.2, frame_probs[0]-tonal.speech_confidence)
+					tonal.speech_confidence += adapt * MIN16Float(0.2, frame_probs[0]-tonal.speech_confidence)
 				}
 			} else {
 				if tonal.music_confidence_count == 0 {

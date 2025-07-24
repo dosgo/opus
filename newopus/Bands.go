@@ -134,10 +134,10 @@ func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE 
 		j := M * eBands[i]
 		band_end := M * eBands[i+1]
 		lg := ADD16(bandLogE[bandLogE_ptr+i], SHL16(eMeans[i], 6))
-		shift := 16 - (lg >> DB_SHIFT)
+		shift := 16 - (lg >> CeltConstants.DB_SHIFT)
 		g := 0
 		if shift <= 31 {
-			g = celt_exp2_frac(lg & ((1 << DB_SHIFT) - 1))
+			g = celt_exp2_frac(lg & ((1 << CeltConstants.DB_SHIFT) - 1))
 		}
 		if shift < 0 {
 			if shift < -2 {

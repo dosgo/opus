@@ -144,9 +144,9 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			X[c] = make([]int, N)
 		}
 
-		decay := QCONST16(0.5, DB_SHIFT)
+		decay := QCONST16(0.5, CeltConstants.DB_SHIFT)
 		if this.loss_count == 0 {
-			decay = QCONST16(1.5, DB_SHIFT)
+			decay = QCONST16(1.5, CeltConstants, DB_SHIFT)
 		}
 		for c := 0; c < C; c++ {
 			for i := this.start; i < end; i++ {
