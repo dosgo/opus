@@ -7,5 +7,5 @@ func silk_LTP_scale_ctrl(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContro
 	} else {
 		psEnc.indices.LTP_scaleIndex = 0
 	}
-	psEncCtrl.LTP_scale_Q14 = int32(silk_LTPScales_table_Q14[psEnc.indices.LTP_scaleIndex])
+	psEncCtrl.LTP_scale_Q14 = int(silk_LTPScales_table_Q14[psEnc.indices.LTP_scaleIndex])
 }

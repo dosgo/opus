@@ -3,8 +3,8 @@ package opus
 import "math"
 
 func silk_warped_LPC_analysis_filter(
-	state []int32,
-	res_Q2 []int32,
+	state []int,
+	res_Q2 []int,
 	coef_Q13 []int16,
 	coef_Q13_ptr int,
 	input []int16,
@@ -14,30 +14,30 @@ func silk_warped_LPC_analysis_filter(
 	order int) {
 
 	for n := 0; n < length; n++ {
-		tmp2 := silk_SMLAWB(state[0], state[1], int32(lambda_Q16))
-		state[0] = silk_LSHIFT(int32(input[input_ptr+n]), 14)
-		tmp1 := silk_SMLAWB(state[1], state[2]-tmp2, int32(lambda_Q16))
+		tmp2 := silk_SMLAWB(state[0], state[1], int(lambda_Q16))
+		state[0] = silk_LSHIFT(int(input[input_ptr+n]), 14)
+		tmp1 := silk_SMLAWB(state[1], state[2]-tmp2, int(lambda_Q16))
 		state[1] = tmp2
-		acc_Q11 := int32(order >> 1)
-		acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr]))
+		acc_Q11 := int(order >> 1)
+		acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int(coef_Q13[coef_Q13_ptr]))
 		for i := 2; i < order; i += 2 {
-			tmp2 = silk_SMLAWB(state[i], state[i+1]-tmp1, int32(lambda_Q16))
+			tmp2 = silk_SMLAWB(state[i], state[i+1]-tmp1, int(lambda_Q16))
 			state[i] = tmp1
-			acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+i-1]))
-			tmp1 = silk_SMLAWB(state[i+1], state[i+2]-tmp2, int32(lambda_Q16))
+			acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int(coef_Q13[coef_Q13_ptr+i-1]))
+			tmp1 = silk_SMLAWB(state[i+1], state[i+2]-tmp2, int(lambda_Q16))
 			state[i+1] = tmp2
-			acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int32(coef_Q13[coef_Q13_ptr+i]))
+			acc_Q11 = silk_SMLAWB(acc_Q11, tmp2, int(coef_Q13[coef_Q13_ptr+i]))
 		}
 		state[order] = tmp1
-		acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int32(coef_Q13[coef_Q13_ptr+order-1]))
-		res_Q2[n] = silk_LSHIFT(int32(input[input_ptr+n]), 2) - silk_RSHIFT_ROUND(acc_Q11, 9)
+		acc_Q11 = silk_SMLAWB(acc_Q11, tmp1, int(coef_Q13[coef_Q13_ptr+order-1]))
+		res_Q2[n] = silk_LSHIFT(int(input[input_ptr+n]), 2) - silk_RSHIFT_ROUND(acc_Q11, 9)
 	}
 }
 
 func silk_prefilter(
 	psEnc *SilkChannelEncoder,
 	psEncCtrl *SilkEncoderControl,
-	xw_Q3 []int32,
+	xw_Q3 []int,
 	x []int16,
 	x_ptr int) {
 
@@ -46,30 +46,30 @@ func silk_prefilter(
 	px := x_ptr
 	pxw_Q3 := 0
 	lag = P.lagPrev
-	x_filt_Q12 := make([]int32, psEnc.subfr_length)
-	st_res_Q2 := make([]int32, psEnc.subfr_length)
+	x_filt_Q12 := make([]int, psEnc.subfr_length)
+	st_res_Q2 := make([]int, psEnc.subfr_length)
 	for k := 0; k < psEnc.nb_subfr; k++ {
 		if psEnc.indices.signalType == TYPE_VOICED {
 			lag = psEncCtrl.pitchL[k]
 		}
-		HarmShapeGain_Q12 := silk_SMULWB(int32(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int32(psEncCtrl.HarmBoost_Q14[k]))
+		HarmShapeGain_Q12 := silk_SMULWB(int(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int32(psEncCtrl.HarmBoost_Q14[k]))
 		HarmShapeFIRPacked_Q12 := silk_RSHIFT(HarmShapeGain_Q12, 2)
-		HarmShapeFIRPacked_Q12 |= silk_LSHIFT(int32(silk_RSHIFT(HarmShapeGain_Q12, 1)), 16)
+		HarmShapeFIRPacked_Q12 |= silk_LSHIFT(int(silk_RSHIFT(HarmShapeGain_Q12, 1)), 16)
 		Tilt_Q14 := psEncCtrl.Tilt_Q14[k]
 		LF_shp_Q14 := psEncCtrl.LF_shp_Q14[k]
 		AR1_shp_Q13 := k * MAX_SHAPE_LPC_ORDER
 		silk_warped_LPC_analysis_filter(P.sAR_shp[:], st_res_Q2, psEncCtrl.AR1_Q13[:], AR1_shp_Q13, x, px, int16(psEnc.warping_Q16), psEnc.subfr_length, psEnc.shapingLPCOrder)
-		B_Q10 := [2]int16{int16(silk_RSHIFT_ROUND(int32(psEncCtrl.GainsPre_Q14[k]), 4)), 0}
-		tmp_32 := silk_SMLABB(INPUT_TILT_Q26, int32(psEncCtrl.HarmBoost_Q14[k]), HarmShapeGain_Q12)
-		tmp_32 = silk_SMLABB(tmp_32, int32(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
-		tmp_32 = silk_SMULWB(tmp_32, -int32(psEncCtrl.GainsPre_Q14[k]))
+		B_Q10 := [2]int16{int16(silk_RSHIFT_ROUND(int(psEncCtrl.GainsPre_Q14[k]), 4)), 0}
+		tmp_32 := silk_SMLABB(int(TuningParameters.INPUT_TILT), int(psEncCtrl.HarmBoost_Q14[k]), HarmShapeGain_Q12)
+		tmp_32 = silk_SMLABB(tmp_32, int(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
+		tmp_32 = silk_SMULWB(tmp_32, -int(psEncCtrl.GainsPre_Q14[k]))
 		tmp_32 = silk_RSHIFT_ROUND(tmp_32, 14)
 		B_Q10[1] = int16(silk_SAT16(tmp_32))
-		x_filt_Q12[0] = silk_MLA(silk_MUL(st_res_Q2[0], int32(B_Q10[0])), int32(P.sHarmHP_Q2), int32(B_Q10[1]))
+		x_filt_Q12[0] = silk_MLA(silk_MUL(st_res_Q2[0], int(B_Q10[0])), int32(P.sHarmHP_Q2), int32(B_Q10[1]))
 		for j := 1; j < psEnc.subfr_length; j++ {
-			x_filt_Q12[j] = silk_MLA(silk_MUL(st_res_Q2[j], int32(B_Q10[0])), st_res_Q2[j-1], int32(B_Q10[1]))
+			x_filt_Q12[j] = silk_MLA(silk_MUL(st_res_Q2[j], int(B_Q10[0])), st_res_Q2[j-1], int32(B_Q10[1]))
 		}
-		P.sHarmHP_Q2 = int16(st_res_Q2[psEnc.subfr_length-1])
+		P.sHarmHP_Q2 = int(st_res_Q2[psEnc.subfr_length-1])
 		silk_prefilt(P, x_filt_Q12, xw_Q3, pxw_Q3, HarmShapeFIRPacked_Q12, Tilt_Q14, LF_shp_Q14, lag, psEnc.subfr_length)
 		px += psEnc.subfr_length
 		pxw_Q3 += psEnc.subfr_length
@@ -79,16 +79,16 @@ func silk_prefilter(
 
 func silk_prefilt(
 	P *SilkPrefilterState,
-	st_res_Q12 []int32,
-	xw_Q3 []int32,
+	st_res_Q12 []int,
+	xw_Q3 []int,
 	xw_Q3_ptr int,
-	HarmShapeFIRPacked_Q12 int32,
-	Tilt_Q14 int32,
-	LF_shp_Q14 int32,
+	HarmShapeFIRPacked_Q12 int,
+	Tilt_Q14 int,
+	LF_shp_Q14 int,
 	lag int,
 	length int) {
 
-	var n_LTP_Q12, n_Tilt_Q10, n_LF_Q10 int32
+	var n_LTP_Q12, n_Tilt_Q10, n_LF_Q10 int
 	LTP_shp_buf := P.sLTP_shp[:]
 	LTP_shp_buf_idx := P.sLTP_shp_buf_idx
 	sLF_AR_shp_Q12 := P.sLF_AR_shp_Q12
@@ -96,9 +96,9 @@ func silk_prefilt(
 	for i := 0; i < length; i++ {
 		if lag > 0 {
 			idx := lag + LTP_shp_buf_idx
-			n_LTP_Q12 = silk_SMULBB(int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2-1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
-			n_LTP_Q12 = silk_SMLABT(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2)&LTP_MASK]), HarmShapeFIRPacked_Q12)
-			n_LTP_Q12 = silk_SMLABB(n_LTP_Q12, int32(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2+1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMULBB(int(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2-1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMLABT(n_LTP_Q12, int(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2)&LTP_MASK]), HarmShapeFIRPacked_Q12)
+			n_LTP_Q12 = silk_SMLABB(n_LTP_Q12, int(LTP_shp_buf[(idx-HARM_SHAPE_FIR_TAPS/2+1)&LTP_MASK]), HarmShapeFIRPacked_Q12)
 		} else {
 			n_LTP_Q12 = 0
 		}
@@ -118,9 +118,9 @@ func silk_prefilt(
 func silk_biquad_alt(
 	input []int16,
 	input_ptr int,
-	B_Q28 []int32,
-	A_Q28 []int32,
-	S []int32,
+	B_Q28 []int,
+	A_Q28 []int,
+	S []int,
 	output []int16,
 	output_ptr int,
 	len int,
@@ -131,7 +131,7 @@ func silk_biquad_alt(
 	A1_L_Q28 := (-A_Q28[1]) & 0x00003FFF
 	A1_U_Q28 := silk_RSHIFT(-A_Q28[1], 14)
 	for k := 0; k < len; k++ {
-		inval := int32(input[input_ptr+k*stride])
+		inval := int(input[input_ptr+k*stride])
 		out32_Q14 := silk_LSHIFT(silk_SMLAWB(S[0], B_Q28[0], inval), 2)
 		S[0] = S[1] + silk_RSHIFT_ROUND(silk_SMULWB(out32_Q14, A0_L_Q28), 14)
 		S[0] = silk_SMLAWB(S[0], out32_Q14, A0_U_Q28)
@@ -146,9 +146,9 @@ func silk_biquad_alt(
 func silk_biquad_alt_ptr(
 	input []int16,
 	input_ptr int,
-	B_Q28 []int32,
-	A_Q28 []int32,
-	S []int32,
+	B_Q28 []int,
+	A_Q28 []int,
+	S []int,
 	S_ptr int,
 	output []int16,
 	output_ptr int,
@@ -160,7 +160,7 @@ func silk_biquad_alt_ptr(
 	A1_L_Q28 := (-A_Q28[1]) & 0x00003FFF
 	A1_U_Q28 := silk_RSHIFT(-A_Q28[1], 14)
 	for k := 0; k < len; k++ {
-		inval := int32(input[input_ptr+k*stride])
+		inval := int(input[input_ptr+k*stride])
 		s0 := S[S_ptr]
 		s1 := S[S_ptr+1]
 		out32_Q14 := silk_LSHIFT(silk_SMLAWB(s0, B_Q28[0], inval), 2)
@@ -184,7 +184,7 @@ const (
 func silk_ana_filt_bank_1(
 	input []int16,
 	input_ptr int,
-	S []int32,
+	S []int,
 	outL []int16,
 	outH []int16,
 	outH_ptr int,
@@ -192,12 +192,12 @@ func silk_ana_filt_bank_1(
 
 	N2 := N >> 1
 	for k := 0; k < N2; k++ {
-		in32 := silk_LSHIFT(int32(input[input_ptr+2*k]), 10)
+		in32 := silk_LSHIFT(int(input[input_ptr+2*k]), 10)
 		Y := in32 - S[0]
 		X := silk_SMLAWB(Y, Y, A_fb1_21)
 		out_1 := S[0] + X
 		S[0] = in32 + X
-		in32 = silk_LSHIFT(int32(input[input_ptr+2*k+1]), 10)
+		in32 = silk_LSHIFT(int(input[input_ptr+2*k+1]), 10)
 		Y = in32 - S[1]
 		X = silk_SMULWB(Y, A_fb1_20)
 		out_2 := S[1] + X
@@ -208,10 +208,10 @@ func silk_ana_filt_bank_1(
 }
 
 func silk_LP_interpolate_filter_taps(
-	B_Q28 []int32,
-	A_Q28 []int32,
+	B_Q28 []int,
+	A_Q28 []int,
 	ind int,
-	fac_Q16 int32) {
+	fac_Q16 int) {
 
 	if ind < TRANSITION_INT_NUM-1 {
 		if fac_Q16 > 0 {
@@ -277,14 +277,14 @@ func silk_LPC_analysis_filter(
 	}
 }
 
-const A_LIMIT = int32(math.Round(0.99975 * float64(1<<QA)))
+const A_LIMIT = int(math.Round(0.99975 * float64(1<<QA)))
 
 func LPC_inverse_pred_gain_QA(
-	A_QA [2][]int32,
-	order int) int32 {
+	A_QA [2][]int,
+	order int) int {
 
 	Anew_QA := A_QA[order&1]
-	invGain_Q30 := int32(1 << 30)
+	invGain_Q30 := int(1 << 30)
 	for k := order - 1; k > 0; k-- {
 		if Anew_QA[k] > A_LIMIT || Anew_QA[k] < -A_LIMIT {
 			return 0
@@ -310,16 +310,16 @@ func LPC_inverse_pred_gain_QA(
 	return invGain_Q30
 }
 
-func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int32 {
-	Atmp_QA := [2][]int32{
-		make([]int32, order),
-		make([]int32, order),
+func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
+	Atmp_QA := [2][]int{
+		make([]int, order),
+		make([]int, order),
 	}
 	Anew_QA := Atmp_QA[order&1]
 	DC_resp := 0
 	for k := 0; k < order; k++ {
 		DC_resp += int(A_Q12[k])
-		Anew_QA[k] = silk_LSHIFT32(int32(A_Q12[k]), QA-12)
+		Anew_QA[k] = silk_LSHIFT32(int(A_Q12[k]), QA-12)
 	}
 	if DC_resp >= 4096 {
 		return 0

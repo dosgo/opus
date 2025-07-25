@@ -1,8 +1,10 @@
 package opus
 
-type CorrelateMatrix struct{}
+type correlateMatrix struct{}
 
-func (c *CorrelateMatrix) silk_corrVector(
+var CorrelateMatrix correlateMatrix
+
+func (c *correlateMatrix) silk_corrVector(
 	x []int16,
 	x_ptr int,
 	t []int16,
@@ -37,7 +39,7 @@ func (c *CorrelateMatrix) silk_corrVector(
 	}
 }
 
-func (c *CorrelateMatrix) silk_corrMatrix(
+func (c *correlateMatrix) silk_corrMatrix(
 	x []int16,
 	x_ptr int,
 	L int,

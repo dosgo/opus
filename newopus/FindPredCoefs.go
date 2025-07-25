@@ -9,23 +9,23 @@ func silk_find_pred_coefs(
 	condCoding int,
 ) {
 	var i int
-	invGains_Q16 := make([]int32, MAX_NB_SUBFR)
-	local_gains := make([]int32, MAX_NB_SUBFR)
-	Wght_Q15 := make([]int32, MAX_NB_SUBFR)
-	NLSF_Q15 := make([]int16, MAX_LPC_ORDER)
+	invGains_Q16 := make([]int, MAX_NB_SUBFR)
+	local_gains := make([]int, MAX_NB_SUBFR)
+	Wght_Q15 := make([]int, MAX_NB_SUBFR)
+	NLSF_Q15 := make([]int, MAX_LPC_ORDER)
 	var x_ptr2, x_pre_ptr int
 	var LPC_in_pre []int16
-	var tmp, min_gain_Q16, minInvGain_Q30 int32
+	var tmp, min_gain_Q16, minInvGain_Q30 int
 	LTP_corrs_rshift := make([]int32, MAX_NB_SUBFR)
 
-	min_gain_Q16 = int32(0x7FFFFFFF >> 6)
+	min_gain_Q16 = int(0x7FFFFFFF >> 6)
 	for i = 0; i < psEnc.nb_subfr; i++ {
 		if psEncCtrl.Gains_Q16[i] < min_gain_Q16 {
 			min_gain_Q16 = psEncCtrl.Gains_Q16[i]
 		}
 	}
 	for i = 0; i < psEnc.nb_subfr; i++ {
-		silk_OpusAssert(psEncCtrl.Gains_Q16[i] > 0)
+		OpusAssert(psEncCtrl.Gains_Q16[i] > 0)
 		invGains_Q16[i] = silk_DIV32_varQ(min_gain_Q16, psEncCtrl.Gains_Q16[i], 16-2)
 
 		if invGains_Q16[i] < 363 {
@@ -42,7 +42,7 @@ func silk_find_pred_coefs(
 	if psEnc.indices.signalType == TYPE_VOICED {
 		var WLTP []int32
 
-		silk_OpusAssert(psEnc.ltp_mem_length-psEnc.predictLPCOrder >= psEncCtrl.pitchL[0]+LTP_ORDER/2)
+		OpusAssert(psEnc.ltp_mem_length-psEnc.predictLPCOrder >= psEncCtrl.pitchL[0]+LTP_ORDER/2)
 
 		WLTP = make([]int32, psEnc.nb_subfr*LTP_ORDER*LTP_ORDER)
 

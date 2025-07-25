@@ -1,8 +1,8 @@
 package opus
 
-func warped_gain(coefs_Q24 []int32, lambda_Q16 int32, order int) int32 {
+func warped_gain(coefs_Q24 []int, lambda_Q16 int, order int) int {
 	var i int
-	var gain_Q24 int32
+	var gain_Q24 int
 
 	lambda_Q16 = -lambda_Q16
 	gain_Q24 = coefs_Q24[order-1]
@@ -13,10 +13,10 @@ func warped_gain(coefs_Q24 []int32, lambda_Q16 int32, order int) int32 {
 	return silk_INVERSE32_varQ(gain_Q24, 40)
 }
 
-func limit_warped_coefs(coefs_syn_Q24 []int32, coefs_ana_Q24 []int32, lambda_Q16 int32, limit_Q24 int32, order int) {
+func limit_warped_coefs(coefs_syn_Q24 []int, coefs_ana_Q24 []int, lambda_Q16 int, limit_Q24 int, order int) {
 	var i, iter, ind int
-	var tmp, maxabs_Q24, chirp_Q16, gain_syn_Q16, gain_ana_Q16 int32
-	var nom_Q16, den_Q24 int32
+	var tmp, maxabs_Q24, chirp_Q16, gain_syn_Q16, gain_ana_Q16 int
+	var nom_Q16, den_Q24 int
 
 	lambda_Q16 = -lambda_Q16
 	for i = order - 1; i > 0; i-- {
@@ -59,8 +59,8 @@ func limit_warped_coefs(coefs_syn_Q24 []int32, coefs_ana_Q24 []int32, lambda_Q16
 		}
 
 		chirp_Q16 = (3244032) - silk_DIV32_varQ(
-			silk_SMULWB(maxabs_Q24-limit_Q24, silk_SMLABB(819, 102, int32(iter))),
-			silk_MUL(maxabs_Q24, int32(ind+1)), 22)
+			silk_SMULWB(maxabs_Q24-limit_Q24, silk_SMLABB(819, 102, int(iter))),
+			silk_MUL(maxabs_Q24, int(ind+1)), 22)
 		silk_bwexpander_32(coefs_syn_Q24, order, chirp_Q16)
 		silk_bwexpander_32(coefs_ana_Q24, order, chirp_Q16)
 
@@ -86,14 +86,14 @@ func limit_warped_coefs(coefs_syn_Q24 []int32, coefs_ana_Q24 []int32, lambda_Q16
 func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderControl, pitch_res []int16, pitch_res_ptr int, x []int16, x_ptr int) {
 	psShapeSt := psEnc.sShape
 	var k, i, nSamples, Qnrg int
-	var b_Q14, warping_Q16, scale int32
-	var SNR_adj_dB_Q7, HarmBoost_Q16, HarmShapeGain_Q16, Tilt_Q16, tmp32 int32
-	var nrg, pre_nrg_Q30, log_energy_Q7, log_energy_prev_Q7, energy_variation_Q7 int32
-	var delta_Q16, BWExp1_Q16, BWExp2_Q16, gain_mult_Q16, gain_add_Q16, strength_Q16, b_Q8 int32
-	auto_corr := make([]int32, MAX_SHAPE_LPC_ORDER+1)
-	refl_coef_Q16 := make([]int32, MAX_SHAPE_LPC_ORDER)
-	AR1_Q24 := make([]int32, MAX_SHAPE_LPC_ORDER)
-	AR2_Q24 := make([]int32, MAX_SHAPE_LPC_ORDER)
+	var b_Q14, warping_Q16, scale int
+	var SNR_adj_dB_Q7, HarmBoost_Q16, HarmShapeGain_Q16, Tilt_Q16, tmp32 int
+	var nrg, pre_nrg_Q30, log_energy_Q7, log_energy_prev_Q7, energy_variation_Q7 int
+	var delta_Q16, BWExp1_Q16, BWExp2_Q16, gain_mult_Q16, gain_add_Q16, strength_Q16, b_Q8 int
+	auto_corr := make([]int, MAX_SHAPE_LPC_ORDER+1)
+	refl_coef_Q16 := make([]int, MAX_SHAPE_LPC_ORDER)
+	AR1_Q24 := make([]int, MAX_SHAPE_LPC_ORDER)
+	AR2_Q24 := make([]int, MAX_SHAPE_LPC_ORDER)
 	var x_windowed []int16
 	x_ptr2 := x_ptr - psEnc.la_shape
 
@@ -110,10 +110,10 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	}
 
 	if psEnc.indices.signalType == TYPE_VOICED {
-		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7, int32(HARM_SNR_INCR_dB<<8), psEnc.LTPCorr_Q15)
+		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7, int(HARM_SNR_INCR_dB<<8), psEnc.LTPCorr_Q15)
 	} else {
 		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7,
-			silk_SMLAWB(6<<9, -int32(0.4*float64(1<<18)), psEnc.SNR_dB_Q7),
+			silk_SMLAWB(6<<9, -int(0.4*float64(1<<18)), psEnc.SNR_dB_Q7),
 			(1<<14)-psEncCtrl.input_quality_Q14)
 	}
 
@@ -147,11 +147,11 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	}
 
 	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int32(FIND_PITCH_WHITE_NOISE_FRACTION<<16))
-	BWExp1_Q16 = silk_DIV32_varQ(int32(BANDWIDTH_EXPANSION<<16),
+	BWExp1_Q16 = silk_DIV32_varQ(int(BANDWIDTH_EXPANSION<<16),
 		silk_SMLAWW(1<<16, strength_Q16, strength_Q16), 16)
 	BWExp2_Q16 = BWExp1_Q16
 	delta_Q16 = silk_SMULWB((1<<16)-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
-		int32(LOW_RATE_BANDWIDTH_EXPANSION_DELTA<<16))
+		int(LOW_RATE_BANDWIDTH_EXPANSION_DELTA<<16))
 	BWExp1_Q16 -= delta_Q16
 	BWExp2_Q16 += delta_Q16
 	BWExp1_Q16 = silk_DIV32_16(BWExp1_Q16<<14, BWExp2_Q16>>2)
@@ -226,18 +226,18 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		psEncCtrl.GainsPre_Q14[k] = silk_SMULWB(gain_mult_Q16, psEncCtrl.GainsPre_Q14[k])
 	}
 
-	strength_Q16 = silk_MUL(int32(LOW_FREQ_SHAPING<<4), silk_SMLAWB(1<<12, int32(LOW_QUALITY_LOW_FREQ_SHAPING_DECR<<13), psEnc.input_quality_bands_Q15[0]-(1<<15)))
+	strength_Q16 = silk_MUL(int(LOW_FREQ_SHAPING<<4), silk_SMLAWB(1<<12, int32(LOW_QUALITY_LOW_FREQ_SHAPING_DECR<<13), psEnc.input_quality_bands_Q15[0]-(1<<15)))
 	strength_Q16 = (strength_Q16 * psEnc.speech_activity_Q8) >> 8
 	if psEnc.indices.signalType == TYPE_VOICED {
-		fs_kHz_inv := silk_DIV32_16(int32(0.2*float64(1<<14)), int16(psEnc.fs_kHz))
+		fs_kHz_inv := silk_DIV32_16(int(0.2*float64(1<<14)), int16(psEnc.fs_kHz))
 		for k = 0; k < psEnc.nb_subfr; k++ {
-			b_Q14 = fs_kHz_inv + silk_DIV32_16(int32(3.0*float64(1<<14)), int16(psEncCtrl.pitchL[k]))
+			b_Q14 = fs_kHz_inv + silk_DIV32_16(int(3.0*float64(1<<14)), int16(psEncCtrl.pitchL[k]))
 			psEncCtrl.LF_shp_Q14[k] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, b_Q14)) << 16
 			psEncCtrl.LF_shp_Q14[k] |= (b_Q14 - (1 << 14)) & 0xFFFF
 		}
-		OpusAssert(int32(HARM_HP_NOISE_COEF<<24) < int32(0.5*float64(1<<24)))
-		Tilt_Q16 = -int32(HP_NOISE_COEF<<16) - silk_SMULWB((1<<16)-int32(HP_NOISE_COEF<<16),
-			silk_SMULWB(int32(HARM_HP_NOISE_COEF<<24), psEnc.speech_activity_Q8))
+		OpusAssert(int(HARM_HP_NOISE_COEF<<24) < int32(0.5*float64(1<<24)))
+		Tilt_Q16 = -int(HP_NOISE_COEF<<16) - silk_SMULWB((1<<16)-int32(HP_NOISE_COEF<<16),
+			silk_SMULWB(int(HARM_HP_NOISE_COEF<<24), psEnc.speech_activity_Q8))
 	} else {
 		b_Q14 = silk_DIV32_16(21299, int16(psEnc.fs_kHz))
 		psEncCtrl.LF_shp_Q14[0] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, silk_SMULWB(int32(0.6*float64(1<<16)), b_Q14))) << 16

@@ -10,7 +10,7 @@ const (
 
 var SILK_CONST_FIND_LPC_COND_FAC_32 int32 = 42950
 
-func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValueInt, A_Q16 []int32, x []int16, x_ptr int, minInvGain_Q30 int32, subfr_length int32, nb_subfr int32, D int32) {
+func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValueInt, A_Q16 []int32, x []int16, x_ptr int, minInvGain_Q30 int, subfr_length int, nb_subfr int, D int) {
 	var k, n, s, lz, rshifts, reached_max_gain int
 	var C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2 int
 	var x_offset int

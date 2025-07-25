@@ -95,6 +95,7 @@ func celt_fir_int(x []int32, x_ptr int, num []int32, num_ptr int, y []int32, y_p
 }
 
 func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueInt, _sum1 *BoxedValueInt, _sum2 *BoxedValueInt, _sum3 *BoxedValueInt, len int) {
+
 	sum0 := _sum0.Val
 	sum1 := _sum1.Val
 	sum2 := _sum2.Val

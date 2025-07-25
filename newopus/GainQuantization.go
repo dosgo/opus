@@ -93,8 +93,8 @@ func silk_gains_dequant(gain_Q16 []int32, ind []byte, prev_ind *byte, conditiona
 	}
 }
 
-func silk_gains_ID(ind []byte, nb_subfr int) int32 {
-	gainsID := int32(0)
+func silk_gains_ID(ind []byte, nb_subfr int) int {
+	gainsID := int(0)
 	for k := 0; k < nb_subfr; k++ {
 		gainsID = silk_ADD_LSHIFT32(int(ind[k]), gainsID, 8)
 	}

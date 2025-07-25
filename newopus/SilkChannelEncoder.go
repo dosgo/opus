@@ -54,12 +54,12 @@ type SilkChannelEncoder struct {
 	pitch_lag_low_bits_iCDF       []int16
 	pitch_contour_iCDF            []int16
 	psNLSF_CB                     *NLSFCodebook
-	input_quality_bands_Q15       [VAD_N_BANDS]int32
-	input_tilt_Q15                int32
-	SNR_dB_Q7                     int32
+	input_quality_bands_Q15       [VAD_N_BANDS]int
+	input_tilt_Q15                int
+	SNR_dB_Q7                     int
 	VAD_flags                     [MAX_FRAMES_PER_PACKET]byte
 	LBRR_flag                     byte
-	LBRR_flags                    [MAX_FRAMES_PER_PACKET]int32
+	LBRR_flags                    [MAX_FRAMES_PER_PACKET]int
 	indices                       SideInfoIndices
 	pulses                        [MAX_FRAME_LENGTH]byte
 	inputBuf                      [MAX_FRAME_LENGTH + 2]int16

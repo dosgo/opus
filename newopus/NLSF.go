@@ -33,32 +33,32 @@ func silk_NLSF_VQ(err_Q26 []int32, in_Q15 []int16, pCB_Q8 []int16, K int, LPC_or
 }
 
 func silk_NLSF_VQ_weights_laroia(pNLSFW_Q_OUT []int16, pNLSF_Q15 []int16, D int) {
-	var tmp1_int, tmp2_int int32
+	var tmp1_int, tmp2_int int
 
 	OpusAssert(pNLSFW_Q_OUT != nil)
 	OpusAssert(D > 0)
 	OpusAssert((D & 1) == 0)
 
-	tmp1_int = int32(silk_max_int(int(pNLSF_Q15[0]), 1))
+	tmp1_int = int(silk_max_int(int(pNLSF_Q15[0]), 1))
 	tmp1_int = silk_DIV32(1<<(15+SilkConstants.NLSF_W_Q), tmp1_int)
-	tmp2_int = int32(silk_max_int(int(pNLSF_Q15[1]-pNLSF_Q15[0]), 1))
+	tmp2_int = int(silk_max_int(int(pNLSF_Q15[1]-pNLSF_Q15[0]), 1))
 	tmp2_int = silk_DIV32(1<<(15+SilkConstants.NLSF_W_Q), tmp2_int)
 	pNLSFW_Q_OUT[0] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
 	OpusAssert(pNLSFW_Q_OUT[0] > 0)
 
 	for k := 1; k < D-1; k += 2 {
-		tmp1_int = int32(silk_max_int(int(pNLSF_Q15[k+1]-pNLSF_Q15[k]), 1))
+		tmp1_int = int(silk_max_int(int(pNLSF_Q15[k+1]-pNLSF_Q15[k]), 1))
 		tmp1_int = silk_DIV32(1<<(15+SilkConstants.NLSF_W_Q), tmp1_int)
 		pNLSFW_Q_OUT[k] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
 		OpusAssert(pNLSFW_Q_OUT[k] > 0)
 
-		tmp2_int = int32(silk_max_int(int(pNLSF_Q15[k+2]-pNLSF_Q15[k+1]), 1))
+		tmp2_int = int(silk_max_int(int(pNLSF_Q15[k+2]-pNLSF_Q15[k+1]), 1))
 		tmp2_int = silk_DIV32(1<<(15+SilkConstants.NLSF_W_Q), tmp2_int)
 		pNLSFW_Q_OUT[k+1] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
 		OpusAssert(pNLSFW_Q_OUT[k+1] > 0)
 	}
 
-	tmp1_int = int32(silk_max_int(int((1<<15)-int(pNLSF_Q15[D-1]), 1)))
+	tmp1_int = int(silk_max_int(int((1<<15)-int(pNLSF_Q15[D-1]), 1)))
 	tmp1_int = silk_DIV32(1<<(15+SilkConstants.NLSF_W_Q), tmp1_int)
 	pNLSFW_Q_OUT[D-1] = int16(silk_min_int(tmp1_int+tmp2_int, math.MaxInt16))
 	OpusAssert(pNLSFW_Q_OUT[D-1] > 0)
@@ -546,7 +546,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 	}
 }
 
-func silk_A2NLSF_trans_poly(p []int32, dd int) {
+func silk_A2NLSF_trans_poly(p []int, dd int) {
 	for k := 2; k <= dd; k++ {
 		for n := dd; n > k; n-- {
 			p[n-2] -= p[n]
@@ -555,7 +555,7 @@ func silk_A2NLSF_trans_poly(p []int32, dd int) {
 	}
 }
 
-func silk_A2NLSF_eval_poly(p []int32, x int32, dd int) int32 {
+func silk_A2NLSF_eval_poly(p []int, x int, dd int) int {
 	x_Q16 := x << 4
 	y32 := p[dd]
 	if dd == 8 {
@@ -575,7 +575,7 @@ func silk_A2NLSF_eval_poly(p []int32, x int32, dd int) int32 {
 	return y32
 }
 
-func silk_A2NLSF_init(a_Q16 []int32, P []int32, Q []int32, dd int) {
+func silk_A2NLSF_init(a_Q16 []int, P []int, Q []int, dd int) {
 	P[dd] = 1 << 16
 	Q[dd] = 1 << 16
 	for k := 0; k < dd; k++ {
@@ -590,14 +590,14 @@ func silk_A2NLSF_init(a_Q16 []int32, P []int32, Q []int32, dd int) {
 	silk_A2NLSF_trans_poly(Q, dd)
 }
 
-func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
+func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 	const SILK_MAX_ORDER_LPC = 16
 	const LSF_COS_TAB_SZ = 128
 
 	dd := d / 2
-	P := make([]int32, SILK_MAX_ORDER_LPC/2+1)
-	Q := make([]int32, SILK_MAX_ORDER_LPC/2+1)
-	PQ := [2][]int32{P, Q}
+	P := make([]int, SILK_MAX_ORDER_LPC/2+1)
+	Q := make([]int, SILK_MAX_ORDER_LPC/2+1)
+	PQ := [2][]int{P, Q}
 
 	silk_A2NLSF_init(a_Q16, P, Q, dd)
 
@@ -642,7 +642,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
 				}
 			}
 
-			if silk_abs(int32(ylo)) < 65536 {
+			if silk_abs(int(ylo)) < 65536 {
 				den := ylo - yhi
 				nom := (ylo << (8 - BIN_DIV_STEPS_A2NLSF)) + den/2
 				if den != 0 {
@@ -652,7 +652,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int32, d int) {
 				ffrac += int(ylo / ((ylo - yhi) >> (8 - BIN_DIV_STEPS_A2NLSF)))
 			}
 
-			NLSF[root_ix] = int16(silk_min_32(int32(k)<<8+int32(ffrac), math.MaxInt16))
+			NLSF[root_ix] = int16(silk_min_32(int(k)<<8+int(ffrac), math.MaxInt16))
 			OpusAssert(int(NLSF[root_ix]) >= 0)
 
 			root_ix++

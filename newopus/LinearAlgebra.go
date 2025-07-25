@@ -1,10 +1,10 @@
 package opus
 
-func silk_solve_LDL(A []int32, A_ptr int, M int, b []int32, x_Q16 []int32) {
+func silk_solve_LDL(A []int, A_ptr int, M int, b []int, x_Q16 []int) {
 	OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
-	L_Q16 := make([]int32, M*M)
-	Y := make([]int32, SilkConstants.MAX_MATRIX_SIZE)
-	inv_D := make([]int32, SilkConstants.MAX_MATRIX_SIZE*2)
+	L_Q16 := make([]int, M*M)
+	Y := make([]int, SilkConstants.MAX_MATRIX_SIZE)
+	inv_D := make([]int, SilkConstants.MAX_MATRIX_SIZE*2)
 
 	silk_LDL_factorize(A, A_ptr, M, L_Q16, inv_D)
 	silk_LS_SolveFirst(L_Q16, M, b, Y)
@@ -12,16 +12,16 @@ func silk_solve_LDL(A []int32, A_ptr int, M int, b []int32, x_Q16 []int32) {
 	silk_LS_SolveLast(L_Q16, M, Y, x_Q16)
 }
 
-func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int32) {
+func silk_LDL_factorize(A []int, A_ptr int, M int, L_Q16 []int, inv_D []int) {
 	var i, j, k, status, loop_count int
-	var scratch1 []int32
+	var scratch1 []int
 	var scratch1_ptr int
-	var scratch2 []int32
+	var scratch2 []int
 	var scratch2_ptr int
-	var diag_min_value, tmp_32, err int32
-	v_Q0 := make([]int32, M)
-	D_Q0 := make([]int32, M)
-	var one_div_diag_Q36, one_div_diag_Q40, one_div_diag_Q48 int32
+	var diag_min_value, tmp_32, err int
+	v_Q0 := make([]int, M)
+	D_Q0 := make([]int, M)
+	var one_div_diag_Q36, one_div_diag_Q40, one_div_diag_Q48 int
 
 	OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE)
 
@@ -29,7 +29,7 @@ func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int3
 	diag_min_value = silk_max_32(
 		silk_SMMUL(
 			silk_ADD_SAT32(A[A_ptr], A[A_ptr+silk_SMULBB(M, M)-1]),
-			int32(float64(TuningParameters.FIND_LTP_COND_FAC)*float64(int32(1<<31))+0.5),
+			int(float64(TuningParameters.FIND_LTP_COND_FAC)*float64(int(1<<31))+0.5),
 		),
 		1<<9,
 	)
@@ -57,7 +57,7 @@ func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int3
 
 			one_div_diag_Q36 = silk_INVERSE32_varQ(tmp_32, 36)
 			one_div_diag_Q40 = silk_LSHIFT(one_div_diag_Q36, 4)
-			err = silk_SUB32(int32(1<<24), silk_SMULWW(tmp_32, one_div_diag_Q40))
+			err = silk_SUB32(int(1<<24), silk_SMULWW(tmp_32, one_div_diag_Q40))
 			one_div_diag_Q48 = silk_SMULWW(err, one_div_diag_Q40)
 
 			inv_D[j*2+0] = one_div_diag_Q36
@@ -85,9 +85,9 @@ func silk_LDL_factorize(A []int32, A_ptr int, M int, L_Q16 []int32, inv_D []int3
 	OpusAssert(status == 0)
 }
 
-func silk_LS_divide_Q16(T []int32, inv_D []int32, M int) {
+func silk_LS_divide_Q16(T []int, inv_D []int, M int) {
 	var i int
-	var tmp_32, one_div_diag_Q36, one_div_diag_Q48 int32
+	var tmp_32, one_div_diag_Q36, one_div_diag_Q48 int
 	for i = 0; i < M; i++ {
 		one_div_diag_Q36 = inv_D[i*2+0]
 		one_div_diag_Q48 = inv_D[i*2+1]
@@ -99,9 +99,9 @@ func silk_LS_divide_Q16(T []int32, inv_D []int32, M int) {
 	}
 }
 
-func silk_LS_SolveFirst(L_Q16 []int32, M int, b []int32, x_Q16 []int32) {
+func silk_LS_SolveFirst(L_Q16 []int, M int, b []int, x_Q16 []int) {
 	var i, j, ptr32 int
-	var tmp_32 int32
+	var tmp_32 int
 	for i = 0; i < M; i++ {
 		ptr32 = MatrixGetPointer(i, 0, M)
 		tmp_32 = 0
@@ -112,9 +112,9 @@ func silk_LS_SolveFirst(L_Q16 []int32, M int, b []int32, x_Q16 []int32) {
 	}
 }
 
-func silk_LS_SolveLast(L_Q16 []int32, M int, b []int32, x_Q16 []int32) {
+func silk_LS_SolveLast(L_Q16 []int, M int, b []int, x_Q16 []int) {
 	var i, j, ptr32 int
-	var tmp_32 int32
+	var tmp_32 int
 	for i = M - 1; i >= 0; i-- {
 		ptr32 = MatrixGetPointer(0, i, M)
 		tmp_32 = 0

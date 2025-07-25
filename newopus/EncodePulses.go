@@ -82,10 +82,10 @@ func silk_encode_pulses(
 		nRshifts[i] = 0
 
 		for {
-			scale_down = combine_and_check(pulses_comb, 0, abs_pulses, abs_pulses_ptr, SilkTables.Silk_max_pulses_table[0], 8)
-			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, SilkTables.Silk_max_pulses_table[1], 4)
-			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, SilkTables.Silk_max_pulses_table[2], 2)
-			scale_down += combine_and_check(sum_pulses, i, pulses_comb, 0, SilkTables.Silk_max_pulses_table[3], 1)
+			scale_down = combine_and_check(pulses_comb, 0, abs_pulses, abs_pulses_ptr, int(SilkTables.Silk_max_pulses_table[0]), 8)
+			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[1]), 4)
+			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[2]), 2)
+			scale_down += combine_and_check(sum_pulses, i, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[3]), 1)
 
 			if scale_down != 0 {
 				nRshifts[i]++

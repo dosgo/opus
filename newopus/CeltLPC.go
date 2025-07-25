@@ -1,14 +1,14 @@
 package opus
 
-func celt_lpc(_lpc []int32, ac []int32, p int) {
+func celt_lpc(_lpc []int, ac []int, p int) {
 	var i, j int
-	var r int32
+	var r int
 	error := ac[0]
-	lpc := make([]int32, p)
+	lpc := make([]int, p)
 
 	if ac[0] != 0 {
 		for i = 0; i < p; i++ {
-			var rr int32
+			var rr int
 			for j = 0; j < i; j++ {
 				rr += MULT32_32_Q31(lpc[j], ac[i-j])
 			}
@@ -35,14 +35,14 @@ func celt_lpc(_lpc []int32, ac []int32, p int) {
 	}
 }
 
-func celt_iir(_x []int32, _x_ptr int, den []int32, _y []int32, _y_ptr int, N int, ord int, mem []int32) {
+func celt_iir(_x []int, _x_ptr int, den []int, _y []int, _y_ptr int, N int, ord int, mem []int) {
 	var i, j int
-	rden := make([]int32, ord)
-	y := make([]int32, N+ord)
+	rden := make([]int, ord)
+	y := make([]int, N+ord)
 	OpusAssert((ord & 3) == 0)
 
 	var _sum0, _sum1, _sum2, _sum3 BoxedValueInt
-	var sum0, sum1, sum2, sum3 int32
+	var sum0, sum1, sum2, sum3 int
 
 	for i = 0; i < ord; i++ {
 		rden[i] = den[ord-i-1]
