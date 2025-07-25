@@ -138,7 +138,7 @@ func silk_Decode(
 							silk_stereo_decode_pred(psRangeDec, MS_pred_Q13[:])
 							if channel_state[1].LBRR_flags[i] == 0 {
 								decodeOnlyMiddleBoxed := &BoxedValueInt{Val: decode_only_middle}
-								silk_stereo_decode_mid_only(psRangeDec, decodeOnlyMiddleBoxed)
+								silk_stereo_decode_mid_only(psRangeDec, *decodeOnlyMiddleBoxed)
 								decode_only_middle = decodeOnlyMiddleBoxed.Val
 							}
 						}
@@ -160,7 +160,7 @@ func silk_Decode(
 			silk_stereo_decode_pred(psRangeDec, MS_pred_Q13[:])
 			if (lostFlag == FLAG_DECODE_NORMAL && channel_state[1].VAD_flags[channel_state[0].nFramesDecoded] == 0) || (lostFlag == FLAG_DECODE_LBRR && channel_state[1].LBRR_flags[channel_state[0].nFramesDecoded] == 0) {
 				decodeOnlyMiddleBoxed := &BoxedValueInt{Val: decode_only_middle}
-				silk_stereo_decode_mid_only(psRangeDec, decodeOnlyMiddleBoxed)
+				silk_stereo_decode_mid_only(psRangeDec, *decodeOnlyMiddleBoxed)
 				decode_only_middle = decodeOnlyMiddleBoxed.Val
 			} else {
 				decode_only_middle = 0
