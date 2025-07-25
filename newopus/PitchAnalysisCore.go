@@ -22,16 +22,16 @@ type silk_pe_stage3_vals struct {
 func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedValueShort, contourIndex *BoxedValueByte, LTPCorr_Q15 *BoxedValueInt, prevLag int, search_thres1_Q16 int, search_thres2_Q13 int, Fs_kHz int, complexity int, nb_subfr int) int {
 	frame_8kHz := make([]int16, (PE_LTP_MEM_LENGTH_MS+nb_subfr*PE_SUBFR_LENGTH_MS)*8)
 	frame_4kHz := make([]int16, (PE_LTP_MEM_LENGTH_MS+nb_subfr*PE_SUBFR_LENGTH_MS)*4)
-	filt_state := make([]int32, 6)
+	filt_state := make([]int, 6)
 	var input_frame_ptr []int16
 	var i, k, d, j int
 	var C []int16
-	xcorr32 := make([]int32, MAX_LAG_4KHZ-MIN_LAG_4KHZ+1)
+	xcorr32 := make([]int, MAX_LAG_4KHZ-MIN_LAG_4KHZ+1)
 	var basis []int16
 	var basis_ptr int
 	var target []int16
 	var target_ptr int
-	var cross_corr, normalizer, energy, shift, energy_basis, energy_target int32
+	var cross_corr, normalizer, energy, shift, energy_basis, energy_target int
 	var Cmax, length_d_srch, length_d_comp int
 	d_srch := make([]int, PE_D_SRCH_LENGTH)
 	d_comp := make([]int16, D_COMP_STRIDE)
@@ -67,7 +67,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	silk_resampler_down2(filt_state, frame_4kHz, frame_8kHz, frame_length_8kHz)
 
 	for i := frame_length_4kHz - 1; i > 0; i-- {
-		frame_4kHz[i] = int16(silk_ADD_SAT32(int32(frame_4kHz[i]), int32(frame_4kHz[i-1])))
+		frame_4kHz[i] = int16(silk_ADD_SAT32(int(frame_4kHz[i]), int(frame_4kHz[i-1])))
 	}
 
 	energy_val, shift_val := silk_sum_sqr_shift(frame_4kHz, frame_length_4kHz)
@@ -75,7 +75,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	if shift > 0 {
 		shift = silk_RSHIFT(shift, 1)
 		for i := 0; i < frame_length_4kHz; i++ {
-			frame_4kHz[i] = int16(silk_RSHIFT_uint(uint32(frame_4kHz[i]), uint(shift)))
+			frame_4kHz[i] = int16(silk_RSHIFT_uint(uint(frame_4kHz[i]), uint(shift)))
 		}
 	}
 
@@ -97,7 +97,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		cross_corr = xcorr32[MAX_LAG_4KHZ-MIN_LAG_4KHZ]
 		normalizer = silk_inner_prod_self(target, target_ptr, SF_LENGTH_8KHZ)
 		normalizer = silk_ADD32(normalizer, silk_inner_prod_self(basis, basis_ptr, SF_LENGTH_8KHZ))
-		normalizer = silk_ADD32(normalizer, int32(int16(SF_LENGTH_8KHZ*4000)))
+		normalizer = silk_ADD32(normalizer, int(int16(SF_LENGTH_8KHZ*4000)))
 
 		C[k*CSTRIDE_4KHZ+0] = int16(silk_DIV32_varQ(cross_corr, normalizer, 14))
 
@@ -105,8 +105,8 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 			basis_ptr--
 			cross_corr = xcorr32[MAX_LAG_4KHZ-d]
 			normalizer = silk_ADD32(normalizer,
-				int32(int16(int32(basis[basis_ptr])*int32(basis[basis_ptr])-
-					int32(basis[basis_ptr+SF_LENGTH_8KHZ])*int32(basis[basis_ptr+SF_LENGTH_8KHZ]))))
+				int(int16(int(basis[basis_ptr])*int(basis[basis_ptr])-
+					int(basis[basis_ptr+SF_LENGTH_8KHZ])*int(basis[basis_ptr+SF_LENGTH_8KHZ]))))
 			C[k*CSTRIDE_4KHZ+(d-MIN_LAG_4KHZ)] = int16(silk_DIV32_varQ(cross_corr, normalizer, 14))
 		}
 		target_ptr += SF_LENGTH_8KHZ
@@ -120,7 +120,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		}
 	} else {
 		for i := MAX_LAG_4KHZ; i >= MIN_LAG_4KHZ; i-- {
-			sum = int(silk_LSHIFT(int32(C[i-MIN_LAG_4KHZ]), 1))
+			sum = int(silk_LSHIFT(int(C[i-MIN_LAG_4KHZ]), 1))
 			sum = silk_SMLAWB(sum, sum, silk_LSHIFT(-i, 4))
 			C[i-MIN_LAG_4KHZ] = int16(sum)
 		}
@@ -195,7 +195,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	if shift > 0 {
 		shift = silk_RSHIFT(shift, 1)
 		for i := 0; i < frame_length_8kHz; i++ {
-			frame_8kHz[i] = int16(silk_RSHIFT_uint(uint32(frame_8kHz[i]), uint(shift)))
+			frame_8kHz[i] = int16(silk_RSHIFT_uint(uint(frame_8kHz[i]), uint(shift)))
 		}
 	}
 
@@ -231,7 +231,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 	if prevLag > 0 {
 		if Fs_kHz == 12 {
-			prevLag = silk_DIV32_16(silk_LSHIFT(int32(prevLag), 1), 3)
+			prevLag = silk_DIV32_16(silk_LSHIFT(int(prevLag), 1), 3)
 		} else if Fs_kHz == 16 {
 			prevLag = silk_RSHIFT(prevLag, 1)
 		}
@@ -303,7 +303,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		return 1
 	}
 
-	LTPCorr_Q15.Val = silk_LSHIFT(silk_DIV32_16(int32(CCmax), int16(nb_subfr)), 2)
+	LTPCorr_Q15.Val = silk_LSHIFT(silk_DIV32_16(int(CCmax), int16(nb_subfr)), 2)
 
 	if Fs_kHz > 8 {
 		var scratch_mem []int16
@@ -313,7 +313,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 			scratch_mem = make([]int16, frame_length)
 			shift = silk_RSHIFT(shift, 1)
 			for i = 0; i < frame_length; i++ {
-				scratch_mem[i] = int16(silk_RSHIFT_uint(uint32(frame[i]), uint(shift)))
+				scratch_mem[i] = int16(silk_RSHIFT_uint(uint(frame[i]), uint(shift)))
 			}
 			input_frame_ptr = scratch_mem
 		} else {
@@ -322,7 +322,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 		CBimax_old = CBimax
 		if Fs_kHz == 12 {
-			lag = silk_RSHIFT(silk_SMULBB(int32(lag), 3), 1)
+			lag = silk_RSHIFT(silk_SMULBB(int(lag), 3), 1)
 		} else if Fs_kHz == 16 {
 			lag = silk_LSHIFT(lag, 1)
 		} else {
@@ -408,8 +408,8 @@ func silk_P_Ana_calc_corr_st3(cross_corr_st3 []*silk_pe_stage3_vals, frame []int
 	var target_ptr int
 	var i, j, k, lag_counter, lag_low, lag_high int
 	var nb_cbk_search, delta, idx int
-	scratch_mem := make([]int32, SCRATCH_SIZE)
-	xcorr32 := make([]int32, SCRATCH_SIZE)
+	scratch_mem := make([]int, SCRATCH_SIZE)
+	xcorr32 := make([]int, SCRATCH_SIZE)
 	var Lag_range_ptr, Lag_CB_ptr [][]byte
 
 	if nb_subfr == PE_MAX_NB_SUBFR {
@@ -446,10 +446,10 @@ func silk_P_Ana_calc_corr_st3(cross_corr_st3 []*silk_pe_stage3_vals, frame []int
 
 func silk_P_Ana_calc_energy_st3(energies_st3 []*silk_pe_stage3_vals, frame []int16, start_lag int, sf_length int, nb_subfr int, complexity int) {
 	var target_ptr, basis_ptr int
-	var energy int32
+	var energy int
 	var k, i, j, lag_counter int
 	var nb_cbk_search, delta, idx, lag_diff int
-	scratch_mem := make([]int32, SCRATCH_SIZE)
+	scratch_mem := make([]int, SCRATCH_SIZE)
 	var Lag_range_ptr, Lag_CB_ptr [][]byte
 
 	if nb_subfr == PE_MAX_NB_SUBFR {
@@ -472,8 +472,8 @@ func silk_P_Ana_calc_energy_st3(energies_st3 []*silk_pe_stage3_vals, frame []int
 
 		lag_diff = int(Lag_range_ptr[k][1]) - int(Lag_range_ptr[k][0]) + 1
 		for i = 1; i < lag_diff; i++ {
-			energy -= int32(frame[basis_ptr+sf_length-i]) * int32(frame[basis_ptr+sf_length-i])
-			energy = silk_ADD_SAT32(energy, int32(frame[basis_ptr-i])*int32(frame[basis_ptr-i]))
+			energy -= int(frame[basis_ptr+sf_length-i]) * int(frame[basis_ptr+sf_length-i])
+			energy = silk_ADD_SAT32(energy, int(frame[basis_ptr-i])*int(frame[basis_ptr-i]))
 			scratch_mem[lag_counter] = energy
 			lag_counter++
 		}

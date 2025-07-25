@@ -36,7 +36,7 @@ var OFFSET = ((MIN_QGAIN_DB*128)/6 + 16*128)
 var SCALE_Q16 = (65536 * (N_LEVELS_QGAIN - 1)) / (((MAX_QGAIN_DB - MIN_QGAIN_DB) * 128) / 6)
 var INV_SCALE_Q16 = (65536 * (((MAX_QGAIN_DB - MIN_QGAIN_DB) * 128) / 6)) / (N_LEVELS_QGAIN - 1)
 
-func silk_gains_quant(ind []byte, gain_Q16 []int32, prev_ind *byte, conditional int, nb_subfr int) {
+func silk_gains_quant(ind []byte, gain_Q16 []int, prev_ind *byte, conditional int, nb_subfr int) {
 	for k := 0; k < nb_subfr; k++ {
 		ind[k] = byte(silk_SMULWB(SCALE_Q16, silk_lin2log(gain_Q16[k])-OFFSET))
 
@@ -68,11 +68,11 @@ func silk_gains_quant(ind []byte, gain_Q16 []int32, prev_ind *byte, conditional 
 			ind[k] -= byte(SilkConstants.MIN_DELTA_GAIN_QUANT)
 		}
 
-		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int32(*prev_ind))+OFFSET, 3967))
+		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int(*prev_ind))+OFFSET, 3967))
 	}
 }
 
-func silk_gains_dequant(gain_Q16 []int32, ind []byte, prev_ind *byte, conditional int, nb_subfr int) {
+func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind *byte, conditional int, nb_subfr int) {
 	for k := 0; k < nb_subfr; k++ {
 		if k == 0 && conditional == 0 {
 			*prev_ind = byte(silk_max_int(int(ind[k]), int(*prev_ind)-16))
@@ -81,15 +81,15 @@ func silk_gains_dequant(gain_Q16 []int32, ind []byte, prev_ind *byte, conditiona
 
 			double_step_size_threshold := 2*MAX_DELTA_GAIN_QUANT - N_LEVELS_QGAIN + int(*prev_ind)
 			if ind_tmp > double_step_size_threshold {
-				*prev_ind = byte(int(*prev_ind) + (silk_LSHIFT(uint32(ind_tmp), 1) - double_step_size_threshold))
+				*prev_ind = byte(int(*prev_ind) + (silk_LSHIFT(uint(ind_tmp), 1) - double_step_size_threshold))
 			} else {
 				*prev_ind = byte(int(*prev_ind) + ind_tmp)
 			}
 		}
 
-		*prev_ind = byte(silk_LIMIT_int(int32(*prev_ind), 0, N_LEVELS_QGAIN-1))
+		*prev_ind = byte(silk_LIMIT_int(int(*prev_ind), 0, N_LEVELS_QGAIN-1))
 
-		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int32(*prev_ind))+OFFSET, 3967))
+		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int(*prev_ind))+OFFSET, 3967))
 	}
 }
 

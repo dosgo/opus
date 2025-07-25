@@ -16,7 +16,7 @@ func silk_find_pred_coefs(
 	var x_ptr2, x_pre_ptr int
 	var LPC_in_pre []int16
 	var tmp, min_gain_Q16, minInvGain_Q30 int
-	LTP_corrs_rshift := make([]int32, MAX_NB_SUBFR)
+	LTP_corrs_rshift := make([]int, MAX_NB_SUBFR)
 
 	min_gain_Q16 = int(0x7FFFFFFF >> 6)
 	for i = 0; i < psEnc.nb_subfr; i++ {
@@ -40,11 +40,11 @@ func silk_find_pred_coefs(
 
 	LPC_in_pre = make([]int16, psEnc.nb_subfr*psEnc.predictLPCOrder+psEnc.frame_length)
 	if psEnc.indices.signalType == TYPE_VOICED {
-		var WLTP []int32
+		var WLTP []int
 
 		OpusAssert(psEnc.ltp_mem_length-psEnc.predictLPCOrder >= psEncCtrl.pitchL[0]+LTP_ORDER/2)
 
-		WLTP = make([]int32, psEnc.nb_subfr*LTP_ORDER*LTP_ORDER)
+		WLTP = make([]int, psEnc.nb_subfr*LTP_ORDER*LTP_ORDER)
 
 		codgain := psEncCtrl.LTPredCodGain_Q7
 		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, &codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
@@ -77,10 +77,10 @@ func silk_find_pred_coefs(
 	}
 
 	if psEnc.first_frame_after_reset != 0 {
-		minInvGain_Q30 = int32((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*float64(1<<30) + 0.5)
+		minInvGain_Q30 = int((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*float64(1<<30) + 0.5)
 	} else {
-		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int32(psEncCtrl.LTPredCodGain_Q7), int32((1.0/3.0)*(1<<16)+0.5)))
-		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30, silk_SMULWW(int32(SilkConstants.MAX_PREDICTION_POWER_GAIN*(1)+0.5, silk_SMLAWB(int32(0.25*(1<<18)+0.5, int32(0.75*(1<<18)+0.5, psEncCtrl.coding_quality_Q14)), 14))))
+		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int(psEncCtrl.LTPredCodGain_Q7), int((1.0/3.0)*(1<<16)+0.5)))
+		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30, silk_SMULWW(int(SilkConstants.MAX_PREDICTION_POWER_GAIN*(1)+0.5, silk_SMLAWB(int(0.25*(1<<18)+0.5, int(0.75*(1<<18)+0.5, psEncCtrl.coding_quality_Q14)), 14))))
 	}
 
 	silk_find_LPC(psEnc, NLSF_Q15, LPC_in_pre, minInvGain_Q30)

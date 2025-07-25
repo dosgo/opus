@@ -8,7 +8,7 @@ var eMeans = []int8{
 	60, 60, 60, 60, 60,
 }
 
-var ordery_table = []int32{
+var ordery_table = []int{
 	1, 0,
 	3, 0, 2, 1,
 	7, 0, 4, 3, 6, 1, 5, 2,
@@ -218,7 +218,7 @@ var CELT_PVQ_U_DATA = []int64{
 	1409933619,
 }
 
-var window120 = []int32{
+var window120 = []int{
 	2, 20, 55, 108, 178,
 	266, 372, 494, 635, 792,
 	966, 1157, 1365, 1590, 1831,
@@ -1020,15 +1020,15 @@ var mdct_twiddles960 = []int16{
 	-32501, -32600, -32675, -32729, -32759,
 }
 
-var intensity_thresholds = []int32{1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 36, 44, 50, 56, 62, 67, 72, 79, 88, 106, 134}
-var intensity_histeresis = []int32{1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 4, 5, 6, 8, 8}
+var intensity_thresholds = []int{1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 36, 44, 50, 56, 62, 67, 72, 79, 88, 106, 134}
+var intensity_histeresis = []int{1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 4, 5, 6, 8, 8}
 var CeltTables = struct {
 	Tf_select_table      [][]int8
 	EMeans               []int8
 	Eband5ms             []int16
 	Band_allocation      []int16
 	LogN400              []int16
-	Window120            []int32
+	Window120            []int
 	Cache_index50        []int16
 	Cache_bits50         []int16
 	Cache_caps50         []int16

@@ -46,8 +46,8 @@ const (
 )
 
 func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
-	ft := CapToUInt32(32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
-	return CapToUInt32(ft*(16384-int64(decay))) >> 15
+	ft := CapToUint(32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
+	return CapToUint(ft*(16384-int64(decay))) >> 15
 }
 
 func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
@@ -68,8 +68,8 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 
 		for i = 1; fs > 0 && i < val; i++ {
 			fs *= 2
-			fl = CapToUInt32(fl + fs + 2*LAPLACE_MINP)
-			fs = CapToUInt32((fs * int64(decay)) >> 15)
+			fl = CapToUint(fl + fs + 2*LAPLACE_MINP)
+			fs = CapToUint((fs * int64(decay)) >> 15)
 		}
 
 		if fs == 0 {
@@ -78,7 +78,7 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 			ndi_max = int(32768-fl+LAPLACE_MINP-1) >> LAPLACE_LOG_MINP
 			ndi_max = (ndi_max - s) >> 1
 			di = IMIN(val-i, ndi_max-1)
-			fl = CapToUInt32(fl + int64(2*di+1+s)*LAPLACE_MINP)
+			fl = CapToUint(fl + int64(2*di+1+s)*LAPLACE_MINP)
 			fs = IMIN(LAPLACE_MINP, int(32768-fl))
 			value.Val = (i + di + s) ^ s
 		} else {
@@ -93,7 +93,7 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 		OpusAssert(fs > 0)
 	}
 
-	enc.encode_bin(uint32(fl), uint32(fl+fs), 15)
+	enc.encode_bin(uint(fl), uint(fl+fs), 15)
 }
 
 func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
@@ -101,25 +101,25 @@ func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
 	fm := dec.decode_bin(15)
 	fl := int64(0)
 
-	if fm >= uint32(fs) {
+	if fm >= uint(fs) {
 		val++
 		fl = fs
 		fs = l.ec_laplace_get_freq1(fs, decay) + LAPLACE_MINP
-		for fs > LAPLACE_MINP && fm >= uint32(fl+2*fs) {
+		for fs > LAPLACE_MINP && fm >= uint(fl+2*fs) {
 			fs *= 2
-			fl = CapToUInt32(fl + fs)
-			fs = CapToUInt32((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
+			fl = CapToUint(fl + fs)
+			fs = CapToUint((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
 			val++
 		}
 		if fs <= LAPLACE_MINP {
 			di := int(fm-uint(fl)) >> (LAPLACE_LOG_MINP + 1)
 			val += di
-			fl = CapToUInt32(fl + int64(2*di*LAPLACE_MINP))
+			fl = CapToUint(fl + int64(2*di*LAPLACE_MINP))
 		}
-		if fm < uint32(fl+fs) {
+		if fm < uint(fl+fs) {
 			val = -val
 		} else {
-			fl = CapToUInt32(fl + fs)
+			fl = CapToUint(fl + fs)
 		}
 	}
 

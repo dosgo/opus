@@ -23,8 +23,8 @@ func silk_decode_parameters(
 
 	if psDec.indices.NLSFInterpCoef_Q2 < 4 {
 		for i := 0; i < psDec.LPC_order; i++ {
-			pNLSF0_Q15[i] = int16(psDec.prevNLSF_Q15[i] + silk_RSHIFT(silk_MUL(int32(psDec.indices.NLSFInterpCoef_Q2),
-				int32(pNLSF_Q15[i]-psDec.prevNLSF_Q15[i])), 2))
+			pNLSF0_Q15[i] = int16(psDec.prevNLSF_Q15[i] + silk_RSHIFT(silk_MUL(int(psDec.indices.NLSFInterpCoef_Q2),
+				int(pNLSF_Q15[i]-psDec.prevNLSF_Q15[i])), 2))
 		}
 		silk_NLSF2A(psDecCtrl.PredCoef_Q12[0], pNLSF0_Q15, psDec.LPC_order)
 	} else {
@@ -45,7 +45,7 @@ func silk_decode_parameters(
 		for k := 0; k < psDec.nb_subfr; k++ {
 			Ix := psDec.indices.LTPIndex[k]
 			for i := 0; i < LTP_ORDER; i++ {
-				psDecCtrl.LTPCoef_Q14[k*LTP_ORDER+i] = int16(silk_LSHIFT(int32(cbk_ptr_Q7[Ix][i]), 7))
+				psDecCtrl.LTPCoef_Q14[k*LTP_ORDER+i] = int16(silk_LSHIFT(int(cbk_ptr_Q7[Ix][i]), 7))
 			}
 		}
 

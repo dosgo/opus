@@ -119,19 +119,19 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 	return SilkError.SILK_NO_ERROR
 }
 
-func silk_resampler_down2(S []int32, output []int16, input []int16, inLen int) {
+func silk_resampler_down2(S []int, output []int16, input []int16, inLen int) {
 	len2 := silk_RSHIFT32(inLen, 1)
 	OpusAssert(silk_resampler_down2_0 > 0)
 	OpusAssert(silk_resampler_down2_1 < 0)
 
 	for k := 0; k < len2; k++ {
-		in32 := silk_LSHIFT(int32(input[2*k]), 10)
+		in32 := silk_LSHIFT(int(input[2*k]), 10)
 		Y := silk_SUB32(in32, S[0])
 		X := silk_SMLAWB(Y, Y, silk_resampler_down2_1)
 		out32 := silk_ADD32(S[0], X)
 		S[0] = silk_ADD32(in32, X)
 
-		in32 = silk_LSHIFT(int32(input[2*k+1]), 10)
+		in32 = silk_LSHIFT(int(input[2*k+1]), 10)
 		Y = silk_SUB32(in32, S[1])
 		X = silk_SMULWB(Y, silk_resampler_down2_0)
 		out32 = silk_ADD32(out32, S[1])
@@ -142,8 +142,8 @@ func silk_resampler_down2(S []int32, output []int16, input []int16, inLen int) {
 	}
 }
 
-func silk_resampler_down2_3(S []int32, output []int16, input []int16, inLen int) {
-	buf := make([]int32, RESAMPLER_MAX_BATCH_SIZE_IN+ORDER_FIR)
+func silk_resampler_down2_3(S []int, output []int16, input []int16, inLen int) {
+	buf := make([]int, RESAMPLER_MAX_BATCH_SIZE_IN+ORDER_FIR)
 	input_ptr := 0
 	output_ptr := 0
 
@@ -187,17 +187,17 @@ func silk_resampler_down2_3(S []int32, output []int16, input []int16, inLen int)
 	copy(S[:ORDER_FIR], buf[nSamplesIn:nSamplesIn+ORDER_FIR])
 }
 
-func silk_resampler_private_AR2(S []int32, S_ptr int, out_Q8 []int32, out_Q8_ptr int, input []int16, input_ptr int, A_Q14 []int16, len int) {
+func silk_resampler_private_AR2(S []int, S_ptr int, out_Q8 []int, out_Q8_ptr int, input []int16, input_ptr int, A_Q14 []int16, len int) {
 	for k := 0; k < len; k++ {
-		out32 := silk_ADD_LSHIFT32(S[S_ptr], int32(input[input_ptr+k]), 8)
+		out32 := silk_ADD_LSHIFT32(S[S_ptr], int(input[input_ptr+k]), 8)
 		out_Q8[out_Q8_ptr+k] = out32
 		out32 = silk_LSHIFT(out32, 2)
-		S[S_ptr] = silk_SMLAWB(S[S_ptr+1], out32, int32(A_Q14[0]))
-		S[S_ptr+1] = silk_SMULWB(out32, int32(A_Q14[1]))
+		S[S_ptr] = silk_SMLAWB(S[S_ptr+1], out32, int(A_Q14[0]))
+		S[S_ptr+1] = silk_SMULWB(out32, int(A_Q14[1]))
 	}
 }
 
-func silk_resampler_private_down_FIR_INTERPOL(output []int16, output_ptr int, buf []int32, FIR_Coefs []int16, FIR_Coefs_ptr int, FIR_Order int, FIR_Fracs int, max_index_Q16 int, index_increment_Q16 int) int {
+func silk_resampler_private_down_FIR_INTERPOL(output []int16, output_ptr int, buf []int, FIR_Coefs []int16, FIR_Coefs_ptr int, FIR_Order int, FIR_Fracs int, max_index_Q16 int, index_increment_Q16 int) int {
 	switch FIR_Order {
 	case RESAMPLER_DOWN_ORDER_FIR0:
 		for index_Q16 := 0; index_Q16 < max_index_Q16; index_Q16 += index_increment_Q16 {
@@ -275,7 +275,7 @@ func silk_resampler_private_down_FIR_INTERPOL(output []int16, output_ptr int, bu
 }
 
 func silk_resampler_private_down_FIR(S *SilkResamplerState, output []int16, output_ptr int, input []int16, input_ptr int, inLen int) {
-	buf := make([]int32, S.batchSize+S.FIR_Order)
+	buf := make([]int, S.batchSize+S.FIR_Order)
 	copy(buf[:S.FIR_Order], S.sFIR_i32[:S.FIR_Order])
 
 	index_increment_Q16 := S.invRatio_Q16
@@ -304,14 +304,14 @@ func silk_resampler_private_IIR_FIR_INTERPOL(output []int16, output_ptr int, buf
 		table_index := silk_SMULWB(index_Q16&0xFFFF, 12)
 		buf_ptr := index_Q16 >> 16
 
-		res_Q15 := silk_SMULBB(int32(buf[buf_ptr]), int32(silk_resampler_frac_FIR_12[table_index][0]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+1]), int32(silk_resampler_frac_FIR_12[table_index][1]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+2]), int32(silk_resampler_frac_FIR_12[table_index][2]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+3]), int32(silk_resampler_frac_FIR_12[table_index][3]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+4]), int32(silk_resampler_frac_FIR_12[11-table_index][3]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+5]), int32(silk_resampler_frac_FIR_12[11-table_index][2]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+6]), int32(silk_resampler_frac_FIR_12[11-table_index][1]))
-		res_Q15 = silk_SMLABB(res_Q15, int32(buf[buf_ptr+7]), int32(silk_resampler_frac_FIR_12[11-table_index][0]))
+		res_Q15 := silk_SMULBB(int(buf[buf_ptr]), int(silk_resampler_frac_FIR_12[table_index][0]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+1]), int(silk_resampler_frac_FIR_12[table_index][1]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+2]), int(silk_resampler_frac_FIR_12[table_index][2]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+3]), int(silk_resampler_frac_FIR_12[table_index][3]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+4]), int(silk_resampler_frac_FIR_12[11-table_index][3]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+5]), int(silk_resampler_frac_FIR_12[11-table_index][2]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+6]), int(silk_resampler_frac_FIR_12[11-table_index][1]))
+		res_Q15 = silk_SMLABB(res_Q15, int(buf[buf_ptr+7]), int(silk_resampler_frac_FIR_12[11-table_index][0]))
 		output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q15, 15)))
 		output_ptr++
 	}
@@ -342,7 +342,7 @@ func silk_resampler_private_IIR_FIR(S *SilkResamplerState, output []int16, outpu
 	copy(S.sFIR_i16[:RESAMPLER_ORDER_FIR_12], buf[nSamplesIn<<1:nSamplesIn<<1+RESAMPLER_ORDER_FIR_12])
 }
 
-func silk_resampler_private_up2_HQ(S []int32, output []int16, output_ptr int, input []int16, input_ptr int, len int) {
+func silk_resampler_private_up2_HQ(S []int, output []int16, output_ptr int, input []int16, input_ptr int, len int) {
 	OpusAssert(silk_resampler_up2_hq_0[0] > 0)
 	OpusAssert(silk_resampler_up2_hq_0[1] > 0)
 	OpusAssert(silk_resampler_up2_hq_0[2] < 0)
@@ -351,7 +351,7 @@ func silk_resampler_private_up2_HQ(S []int32, output []int16, output_ptr int, in
 	OpusAssert(silk_resampler_up2_hq_1[2] < 0)
 
 	for k := 0; k < len; k++ {
-		in32 := silk_LSHIFT(int32(input[input_ptr+k]), 10)
+		in32 := silk_LSHIFT(int(input[input_ptr+k]), 10)
 		Y := silk_SUB32(in32, S[0])
 		X := silk_SMULWB(Y, silk_resampler_up2_hq_0[0])
 		out32_1 := silk_ADD32(S[0], X)

@@ -138,7 +138,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 	}
 	psEncC.speech_activity_Q8 = silk_min_int(silk_RSHIFT(SA_Q15, 7), 255)
 
-	smooth_coef_Q16 := int32(silk_SMULWB(VAD_SNR_SMOOTH_COEF_Q18, silk_SMULWB(int32(SA_Q15), int32(SA_Q15))))
+	smooth_coef_Q16 := int(silk_SMULWB(VAD_SNR_SMOOTH_COEF_Q18, silk_SMULWB(int(SA_Q15), int(SA_Q15))))
 	if psEncC.frame_length == 10*psEncC.fs_kHz {
 		smooth_coef_Q16 >>= 1
 	}

@@ -305,20 +305,20 @@ func silk_Encode(
 
 			silk_HP_variable_cutoff(psEnc.state_Fxx)
 
-			nBits = silk_DIV32_16(int32(encControl.bitRate*encControl.payloadSize_ms), 1000)
+			nBits = silk_DIV32_16(int(encControl.bitRate*encControl.payloadSize_ms), 1000)
 			if prefillFlag == 0 {
 				nBits -= psEnc.nBitsUsedLBRR
 			}
-			nBits = silk_DIV32_16(int32(nBits), int32(psEnc.state_Fxx[0].nFramesPerPacket))
+			nBits = silk_DIV32_16(int(nBits), int(psEnc.state_Fxx[0].nFramesPerPacket))
 			if encControl.payloadSize_ms == 10 {
 				TargetRate_bps = nBits * 100
 			} else {
 				TargetRate_bps = nBits * 50
 			}
-			TargetRate_bps -= silk_DIV32_16(int32(psEnc.nBitsExceeded*1000), BITRESERVOIR_DECAY_TIME_MS)
+			TargetRate_bps -= silk_DIV32_16(int(psEnc.nBitsExceeded*1000), BITRESERVOIR_DECAY_TIME_MS)
 			if prefillFlag == 0 && psEnc.state_Fxx[0].nFramesEncoded > 0 {
 				bitsBalance := psRangeEnc.tell() - psEnc.nBitsUsedLBRR - nBits*psEnc.state_Fxx[0].nFramesEncoded
-				TargetRate_bps -= silk_DIV32_16(int32(bitsBalance*1000), BITRESERVOIR_DECAY_TIME_MS)
+				TargetRate_bps -= silk_DIV32_16(int(bitsBalance*1000), BITRESERVOIR_DECAY_TIME_MS)
 			}
 			if TargetRate_bps > encControl.bitRate {
 				TargetRate_bps = encControl.bitRate

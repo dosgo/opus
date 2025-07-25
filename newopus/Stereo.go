@@ -338,7 +338,7 @@ func silk_stereo_quant_pred(
 
 	for n = 0; n < 2; n++ {
 		done := false
-		err_min_Q13 = math.MaxInt32
+		err_min_Q13 = math.Maxint
 		for i = 0; !done && i < SilkConstants.STEREO_QUANT_TAB_SIZE-1; i++ {
 			low_Q13 = SilkTables.Silk_stereo_pred_quant_Q13[i]
 			step_Q13 = silk_SMULWB(SilkTables.Silk_stereo_pred_quant_Q13[i+1]-low_Q13,

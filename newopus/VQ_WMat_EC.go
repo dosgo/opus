@@ -31,34 +31,34 @@ func silk_VQ_WMat_EC(ind *byte, rate_dist_Q14 *int, gain_Q7 *int, in_Q14 []int16
 			panic("OpusAssert failed: sum1_Q14 >= 0")
 		}
 
-		sum2_Q16 = int((int32(W_Q18[W_Q18_ptr+1]) * int32(diff_Q14[1]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+2]) * int32(diff_Q14[2]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+3]) * int32(diff_Q14[3]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+4]) * int32(diff_Q14[4]) >> 16))
+		sum2_Q16 = int((int(W_Q18[W_Q18_ptr+1]) * int(diff_Q14[1]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+2]) * int(diff_Q14[2]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+3]) * int(diff_Q14[3]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+4]) * int(diff_Q14[4]) >> 16))
 		sum2_Q16 = sum2_Q16 << 1
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr]) * int32(diff_Q14[0]) >> 16))
-		sum1_Q14 += int((int32(sum2_Q16) * int32(diff_Q14[0]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr]) * int(diff_Q14[0]) >> 16))
+		sum1_Q14 += int((int(sum2_Q16) * int(diff_Q14[0]) >> 16))
 
-		sum2_Q16 = int((int32(W_Q18[W_Q18_ptr+7]) * int32(diff_Q14[2]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+8]) * int32(diff_Q14[3]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+9]) * int32(diff_Q14[4]) >> 16))
+		sum2_Q16 = int((int(W_Q18[W_Q18_ptr+7]) * int(diff_Q14[2]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+8]) * int(diff_Q14[3]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+9]) * int(diff_Q14[4]) >> 16))
 		sum2_Q16 = sum2_Q16 << 1
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+6]) * int32(diff_Q14[1]) >> 16))
-		sum1_Q14 += int((int32(sum2_Q16) * int32(diff_Q14[1]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+6]) * int(diff_Q14[1]) >> 16))
+		sum1_Q14 += int((int(sum2_Q16) * int(diff_Q14[1]) >> 16))
 
-		sum2_Q16 = int((int32(W_Q18[W_Q18_ptr+13]) * int32(diff_Q14[3]) >> 16))
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+14]) * int32(diff_Q14[4]) >> 16))
+		sum2_Q16 = int((int(W_Q18[W_Q18_ptr+13]) * int(diff_Q14[3]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+14]) * int(diff_Q14[4]) >> 16))
 		sum2_Q16 = sum2_Q16 << 1
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+12]) * int32(diff_Q14[2]) >> 16))
-		sum1_Q14 += int((int32(sum2_Q16) * int32(diff_Q14[2]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+12]) * int(diff_Q14[2]) >> 16))
+		sum1_Q14 += int((int(sum2_Q16) * int(diff_Q14[2]) >> 16))
 
-		sum2_Q16 = int((int32(W_Q18[W_Q18_ptr+19]) * int32(diff_Q14[4]) >> 16))
+		sum2_Q16 = int((int(W_Q18[W_Q18_ptr+19]) * int(diff_Q14[4]) >> 16))
 		sum2_Q16 = sum2_Q16 << 1
-		sum2_Q16 += int((int32(W_Q18[W_Q18_ptr+18]) * int32(diff_Q14[3]) >> 16))
-		sum1_Q14 += int((int32(sum2_Q16) * int32(diff_Q14[3]) >> 16))
+		sum2_Q16 += int((int(W_Q18[W_Q18_ptr+18]) * int(diff_Q14[3]) >> 16))
+		sum1_Q14 += int((int(sum2_Q16) * int(diff_Q14[3]) >> 16))
 
-		sum2_Q16 = int((int32(W_Q18[W_Q18_ptr+24]) * int32(diff_Q14[4]) >> 16))
-		sum1_Q14 += int((int32(sum2_Q16) * int32(diff_Q14[4]) >> 16))
+		sum2_Q16 = int((int(W_Q18[W_Q18_ptr+24]) * int(diff_Q14[4]) >> 16))
+		sum1_Q14 += int((int(sum2_Q16) * int(diff_Q14[4]) >> 16))
 
 		if sum1_Q14 < 0 {
 			panic("OpusAssert failed: sum1_Q14 >= 0")

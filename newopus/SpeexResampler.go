@@ -137,10 +137,10 @@ func sinc(cutoff, x float32, N int, window_func *FuncDef) int16 {
 func cubic_coef(x int16, interp0, interp1, interp2, interp3 *BoxedValueShort) {
 	x2 := MULT16_16_P15(x, x)
 	x3 := MULT16_16_P15(x, x2)
-	interp0.Val = PSHR32(int32(MULT16_16(QCONST16(-0.16667, 15), x)+int32(MULT16_16(QCONST16(0.16667, 15), x3)), 15))
+	interp0.Val = PSHR32(int(MULT16_16(QCONST16(-0.16667, 15), x)+int(MULT16_16(QCONST16(0.16667, 15), x3)), 15))
 	interp1.Val = EXTRACT16(EXTEND32(x) + SHR32(SUB32(EXTEND32(x2), EXTEND32(x3)), 1))
-	interp3.Val = PSHR32(int32(MULT16_16(QCONST16(-0.33333, 15), x))+int32(MULT16_16(QCONST16(0.5, 15), x2))-int32(MULT16_16(QCONST16(0.16667, 15), x3)), 15)
-	interp2.Val = int16(32767 - int32(interp0.Val) - int32(interp1.Val) - int32(interp3.Val))
+	interp3.Val = PSHR32(int(MULT16_16(QCONST16(-0.33333, 15), x))+int(MULT16_16(QCONST16(0.5, 15), x2))-int(MULT16_16(QCONST16(0.16667, 15), x3)), 15)
+	interp2.Val = int16(32767 - int(interp0.Val) - int(interp1.Val) - int(interp3.Val))
 	if interp2.Val < 32767 {
 		interp2.Val += 1
 	}
@@ -161,7 +161,7 @@ func (st *SpeexResampler) resampler_basic_direct_single(channel_index int, input
 			sum += int(MULT16_16(st.sinc_table[sinct+j], input[iptr+j]))
 		}
 
-		output[output_ptr+st.out_stride*out_sample] = SATURATE16(PSHR32(int32(sum), 15))
+		output[output_ptr+st.out_stride*out_sample] = SATURATE16(PSHR32(int(sum), 15))
 		out_sample++
 		last_sample += st.int_advance
 		samp_frac_num += st.frac_advance
@@ -189,7 +189,7 @@ func (st *SpeexResampler) resampler_basic_interpolate_single(channel_index int, 
 	for !(last_sample >= in_len.Val || out_sample >= out_len.Val) {
 		iptr := input_ptr + last_sample
 		offset := samp_frac_num * st.oversample / st.den_rate
-		frac := int16(PDIV32(SHL32(int((samp_frac_num*st.oversample)%st.den_rate), 15), int32(st.den_rate)))
+		frac := int16(PDIV32(SHL32(int((samp_frac_num*st.oversample)%st.den_rate), 15), int(st.den_rate)))
 
 		accum0 := 0
 		accum1 := 0

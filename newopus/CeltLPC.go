@@ -31,7 +31,7 @@ func celt_lpc(_lpc []int, ac []int, p int) {
 	}
 
 	for i = 0; i < p; i++ {
-		_lpc[i] = ROUND16(lpc[i], 16)
+		_lpc[i] = ROUND16Int(lpc[i], 16)
 	}
 }
 
@@ -59,25 +59,26 @@ func celt_iir(_x []int, _x_ptr int, den []int, _y []int, _y_ptr int, N int, ord 
 		_sum2.Val = _x[_x_ptr+i+2]
 		_sum3.Val = _x[_x_ptr+i+3]
 		xcorr_kernel(rden, y, i, &_sum0, &_sum1, &_sum2, &_sum3, ord)
+
 		sum0 = _sum0.Val
 		sum1 = _sum1.Val
 		sum2 = _sum2.Val
 		sum3 = _sum3.Val
 
-		y[i+ord] = -ROUND16(sum0, CeltConstants.SIG_SHIFT)
+		y[i+ord] = -ROUND16Int(sum0, CeltConstants.SIG_SHIFT)
 		_y[_y_ptr+i] = sum0
-		sum1 = MAC16_16(sum1, y[i+ord], den[0])
-		y[i+ord+1] = -ROUND16(sum1, CeltConstants.SIG_SHIFT)
+		sum1 = MAC16_16IntAll(sum1, y[i+ord], den[0])
+		y[i+ord+1] = -ROUND16Int(sum1, CeltConstants.SIG_SHIFT)
 		_y[_y_ptr+i+1] = sum1
-		sum2 = MAC16_16(sum2, y[i+ord+1], den[0])
-		sum2 = MAC16_16(sum2, y[i+ord], den[1])
-		y[i+ord+2] = -ROUND16(sum2, CeltConstants.SIG_SHIFT)
+		sum2 = MAC16_16IntAll(sum2, y[i+ord+1], den[0])
+		sum2 = MAC16_16IntAll(sum2, y[i+ord], den[1])
+		y[i+ord+2] = -ROUND16Int(sum2, CeltConstants.SIG_SHIFT)
 		_y[_y_ptr+i+2] = sum2
 
-		sum3 = MAC16_16(sum3, y[i+ord+2], den[0])
-		sum3 = MAC16_16(sum3, y[i+ord+1], den[1])
-		sum3 = MAC16_16(sum3, y[i+ord], den[2])
-		y[i+ord+3] = -ROUND16(sum3, CeltConstants.SIG_SHIFT)
+		sum3 = MAC16_16IntAll(sum3, y[i+ord+2], den[0])
+		sum3 = MAC16_16IntAll(sum3, y[i+ord+1], den[1])
+		sum3 = MAC16_16IntAll(sum3, y[i+ord], den[2])
+		y[i+ord+3] = -ROUND16Int(sum3, CeltConstants.SIG_SHIFT)
 		_y[_y_ptr+i+3] = sum3
 	}
 	for ; i < N; i++ {
@@ -85,7 +86,7 @@ func celt_iir(_x []int, _x_ptr int, den []int, _y []int, _y_ptr int, N int, ord 
 		for j = 0; j < ord; j++ {
 			sum -= MULT16_16(rden[j], y[i+j])
 		}
-		y[i+ord] = ROUND16(sum, CeltConstants.SIG_SHIFT)
+		y[i+ord] = ROUND16Int(sum, CeltConstants.SIG_SHIFT)
 		_y[_y_ptr+i] = sum
 	}
 	for i = 0; i < ord; i++ {

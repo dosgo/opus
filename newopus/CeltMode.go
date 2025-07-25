@@ -41,7 +41,7 @@ type CeltMode struct {
 	overlap        int
 	nbEBands       int
 	effEBands      int
-	preemph        []int32
+	preemph        []int
 	eBands         []int16
 	maxLM          int
 	nbShortMdcts   int
@@ -49,7 +49,7 @@ type CeltMode struct {
 	nbAllocVectors int
 	allocVectors   []int16
 	logN           []int16
-	window         []int32
+	window         []int
 	mdct           *MDCTLookup
 	cache          *PulseCache
 }
@@ -59,7 +59,7 @@ var mode48000_960_120 *CeltMode = &CeltMode{
 	overlap:        120,
 	nbEBands:       21,
 	effEBands:      21,
-	preemph:        []int32{27853, 0, 4096, 8192},
+	preemph:        []int{27853, 0, 4096, 8192},
 	eBands:         CeltTables.Eband5ms,
 	maxLM:          3,
 	nbShortMdcts:   8,

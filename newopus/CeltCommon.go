@@ -46,7 +46,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 			stereo_saving_val = 256
 		}
 		saving := int(MIN32(
-			MULT16_32_Q15(int16(max_frac), int32(target)),
+			MULT16_32_Q15(int16(max_frac), int(target)),
 			SHR32(MULT16_16(int16(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
 		))
 		target -= saving
@@ -59,7 +59,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	} else {
 		tf_calibration = int16(0.04 * 16384.5)
 	}
-	target += int(SHL32(MULT16_32_Q15(int16(tf_estimate)-tf_calibration, int32(target)), 1))
+	target += int(SHL32(MULT16_32_Q15(int16(tf_estimate)-tf_calibration, int(target)), 1))
 
 	if analysis.enabled && analysis.valid != 0 && lfe == 0 {
 		tonal := analysis.tonality - 0.15
@@ -102,13 +102,13 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 				rate_factor = int(0.67 * 32767.5)
 			}
 		}
-		target = base_target + int(MULT16_32_Q15(int16(rate_factor), int32(target-base_target)))
+		target = base_target + int(MULT16_32_Q15(int16(rate_factor), int(target-base_target)))
 	}
 
 	if has_surround_mask == 0 && tf_estimate < int(0.2*16384.5) {
 		amount := MULT16_16_Q15(int16(0.0000031*1073741823.5), int16(IMAX(0, IMIN(32000, 96000-bitrate))))
 		tvbr_factor := SHR32(amount, CeltConstants.DB_SHIFT)
-		target += int(MULT16_32_Q15(int16(tvbr_factor), int32(target)))
+		target += int(MULT16_32_Q15(int16(tvbr_factor), int(target)))
 	}
 
 	if target > 2*base_target {
@@ -185,7 +185,7 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 
 	tf_max := MAX16(0, int16(celt_sqrt(27*float32(mask_metric))-42))
 	tf_estimate_val := int16(0.0069 * 16384.5)
-	tf_estimate.Val = int(celt_sqrt(MAX32(0, SHL32(MULT16_16(tf_estimate_val, int16(MIN16(163, tf_max))), 14)-int32(0.139*268435455.5))))
+	tf_estimate.Val = int(celt_sqrt(MAX32(0, SHL32(MULT16_16(tf_estimate_val, int16(MIN16(163, tf_max))), 14)-int(0.139*268435455.5))))
 	return is_transient
 }
 
@@ -302,7 +302,7 @@ func l1_metric(tmp []int, N int, LM int, bias int) int {
 	for i := 0; i < N; i++ {
 		L1 += EXTEND32(ABS32(tmp[i]))
 	}
-	L1 += MAC16_32_Q15(L1, int16(LM*bias), int32(L1))
+	L1 += MAC16_32_Q15(L1, int16(LM*bias), int(L1))
 	return L1
 }
 
@@ -664,7 +664,7 @@ func deemphasis(input [][]int, input_ptrs []int, pcm []int16, pcm_ptr int, N int
 				tmp := x[x_ptr+j] + m_val + CeltConstants.VERY_SMALL
 				m_val = MULT16_32_Q15(int16(coef[0]), tmp)
 				idx := y_ptr + j*C
-				pcm[idx] = SAT16(ADD32(int32(pcm[idx]), SIG2WORD16(tmp)))
+				pcm[idx] = SAT16(ADD32(int(pcm[idx]), SIG2WORD16(tmp)))
 			}
 		} else {
 			for j := 0; j < N; j++ {
@@ -852,12 +852,12 @@ func comb_filter(y []int, y_ptr int, x []int, x_ptr int, T0 int, T1 int, N int, 
 		x0 := x[x_ptr+i-T1+2]
 		f := MULT16_16_Q15(int16(window[i]), int16(window[i]))
 		inv_f := 32768 - int(f)
-		term1 := MULT16_32_Q15(int16(inv_f), g00*int32(x[x_ptr+i-T0]))
-		term2 := MULT16_32_Q15(int16(inv_f), g01*int32(ADD32(x[x_ptr+i-T0+1], x[x_ptr+i-T0-1])))
-		term3 := MULT16_32_Q15(int16(inv_f), g02*int32(ADD32(x[x_ptr+i-T0+2], x[x_ptr+i-T0-2])))
-		term4 := MULT16_32_Q15(int16(f), g10*int32(x2))
-		term5 := MULT16_32_Q15(int16(f), g11*int32(ADD32(x1, x3)))
-		term6 := MULT16_32_Q15(int16(f), g12*int32(ADD32(x0, x4)))
+		term1 := MULT16_32_Q15(int16(inv_f), g00*int(x[x_ptr+i-T0]))
+		term2 := MULT16_32_Q15(int16(inv_f), g01*int(ADD32(x[x_ptr+i-T0+1], x[x_ptr+i-T0-1])))
+		term3 := MULT16_32_Q15(int16(inv_f), g02*int(ADD32(x[x_ptr+i-T0+2], x[x_ptr+i-T0-2])))
+		term4 := MULT16_32_Q15(int16(f), g10*int(x2))
+		term5 := MULT16_32_Q15(int16(f), g11*int(ADD32(x1, x3)))
+		term6 := MULT16_32_Q15(int16(f), g12*int(ADD32(x0, x4)))
 		y[y_ptr+i] = x[x_ptr+i] + int(term1+term2+term3+term4+term5+term6)
 		x4 = x3
 		x3 = x2

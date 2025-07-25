@@ -52,7 +52,7 @@ func silk_prefilter(
 		if psEnc.indices.signalType == TYPE_VOICED {
 			lag = psEncCtrl.pitchL[k]
 		}
-		HarmShapeGain_Q12 := silk_SMULWB(int(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int32(psEncCtrl.HarmBoost_Q14[k]))
+		HarmShapeGain_Q12 := silk_SMULWB(int(psEncCtrl.HarmShapeGain_Q14[k]), 16384-int(psEncCtrl.HarmBoost_Q14[k]))
 		HarmShapeFIRPacked_Q12 := silk_RSHIFT(HarmShapeGain_Q12, 2)
 		HarmShapeFIRPacked_Q12 |= silk_LSHIFT(int(silk_RSHIFT(HarmShapeGain_Q12, 1)), 16)
 		Tilt_Q14 := psEncCtrl.Tilt_Q14[k]
@@ -65,9 +65,9 @@ func silk_prefilter(
 		tmp_32 = silk_SMULWB(tmp_32, -int(psEncCtrl.GainsPre_Q14[k]))
 		tmp_32 = silk_RSHIFT_ROUND(tmp_32, 14)
 		B_Q10[1] = int16(silk_SAT16(tmp_32))
-		x_filt_Q12[0] = silk_MLA(silk_MUL(st_res_Q2[0], int(B_Q10[0])), int32(P.sHarmHP_Q2), int32(B_Q10[1]))
+		x_filt_Q12[0] = silk_MLA(silk_MUL(st_res_Q2[0], int(B_Q10[0])), int(P.sHarmHP_Q2), int(B_Q10[1]))
 		for j := 1; j < psEnc.subfr_length; j++ {
-			x_filt_Q12[j] = silk_MLA(silk_MUL(st_res_Q2[j], int(B_Q10[0])), st_res_Q2[j-1], int32(B_Q10[1]))
+			x_filt_Q12[j] = silk_MLA(silk_MUL(st_res_Q2[j], int(B_Q10[0])), st_res_Q2[j-1], int(B_Q10[1]))
 		}
 		P.sHarmHP_Q2 = int(st_res_Q2[psEnc.subfr_length-1])
 		silk_prefilt(P, x_filt_Q12, xw_Q3, pxw_Q3, HarmShapeFIRPacked_Q12, Tilt_Q14, LF_shp_Q14, lag, psEnc.subfr_length)

@@ -18,10 +18,10 @@ func silk_HP_variable_cutoff(state_Fxx []SilkChannelEncoder) {
 			delta_freq_Q7 = silk_MUL(delta_freq_Q7, 3)
 		}
 
-		max_delta_freq_Q7 := int32(TuningParameters.VARIABLE_HP_MAX_DELTA_FREQ*(1<<7) + 0.5)
+		max_delta_freq_Q7 := int(TuningParameters.VARIABLE_HP_MAX_DELTA_FREQ*(1<<7) + 0.5)
 		delta_freq_Q7 = silk_LIMIT_32(delta_freq_Q7, -max_delta_freq_Q7, max_delta_freq_Q7)
 
-		smth_coef1_Q16 := int32(TuningParameters.VARIABLE_HP_SMTH_COEF1*(1<<16) + 0.5)
+		smth_coef1_Q16 := int(TuningParameters.VARIABLE_HP_SMTH_COEF1*(1<<16) + 0.5)
 		psEncC1.variable_HP_smth1_Q15 = silk_SMLAWB(psEncC1.variable_HP_smth1_Q15, silk_SMULBB(psEncC1.speech_activity_Q8, delta_freq_Q7), smth_coef1_Q16)
 
 		min_cutoff_log_Q8 := silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)

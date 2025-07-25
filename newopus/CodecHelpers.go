@@ -30,13 +30,13 @@ func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int
 	return byte(0xFF & toc)
 }
 
-func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int32, len int, channels int, Fs int) {
+func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int, len int, channels int, Fs int) {
 	var B_Q28 [3]int
 	var A_Q28 [2]int
 	var Fc_Q19, r_Q28, r_Q22 int
 
 	OpusAssert(cutoff_Hz <= 2147483647/((int)((1.5*3.14159/1000)*(1<<19)+0.5)))
-	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int)((1.5*3.14159/1000)*(1<<19)+0.5, int32(cutoff_Hz)), int32(Fs/1000)))
+	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int)((1.5*3.14159/1000)*(1<<19)+0.5, int(cutoff_Hz)), int(Fs/1000)))
 	OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
 
 	r_Q28 = (int)((1.0)*(1<<28)+0.5) - silk_MUL((int)((0.92)*(1<<9)+0.5), Fc_Q19)
@@ -46,7 +46,7 @@ func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	B_Q28[2] = r_Q28
 
 	r_Q22 = silk_RSHIFT(r_Q28, 6)
-	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-(int32)((2.0)*(1<<22)+0.5))
+	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-(int)((2.0)*(1<<22)+0.5))
 	A_Q28[1] = silk_SMULWW(r_Q22, r_Q22)
 
 	silk_biquad_alt(input, input_ptr, B_Q28[:], A_Q28[:], hp_mem, 0, output, output_ptr, len, channels)
@@ -55,14 +55,14 @@ func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	}
 }
 
-func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int32, len int, channels int, Fs int) {
+func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int, len int, channels int, Fs int) {
 	var shift int
 
 	shift = celt_ilog2(Fs / (cutoff_Hz * 3))
 	for c := 0; c < channels; c++ {
 		for i := 0; i < len; i++ {
-			var x, tmp, y int32
-			x = SHL32(EXTEND32(int32(input[channels*i+c+input_ptr])), 15)
+			var x, tmp, y int
+			x = SHL32(EXTEND32(int(input[channels*i+c+input_ptr])), 15)
 			tmp = x - hp_mem[2*c]
 			hp_mem[2*c] = hp_mem[2*c] + PSHR32(x-hp_mem[2*c], shift)
 			y = tmp - hp_mem[2*c+1]
@@ -72,54 +72,54 @@ func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	}
 }
 
-func stereo_fade(pcm_buf []int16, g1 int, g2 int, overlap48 int, frame_size int, channels int, window []int32, Fs int) {
+func stereo_fade(pcm_buf []int16, g1 int, g2 int, overlap48 int, frame_size int, channels int, window []int, Fs int) {
 	var overlap, inc int
 	inc = 48000 / Fs
 	overlap = overlap48 / inc
 	g1 = CeltConstants.Q15ONE - g1
 	g2 = CeltConstants.Q15ONE - g2
 	for i := 0; i < overlap; i++ {
-		var diff int32
-		var g, w int32
+		var diff int
+		var g, w int
 		w = MULT16_16_Q15(window[i*inc], window[i*inc])
-		g = SHR32(MAC16_16(MULT16_16(w, int32(g2)), CeltConstants.Q15ONE-w, int32(g1)), 15)
-		diff = EXTRACT16(HALF32(int32(pcm_buf[i*channels]) - int32(pcm_buf[i*channels+1])))
-		diff = MULT16_16_Q15(int32(g), diff)
-		pcm_buf[i*channels] = int16(int32(pcm_buf[i*channels]) - diff)
-		pcm_buf[i*channels+1] = int16(int32(pcm_buf[i*channels+1]) + diff)
+		g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+		diff = EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1])))
+		diff = MULT16_16_Q15(int(g), diff)
+		pcm_buf[i*channels] = int16(int(pcm_buf[i*channels]) - diff)
+		pcm_buf[i*channels+1] = int16(int(pcm_buf[i*channels+1]) + diff)
 	}
 	for i := overlap; i < frame_size; i++ {
-		var diff int32
-		diff = EXTRACT16(HALF32(int32(pcm_buf[i*channels]) - int32(pcm_buf[i*channels+1])))
-		diff = MULT16_16_Q15(int32(g2), diff)
-		pcm_buf[i*channels] = int16(int32(pcm_buf[i*channels]) - diff)
-		pcm_buf[i*channels+1] = int16(int32(pcm_buf[i*channels+1]) + diff)
+		var diff int
+		diff = EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1])))
+		diff = MULT16_16_Q15(int(g2), diff)
+		pcm_buf[i*channels] = int16(int(pcm_buf[i*channels]) - diff)
+		pcm_buf[i*channels+1] = int16(int(pcm_buf[i*channels+1]) + diff)
 	}
 }
 
-func gain_fade(buffer []int16, buf_ptr int, g1 int, g2 int, overlap48 int, frame_size int, channels int, window []int32, Fs int) {
+func gain_fade(buffer []int16, buf_ptr int, g1 int, g2 int, overlap48 int, frame_size int, channels int, window []int, Fs int) {
 	var inc, overlap int
 	inc = 48000 / Fs
 	overlap = overlap48 / inc
 	if channels == 1 {
 		for i := 0; i < overlap; i++ {
-			var g, w int32
+			var g, w int
 			w = MULT16_16_Q15(window[i*inc], window[i*inc])
-			g = SHR32(MAC16_16(MULT16_16(w, int32(g2)), CeltConstants.Q15ONE-w, int32(g1)), 15)
-			buffer[buf_ptr+i] = int16(MULT16_16_Q15(int32(g), int32(buffer[buf_ptr+i])))
+			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+			buffer[buf_ptr+i] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i])))
 		}
 	} else {
 		for i := 0; i < overlap; i++ {
-			var g, w int32
+			var g, w int
 			w = MULT16_16_Q15(window[i*inc], window[i*inc])
-			g = SHR32(MAC16_16(MULT16_16(w, int32(g2)), CeltConstants.Q15ONE-w, int32(g1)), 15)
-			buffer[buf_ptr+i*2] = int16(MULT16_16_Q15(int32(g), int32(buffer[buf_ptr+i*2])))
-			buffer[buf_ptr+i*2+1] = int16(MULT16_16_Q15(int32(g), int32(buffer[buf_ptr+i*2+1])))
+			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+			buffer[buf_ptr+i*2] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i*2])))
+			buffer[buf_ptr+i*2+1] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i*2+1])))
 		}
 	}
 	for c := 0; c < channels; c++ {
 		for i := overlap; i < frame_size; i++ {
-			buffer[buf_ptr+i*channels+c] = int16(MULT16_16_Q15(int32(g2), int32(buffer[buf_ptr+i*channels+c])))
+			buffer[buf_ptr+i*channels+c] = int16(MULT16_16_Q15(int(g2), int(buffer[buf_ptr+i*channels+c])))
 		}
 	}
 }
@@ -302,34 +302,34 @@ func compute_frame_size(analysis_pcm []int16, analysis_pcm_ptr int, frame_size i
 }
 
 func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem *StereoWidthState) int {
-	var xx, xy, yy int32
+	var xx, xy, yy int
 	var frame_rate, short_alpha int
 
 	frame_rate = Fs / frame_size
 	short_alpha = CeltConstants.Q15ONE - (25*CeltConstants.Q15ONE)/IMAX(50, frame_rate)
 	for i := 0; i < frame_size-3; i += 4 {
-		var pxx, pxy, pyy int32
+		var pxx, pxy, pyy int
 		p2i := pcm_ptr + (2 * i)
-		x := int32(pcm[p2i])
-		y := int32(pcm[p2i+1])
+		x := int(pcm[p2i])
+		y := int(pcm[p2i+1])
 		pxx = SHR32(MULT16_16(x, x), 2)
 		pxy = SHR32(MULT16_16(x, y), 2)
 		pyy = SHR32(MULT16_16(y, y), 2)
 
-		x = int32(pcm[p2i+2])
-		y = int32(pcm[p2i+3])
+		x = int(pcm[p2i+2])
+		y = int(pcm[p2i+3])
 		pxx += SHR32(MULT16_16(x, x), 2)
 		pxy += SHR32(MULT16_16(x, y), 2)
 		pyy += SHR32(MULT16_16(y, y), 2)
 
-		x = int32(pcm[p2i+4])
-		y = int32(pcm[p2i+5])
+		x = int(pcm[p2i+4])
+		y = int(pcm[p2i+5])
 		pxx += SHR32(MULT16_16(x, x), 2)
 		pxy += SHR32(MULT16_16(x, y), 2)
 		pyy += SHR32(MULT16_16(y, y), 2)
 
-		x = int32(pcm[p2i+6])
-		y = int32(pcm[p2i+7])
+		x = int(pcm[p2i+6])
+		y = int(pcm[p2i+7])
 		pxx += SHR32(MULT16_16(x, x), 2)
 		pxy += SHR32(MULT16_16(x, y), 2)
 		pyy += SHR32(MULT16_16(y, y), 2)
@@ -345,7 +345,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 	mem.XX = MAX32(0, mem.XX)
 	mem.XY = MAX32(0, mem.XY)
 	mem.YY = MAX32(0, mem.YY)
-	if MAX32(mem.XX, mem.YY) > int32(0.5+(8e-4)*(1<<18)) {
+	if MAX32(mem.XX, mem.YY) > int(0.5+(8e-4)*(1<<18)) {
 		sqrt_xx := celt_sqrt(mem.XX)
 		sqrt_yy := celt_sqrt(mem.YY)
 		qrrt_xx := celt_sqrt(sqrt_xx)
@@ -354,8 +354,8 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		corr := SHR32(frac_div32(mem.XY, CeltConstants.EPSILON+MULT16_16(sqrt_xx, sqrt_yy)), 16)
 		ldiff := CeltConstants.Q15ONE * ABS16(qrrt_xx-qrrt_yy) / (CeltConstants.EPSILON + qrrt_xx + qrrt_yy)
 		width := MULT16_16_Q15(celt_sqrt(1<<30-MULT16_16(corr, corr)), ldiff)
-		mem.smoothed_width += (width - mem.smoothed_width) / int32(frame_rate)
-		mem.max_follower = MAX16(mem.max_follower-int32(0.5+(0.02)*(1<<15))/int32(frame_rate), mem.smoothed_width)
+		mem.smoothed_width += (width - mem.smoothed_width) / int(frame_rate)
+		mem.max_follower = MAX16(mem.max_follower-int(0.5+(0.02)*(1<<15))/int(frame_rate), mem.smoothed_width)
 	} else {
 		mem.smoothed_width = 0
 		mem.max_follower = 0
@@ -363,12 +363,12 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 	return EXTRACT16(MIN32(CeltConstants.Q15ONE, 20*mem.max_follower))
 }
 
-func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []int16, output_ptr int, overlap int, channels int, window []int32, Fs int) {
+func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []int16, output_ptr int, overlap int, channels int, window []int, Fs int) {
 	inc := 48000 / Fs
 	for c := 0; c < channels; c++ {
 		for i := 0; i < overlap; i++ {
 			w := MULT16_16_Q15(window[i*inc], window[i*inc])
-			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16(MULT16_16(w, int32(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int32(in1[in1_ptr+(i*channels)+c])), 15))
+			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16(MULT16_16(w, int(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int(in1[in1_ptr+(i*channels)+c])), 15))
 		}
 	}
 }

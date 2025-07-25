@@ -89,7 +89,7 @@ func (ec *EntropyCoder) read_byte_from_end() int {
 	return 0
 }
 
-func (ec *EntropyCoder) write_byte(_value uint32) int {
+func (ec *EntropyCoder) write_byte(_value uint) int {
 	if ec.offs+ec.end_offs >= ec.storage {
 		return -1
 	}
@@ -98,7 +98,7 @@ func (ec *EntropyCoder) write_byte(_value uint32) int {
 	return 0
 }
 
-func (ec *EntropyCoder) write_byte_at_end(_value uint32) int {
+func (ec *EntropyCoder) write_byte_at_end(_value uint) int {
 	if ec.offs+ec.end_offs >= ec.storage {
 		return -1
 	}
@@ -165,7 +165,7 @@ func (ec *EntropyCoder) dec_update(_fl int64, _fh int64, _ft int64) {
 	ec.dec_normalize()
 }
 
-func (ec *EntropyCoder) dec_bit_logp(_logp uint32) int {
+func (ec *EntropyCoder) dec_bit_logp(_logp uint) int {
 	r := ec.rng
 	d := ec.val
 	s := r >> _logp
@@ -260,12 +260,12 @@ func (ec *EntropyCoder) enc_carry_out(_c int) {
 	if _c != EC_SYM_MAX {
 		carry := _c >> EC_SYM_BITS
 		if ec.rem >= 0 {
-			ec.error |= ec.write_byte(uint32(ec.rem + carry))
+			ec.error |= ec.write_byte(uint(ec.rem + carry))
 		}
 		if ec.ext > 0 {
 			sym := (EC_SYM_MAX + carry) & EC_SYM_MAX
 			for ec.ext > 0 {
-				ec.error |= ec.write_byte(uint32(sym))
+				ec.error |= ec.write_byte(uint(sym))
 				ec.ext--
 			}
 		}
@@ -382,7 +382,7 @@ func (ec *EntropyCoder) enc_bits(_fl int64, _bits int) {
 	used := ec.nend_bits
 	if used+_bits > EC_WINDOW_SIZE {
 		for used >= EC_SYM_BITS {
-			ec.error |= ec.write_byte_at_end(uint32(window & EC_SYM_MAX))
+			ec.error |= ec.write_byte_at_end(uint(window & EC_SYM_MAX))
 			window >>= EC_SYM_BITS
 			used -= EC_SYM_BITS
 		}
@@ -470,7 +470,7 @@ func (ec *EntropyCoder) enc_done() {
 	window := ec.end_window
 	used := ec.nend_bits
 	for used >= EC_SYM_BITS {
-		ec.error |= ec.write_byte_at_end(uint32(window & EC_SYM_MAX))
+		ec.error |= ec.write_byte_at_end(uint(window & EC_SYM_MAX))
 		window >>= EC_SYM_BITS
 		used -= EC_SYM_BITS
 	}

@@ -3,9 +3,9 @@ package opus
 import "math"
 
 type SilkChannelEncoder struct {
-	In_HP_State                   [2]int32
-	variable_HP_smth1_Q15         int32
-	variable_HP_smth2_Q15         int32
+	In_HP_State                   [2]int
+	variable_HP_smth1_Q15         int
+	variable_HP_smth2_Q15         int
 	sLP                           SilkLPState
 	sVAD                          SilkVADState
 	sNSQ                          SilkNSQState
@@ -523,8 +523,8 @@ func (s *SilkChannelEncoder) silk_control_audio_bandwidth(encControl *EncControl
 func (s *SilkChannelEncoder) silk_control_SNR(TargetRate_bps int) int {
 	var k int
 	ret := SilkError.SILK_NO_ERROR
-	var frac_Q6 int32
-	var rateTable []int32
+	var frac_Q6 int
+	var rateTable []int
 	TargetRate_bps = silk_LIMIT(TargetRate_bps, SilkConstants.MIN_TARGET_RATE_BPS, SilkConstants.MAX_TARGET_RATE_BPS)
 	if TargetRate_bps != s.TargetRate_bps {
 		s.TargetRate_bps = TargetRate_bps
@@ -591,17 +591,17 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 	s.sLP.Silk_LP_variable_cutoff(s.inputBuf[:], 1, s.frame_length)
 	copy(s.x_buf[x_frame+SilkConstants.LA_SHAPE_MS*s.fs_kHz:], s.inputBuf[1:1+s.frame_length])
 	if s.prefillFlag == 0 {
-		var xfw_Q3 []int32
+		var xfw_Q3 []int
 		var res_pitch []int16
 		var ec_buf_copy []byte
-		var res_pitch_frame int32
+		var res_pitch_frame int
 		res_pitch = make([]int16, s.la_pitch+s.frame_length+s.ltp_mem_length)
 		res_pitch_frame = s.ltp_mem_length
 		silk_find_pitch_lags(s, sEncCtrl, res_pitch, s.x_buf[:], x_frame)
 		silk_noise_shape_analysis(s, sEncCtrl, res_pitch, res_pitch_frame, s.x_buf[:], x_frame)
 		silk_find_pred_coefs(s, sEncCtrl, res_pitch, s.x_buf[:], x_frame, condCoding)
 		silk_process_gains(s, sEncCtrl, condCoding)
-		xfw_Q3 = make([]int32, s.frame_length)
+		xfw_Q3 = make([]int, s.frame_length)
 		silk_prefilter(s, sEncCtrl, xfw_Q3, s.x_buf[:], x_frame)
 		s.silk_LBRR_encode(sEncCtrl, xfw_Q3, condCoding)
 		maxIter = 6
@@ -687,7 +687,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 						gain_factor_Q16 = silk_SMULWB(1.3, 1<<16)
 					}
 				}
-				gainMult_Q8 = int16(silk_SMULWB(gain_factor_Q16, int32(gainMult_Q8)))
+				gainMult_Q8 = int16(silk_SMULWB(gain_factor_Q16, int(gainMult_Q8)))
 			} else {
 				gainMult_Q8 = int16(gainMult_lower + silk_DIV32_16(silk_MUL(gainMult_upper-gainMult_lower, maxBits-nBits_lower), nBits_upper-nBits_lower))
 				if gainMult_Q8 > int16(gainMult_lower+(gainMult_upper-gainMult_lower)>>2) {
@@ -697,7 +697,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 				}
 			}
 			for i := int(0); i < s.nb_subfr; i++ {
-				sEncCtrl.Gains_Q16[i] = silk_LSHIFT_SAT32(silk_SMULWB(sEncCtrl.GainsUnq_Q16[i], int32(gainMult_Q8)), 8)
+				sEncCtrl.Gains_Q16[i] = silk_LSHIFT_SAT32(silk_SMULWB(sEncCtrl.GainsUnq_Q16[i], int(gainMult_Q8)), 8)
 			}
 			s.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev
 			silk_gains_quant(s.indices.GainsIndices[:], sEncCtrl.Gains_Q16[:], &s.sShape.LastGainIndex, Silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
@@ -712,18 +712,18 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 	s.prevLag = sEncCtrl.pitchL[s.nb_subfr-1]
 	s.prevSignalType = s.indices.signalType
 	s.first_frame_after_reset = 0
-	*pnBytesOut = int(uint32(psRangeEnc.tell()+7) >> 3)
+	*pnBytesOut = int(uint(psRangeEnc.tell()+7) >> 3)
 	return ret
 }
 
-func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_Q3 []int32, condCoding int32) {
+func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_Q3 []int, condCoding int) {
 	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > silk_SMULWB(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES, 1<<8) {
 		s.LBRR_flags[s.nFramesEncoded] = 1
 		psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
 		sNSQ_LBRR := &SilkNSQState{}
 		*sNSQ_LBRR = s.sNSQ
 		*psIndices_LBRR = s.indices
-		TempGains_Q16 := make([]int32, s.nb_subfr)
+		TempGains_Q16 := make([]int, s.nb_subfr)
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
 			psIndices_LBRR.GainsIndices[0] = byte(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))

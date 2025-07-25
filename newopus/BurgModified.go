@@ -8,9 +8,9 @@ const (
 	MAX_RSHIFTS      = 32 - QA
 )
 
-var SILK_CONST_FIND_LPC_COND_FAC_32 int32 = 42950
+var SILK_CONST_FIND_LPC_COND_FAC_32 int = 42950
 
-func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValueInt, A_Q16 []int32, x []int16, x_ptr int, minInvGain_Q30 int, subfr_length int, nb_subfr int, D int) {
+func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValueInt, A_Q16 []int, x []int16, x_ptr int, minInvGain_Q30 int, subfr_length int, nb_subfr int, D int) {
 	var k, n, s, lz, rshifts, reached_max_gain int
 	var C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2 int
 	var x_offset int
@@ -51,7 +51,7 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 		for s = 0; s < int(nb_subfr); s++ {
 			x_offset = x_ptr + s*int(subfr_length)
 			for n = 1; n < int(D)+1; n++ {
-				C_first_row[n-1] += int32(silk_inner_prod16_aligned_64(x, x_offset, x, x_offset+n, int(subfr_length)-n) >> uint(rshifts))
+				C_first_row[n-1] += int(silk_inner_prod16_aligned_64(x, x_offset, x, x_offset+n, int(subfr_length)-n) >> uint(rshifts))
 			}
 		}
 	} else {
@@ -62,12 +62,12 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 			for n = 1; n < int(D)+1; n++ {
 				d = 0
 				for i = n + int(subfr_length) - int(D); i < int(subfr_length); i++ {
-					d = int(int32(d) + int32(int32(x[x_offset+i])*int32(x[x_offset+i-n])))
+					d = int(int(d) + int(int(x[x_offset+i])*int(x[x_offset+i-n])))
 				}
-				xcorr[n-1] += int32(d)
+				xcorr[n-1] += int(d)
 			}
 			for n = 1; n < int(D)+1; n++ {
-				C_first_row[n-1] += int32(xcorr[n-1]) << uint(-rshifts)
+				C_first_row[n-1] += int(xcorr[n-1]) << uint(-rshifts)
 			}
 		}
 	}
@@ -89,8 +89,8 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), QA-16)
 				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), QA-16)
 				for k = 0; k < n; k++ {
-					C_first_row[k] = silk_SMLAWB(C_first_row[k], x1, int32(x[x_offset+n-k-1]))
-					C_last_row[k] = silk_SMLAWB(C_last_row[k], x2, int32(x[x_offset+int(subfr_length)-n+k]))
+					C_first_row[k] = silk_SMLAWB(C_first_row[k], x1, int(x[x_offset+n-k-1]))
+					C_last_row[k] = silk_SMLAWB(C_last_row[k], x2, int(x[x_offset+int(subfr_length)-n+k]))
 					Atmp_QA = Af_QA[k]
 					tmp1 = silk_SMLAWB(tmp1, Atmp_QA, int(x[x_offset+n-k-1]))
 					tmp2 = silk_SMLAWB(tmp2, Atmp_QA, int(x[x_offset+int(subfr_length)-n+k]))
@@ -110,17 +110,17 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), 17)
 				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), 17)
 				for k = 0; k < n; k++ {
-					C_first_row[k] = silk_MLA(C_first_row[k], x1, int32(x[x_offset+n-k-1]))
-					C_last_row[k] = silk_MLA(C_last_row[k], x2, int32(x[x_offset+int(subfr_length)-n+k]))
+					C_first_row[k] = silk_MLA(C_first_row[k], x1, int(x[x_offset+n-k-1]))
+					C_last_row[k] = silk_MLA(C_last_row[k], x2, int(x[x_offset+int(subfr_length)-n+k]))
 					Atmp1 = silk_RSHIFT_ROUND(Af_QA[k], QA-17)
-					tmp1 = silk_MLA(tmp1, int32(x[x_offset+n-k-1]), Atmp1)
-					tmp2 = silk_MLA(tmp2, int32(x[x_offset+int(subfr_length)-n+k]), Atmp1)
+					tmp1 = silk_MLA(tmp1, int(x[x_offset+n-k-1]), Atmp1)
+					tmp2 = silk_MLA(tmp2, int(x[x_offset+int(subfr_length)-n+k]), Atmp1)
 				}
 				tmp1 = -tmp1
 				tmp2 = -tmp2
 				for k = 0; k <= n; k++ {
-					CAf[k] = silk_SMLAWW(CAf[k], tmp1, silk_LSHIFT32(int32(x[x_offset+n-k]), -rshifts-1))
-					CAb[k] = silk_SMLAWW(CAb[k], tmp2, silk_LSHIFT32(int32(x[x_offset+int(subfr_length)-n+k-1]), -rshifts-1))
+					CAf[k] = silk_SMLAWW(CAf[k], tmp1, silk_LSHIFT32(int(x[x_offset+n-k]), -rshifts-1))
+					CAb[k] = silk_SMLAWW(CAb[k], tmp2, silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n+k-1]), -rshifts-1))
 				}
 			}
 		}
@@ -202,7 +202,7 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 		if rshifts > 0 {
 			for s = 0; s < int(nb_subfr); s++ {
 				x_offset = x_ptr + s*int(subfr_length)
-				C0 -= int32(silk_inner_prod16_aligned_64(x, x_offset, x, x_offset, int(D)) >> uint(rshifts))
+				C0 -= int(silk_inner_prod16_aligned_64(x, x_offset, x, x_offset, int(D)) >> uint(rshifts))
 			}
 		} else {
 			for s = 0; s < int(nb_subfr); s++ {

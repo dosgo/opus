@@ -125,8 +125,8 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	const N2 = 240
 	pi4 := float32(M_PI * M_PI * M_PI * M_PI)
 	var kfft *FFTState
-	input := make([]int32, 960)
-	output := make([]int32, 960)
+	input := make([]int, 960)
+	output := make([]int, 960)
 	tonality := make([]float32, 240)
 	noisiness := make([]float32, 240)
 	band_tonality := make([]float32, NB_TBANDS)
@@ -175,10 +175,10 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 
 	for i := 0; i < N2; i++ {
 		w := OpusTables_analysis_window[i]
-		input[2*i] = int32(w * float32(tonal.inmem[i]))
-		input[2*i+1] = int32(w * float32(tonal.inmem[N2+i]))
-		input[2*(N-i-1)] = int32(w * float32(tonal.inmem[N-i-1]))
-		input[2*(N-i-1)+1] = int32(w * float32(tonal.inmem[N+N2-i-1]))
+		input[2*i] = int(w * float32(tonal.inmem[i]))
+		input[2*i+1] = int(w * float32(tonal.inmem[N2+i]))
+		input[2*(N-i-1)] = int(w * float32(tonal.inmem[N-i-1]))
+		input[2*(N-i-1)+1] = int(w * float32(tonal.inmem[N+N2-i-1]))
 	}
 	copy(tonal.inmem, tonal.inmem[ANALYSIS_BUF_SIZE-240:ANALYSIS_BUF_SIZE])
 

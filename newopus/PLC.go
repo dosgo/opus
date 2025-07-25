@@ -33,7 +33,7 @@ func silk_PLC(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, frame []
 }
 
 func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
-	var LTP_Gain_Q14, temp_LTP_Gain_Q14 int32
+	var LTP_Gain_Q14, temp_LTP_Gain_Q14 int
 	psPLC := &psDec.sPLC
 
 	psDec.prevSignalType = int(psDec.indices.signalType)
@@ -45,12 +45,12 @@ func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
 			}
 			temp_LTP_Gain_Q14 = 0
 			for i := 0; i < LTP_ORDER; i++ {
-				temp_LTP_Gain_Q14 += int32(psDecCtrl.LTPCoef_Q14[(psDec.nb_subfr-1-j)*LTP_ORDER+i])
+				temp_LTP_Gain_Q14 += int(psDecCtrl.LTPCoef_Q14[(psDec.nb_subfr-1-j)*LTP_ORDER+i])
 			}
 			if temp_LTP_Gain_Q14 > LTP_Gain_Q14 {
 				LTP_Gain_Q14 = temp_LTP_Gain_Q14
 				copy(psPLC.LTPCoef_Q14[:], psDecCtrl.LTPCoef_Q14[(psDec.nb_subfr-1-j)*LTP_ORDER:])
-				psPLC.pitchL_Q8 = int32(psDecCtrl.pitchL[psDec.nb_subfr-1-j]) << 8
+				psPLC.pitchL_Q8 = int(psDecCtrl.pitchL[psDec.nb_subfr-1-j]) << 8
 			}
 		}
 
@@ -60,30 +60,30 @@ func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
 		psPLC.LTPCoef_Q14[LTP_ORDER/2] = int16(LTP_Gain_Q14)
 
 		if LTP_Gain_Q14 < V_PITCH_GAIN_START_MIN_Q14 {
-			var scale_Q10 int32
-			tmp := int32(V_PITCH_GAIN_START_MIN_Q14) << 10
+			var scale_Q10 int
+			tmp := int(V_PITCH_GAIN_START_MIN_Q14) << 10
 			if LTP_Gain_Q14 > 0 {
 				scale_Q10 = tmp / LTP_Gain_Q14
 			} else {
 				scale_Q10 = tmp
 			}
 			for i := 0; i < LTP_ORDER; i++ {
-				psPLC.LTPCoef_Q14[i] = int16((int32(psPLC.LTPCoef_Q14[i]) * scale_Q10 >> 10))
+				psPLC.LTPCoef_Q14[i] = int16((int(psPLC.LTPCoef_Q14[i]) * scale_Q10 >> 10))
 			}
 		} else if LTP_Gain_Q14 > V_PITCH_GAIN_START_MAX_Q14 {
-			var scale_Q14 int32
-			tmp := int32(V_PITCH_GAIN_START_MAX_Q14) << 14
+			var scale_Q14 int
+			tmp := int(V_PITCH_GAIN_START_MAX_Q14) << 14
 			if LTP_Gain_Q14 > 0 {
 				scale_Q14 = tmp / LTP_Gain_Q14
 			} else {
 				scale_Q14 = tmp
 			}
 			for i := 0; i < LTP_ORDER; i++ {
-				psPLC.LTPCoef_Q14[i] = int16((int32(psPLC.LTPCoef_Q14[i]) * scale_Q14 >> 14))
+				psPLC.LTPCoef_Q14[i] = int16((int(psPLC.LTPCoef_Q14[i]) * scale_Q14 >> 14))
 			}
 		}
 	} else {
-		psPLC.pitchL_Q8 = int32(psDec.fs_kHz*18) << 8
+		psPLC.pitchL_Q8 = int(psDec.fs_kHz*18) << 8
 		for i := range psPLC.LTPCoef_Q14 {
 			psPLC.LTPCoef_Q14[i] = 0
 		}
@@ -97,7 +97,7 @@ func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
 	psPLC.nb_subfr = psDec.nb_subfr
 }
 
-func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []int32, prevGain_Q10 []int32, subfr_length, nb_subfr int) {
+func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []int, prevGain_Q10 []int, subfr_length, nb_subfr int) {
 	exc_buf := make([]int16, 2*subfr_length)
 	exc_buf_ptr := 0
 
@@ -123,16 +123,16 @@ func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []
 
 func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, frame []int16, frame_ptr int) {
 	var lag, idx, sLTP_buf_idx int
-	var rand_seed, harm_Gain_Q15, rand_Gain_Q15, inv_gain_Q30 int32
+	var rand_seed, harm_Gain_Q15, rand_Gain_Q15, inv_gain_Q30 int
 	var rand_scale_Q14 int16
-	var LPC_pred_Q10, LTP_pred_Q12 int32
+	var LPC_pred_Q10, LTP_pred_Q12 int
 	energy1 := &BoxedValueInt{0}
 	energy2 := &BoxedValueInt{0}
 	shift1 := &BoxedValueInt{0}
 	shift2 := &BoxedValueInt{0}
 
 	psPLC := &psDec.sPLC
-	prevGain_Q10 := [2]int32{
+	prevGain_Q10 := [2]int{
 		psPLC.prevGain_Q16[0] >> 6,
 		psPLC.prevGain_Q16[1] >> 6,
 	}
@@ -157,11 +157,11 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	rand_scale_Q14 = psPLC.randScale_Q14
 
 	harm_idx := min(NB_ATT-1, int(psDec.lossCnt))
-	harm_Gain_Q15 = int32(HARM_ATT_Q15[harm_idx])
+	harm_Gain_Q15 = int(HARM_ATT_Q15[harm_idx])
 	if psDec.prevSignalType == TYPE_VOICED {
-		rand_Gain_Q15 = int32(PLC_RAND_ATTENUATE_V_Q15[harm_idx])
+		rand_Gain_Q15 = int(PLC_RAND_ATTENUATE_V_Q15[harm_idx])
 	} else {
-		rand_Gain_Q15 = int32(PLC_RAND_ATTENUATE_UV_Q15[harm_idx])
+		rand_Gain_Q15 = int(PLC_RAND_ATTENUATE_UV_Q15[harm_idx])
 	}
 
 	//silk_bwexpander(psPLC.prevLPC_Q12[:], psDec.LPC_order, BWE_COEF_Q16)
@@ -170,21 +170,21 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	if psDec.lossCnt == 0 {
 		rand_scale_Q14 = 1 << 14
 		if psDec.prevSignalType == TYPE_VOICED {
-			sum := int32(0)
+			sum := int(0)
 			for i := 0; i < LTP_ORDER; i++ {
-				sum += int32(B_Q14[i])
+				sum += int(B_Q14[i])
 			}
 			rand_scale_Q14 -= int16(sum)
 			if rand_scale_Q14 < 3277 {
 				rand_scale_Q14 = 3277
 			}
-			rand_scale_Q14 = int16((int32(rand_scale_Q14) * int32(psPLC.prevLTP_scale_Q14) >> 14))
+			rand_scale_Q14 = int16((int(rand_scale_Q14) * int(psPLC.prevLTP_scale_Q14) >> 14))
 		} else {
 			invGain_Q30 := silk_LPC_inverse_pred_gain(psPLC.prevLPC_Q12[:], psDec.LPC_order)
-			down_scale_Q30 := min(int32(1<<30)>>LOG2_INV_LPC_GAIN_HIGH_THRES, invGain_Q30)
-			down_scale_Q30 = max(int32(1<<30)>>LOG2_INV_LPC_GAIN_LOW_THRES, down_scale_Q30)
+			down_scale_Q30 := min(int(1<<30)>>LOG2_INV_LPC_GAIN_HIGH_THRES, invGain_Q30)
+			down_scale_Q30 = max(int(1<<30)>>LOG2_INV_LPC_GAIN_LOW_THRES, down_scale_Q30)
 			down_scale_Q30 <<= LOG2_INV_LPC_GAIN_HIGH_THRES
-			rand_Gain_Q15 = int32(int64(down_scale_Q30) * int64(rand_Gain_Q15) >> 14)
+			rand_Gain_Q15 = int(int64(down_scale_Q30) * int64(rand_Gain_Q15) >> 14)
 		}
 	}
 
@@ -200,33 +200,33 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 		inv_gain_Q30 = (1 << 30) - 1
 	}
 	for i := idx + psDec.LPC_order; i < psDec.ltp_mem_length; i++ {
-		sLTP_Q14[i] = silk_SMULWB(inv_gain_Q30, int32(psDec.outBuf[i]))
+		sLTP_Q14[i] = silk_SMULWB(inv_gain_Q30, int(psDec.outBuf[i]))
 	}
 
 	for k := 0; k < psDec.nb_subfr; k++ {
 		pred_lag_ptr := sLTP_buf_idx - lag + LTP_ORDER/2
 		for i := 0; i < psDec.subfr_length; i++ {
 			LTP_pred_Q12 = 2
-			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr], int32(B_Q14[0]))
-			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-1], int32(B_Q14[1]))
-			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-2], int32(B_Q14[2]))
-			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-3], int32(B_Q14[3]))
-			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-4], int32(B_Q14[4]))
+			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr], int(B_Q14[0]))
+			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-1], int(B_Q14[1]))
+			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-2], int(B_Q14[2]))
+			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-3], int(B_Q14[3]))
+			LTP_pred_Q12 = silk_SMLAWB(LTP_pred_Q12, sLTP_Q14[pred_lag_ptr-4], int(B_Q14[4]))
 			pred_lag_ptr++
 
 			rand_seed = silk_RAND(rand_seed)
 			idx = int(rand_seed>>25) & RAND_BUF_MASK
-			sLTP_Q14[sLTP_buf_idx] = (LTP_pred_Q12 + silk_SMULWB(int32(psDec.exc_Q14[rand_ptr+idx]), int32(rand_scale_Q14))<<2)
+			sLTP_Q14[sLTP_buf_idx] = (LTP_pred_Q12 + silk_SMULWB(int(psDec.exc_Q14[rand_ptr+idx]), int(rand_scale_Q14))<<2)
 			sLTP_buf_idx++
 		}
 
 		for j := 0; j < LTP_ORDER; j++ {
-			B_Q14[j] = int16((int32(B_Q14[j]) * harm_Gain_Q15 >> 15))
+			B_Q14[j] = int16((int(B_Q14[j]) * harm_Gain_Q15 >> 15))
 		}
-		rand_scale_Q14 = int16(int32(rand_scale_Q14) * rand_Gain_Q15 >> 15)
+		rand_scale_Q14 = int16(int(rand_scale_Q14) * rand_Gain_Q15 >> 15)
 
-		psPLC.pitchL_Q8 = int32(int64(psPLC.pitchL_Q8) + (int64(psPLC.pitchL_Q8) * int64(PITCH_DRIFT_FAC_Q16) >> 16))
-		max_pitch := int32(MAX_PITCH_LAG_MS*psDec.fs_kHz) << 8
+		psPLC.pitchL_Q8 = int(int64(psPLC.pitchL_Q8) + (int64(psPLC.pitchL_Q8) * int64(PITCH_DRIFT_FAC_Q16) >> 16))
+		max_pitch := int(MAX_PITCH_LAG_MS*psDec.fs_kHz) << 8
 		if psPLC.pitchL_Q8 > max_pitch {
 			psPLC.pitchL_Q8 = max_pitch
 		}
@@ -238,19 +238,19 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 
 	for i := 0; i < psDec.frame_length; i++ {
 		sLPCmaxi := sLPC_Q14_ptr + MAX_LPC_ORDER + i
-		LPC_pred_Q10 = int32(psDec.LPC_order) >> 1
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-1], int32(psPLC.prevLPC_Q12[0]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-2], int32(psPLC.prevLPC_Q12[1]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-3], int32(psPLC.prevLPC_Q12[2]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-4], int32(psPLC.prevLPC_Q12[3]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-5], int32(psPLC.prevLPC_Q12[4]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-6], int32(psPLC.prevLPC_Q12[5]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-7], int32(psPLC.prevLPC_Q12[6]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-8], int32(psPLC.prevLPC_Q12[7]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-9], int32(psPLC.prevLPC_Q12[8]))
-		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-10], int32(psPLC.prevLPC_Q12[9]))
+		LPC_pred_Q10 = int(psDec.LPC_order) >> 1
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-1], int(psPLC.prevLPC_Q12[0]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-2], int(psPLC.prevLPC_Q12[1]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-3], int(psPLC.prevLPC_Q12[2]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-4], int(psPLC.prevLPC_Q12[3]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-5], int(psPLC.prevLPC_Q12[4]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-6], int(psPLC.prevLPC_Q12[5]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-7], int(psPLC.prevLPC_Q12[6]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-8], int(psPLC.prevLPC_Q12[7]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-9], int(psPLC.prevLPC_Q12[8]))
+		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-10], int(psPLC.prevLPC_Q12[9]))
 		for j := 10; j < psDec.LPC_order; j++ {
-			LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-j-1], int32(psPLC.prevLPC_Q12[j]))
+			LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, sLTP_Q14[sLPCmaxi-j-1], int(psPLC.prevLPC_Q12[j]))
 		}
 
 		sLTP_Q14[sLPCmaxi] += LPC_pred_Q10 << 4
@@ -270,7 +270,7 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	psPLC.rand_seed = rand_seed
 	psPLC.randScale_Q14 = rand_scale_Q14
 	for i := 0; i < MAX_NB_SUBFR; i++ {
-		psDecCtrl.pitchL[i] = int32(lag)
+		psDecCtrl.pitchL[i] = int(lag)
 	}
 }
 
@@ -294,22 +294,22 @@ func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr in
 			}
 
 			if energy.Val > psPLC.conc_energy {
-				var frac_Q24, LZ int32
-				var gain_Q16, slope_Q16 int32
+				var frac_Q24, LZ int
+				var gain_Q16, slope_Q16 int
 
-				LZ = int32(silk_CLZ32(uint32(psPLC.conc_energy)))
+				LZ = int(silk_CLZ32(uint(psPLC.conc_energy)))
 				LZ--
 				psPLC.conc_energy <<= LZ
 				energy.Val >>= max(0, 24-int(LZ))
 
 				frac_Q24 = psPLC.conc_energy / max(energy.Val, 1)
 
-				gain_Q16 = int32(silk_SQRT_APPROX(uint32(frac_Q24))) << 4
-				slope_Q16 = ((1 << 16) - gain_Q16) / int32(length)
+				gain_Q16 = int(silk_SQRT_APPROX(uint(frac_Q24))) << 4
+				slope_Q16 = ((1 << 16) - gain_Q16) / int(length)
 				slope_Q16 <<= 2
 
 				for i := frame_ptr; i < frame_ptr+length; i++ {
-					frame[i] = int16((int32(frame[i]) * gain_Q16) >> 16)
+					frame[i] = int16((int(frame[i]) * gain_Q16) >> 16)
 					gain_Q16 += slope_Q16
 					if gain_Q16 > (1 << 16) {
 						break
@@ -328,14 +328,14 @@ func max(a, b int) int {
 	return b
 }
 
-func min(a, b int32) int32 {
+func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func max32(a, b int32) int32 {
+func max32(a, b int) int {
 	if a > b {
 		return a
 	}

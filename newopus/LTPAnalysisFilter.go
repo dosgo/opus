@@ -15,7 +15,7 @@ func silk_LTP_analysis_filter(
 	Btmp_Q14 := make([]int16, SilkConstants.LTP_ORDER)
 	var LTP_res_ptr int
 	var k, i int
-	var LTP_est int32
+	var LTP_est int
 
 	x_ptr2 = x_ptr
 	LTP_res_ptr = 0
@@ -33,17 +33,17 @@ func silk_LTP_analysis_filter(
 			LTP_res[LTP_res_ptri] = x[x_ptr2+i]
 
 			LTP_est = silk_SMULBB(x[x_lag_ptr+SilkConstants.LTP_ORDER/2], Btmp_Q14[0])
-			LTP_est = silk_SMLABB_ovflw(LTP_est, int32(x[x_lag_ptr+1]), int32(Btmp_Q14[1]))
-			LTP_est = silk_SMLABB_ovflw(LTP_est, int32(x[x_lag_ptr]), int32(Btmp_Q14[2]))
-			LTP_est = silk_SMLABB_ovflw(LTP_est, int32(x[x_lag_ptr-1]), int32(Btmp_Q14[3]))
-			LTP_est = silk_SMLABB_ovflw(LTP_est, int32(x[x_lag_ptr-2]), int32(Btmp_Q14[4]))
+			LTP_est = silk_SMLABB_ovflw(LTP_est, int(x[x_lag_ptr+1]), int(Btmp_Q14[1]))
+			LTP_est = silk_SMLABB_ovflw(LTP_est, int(x[x_lag_ptr]), int(Btmp_Q14[2]))
+			LTP_est = silk_SMLABB_ovflw(LTP_est, int(x[x_lag_ptr-1]), int(Btmp_Q14[3]))
+			LTP_est = silk_SMLABB_ovflw(LTP_est, int(x[x_lag_ptr-2]), int(Btmp_Q14[4]))
 
 			LTP_est = silk_RSHIFT_ROUND(LTP_est, 14)
 
-			tmp := int32(x[x_ptr2+i]) - LTP_est
+			tmp := int(x[x_ptr2+i]) - LTP_est
 			LTP_res[LTP_res_ptri] = silk_SAT16(tmp)
 
-			gain := int32(invGains_Q16[k])
+			gain := int(invGains_Q16[k])
 			smulwb_result := silk_SMULWB(gain, LTP_res[LTP_res_ptri])
 			LTP_res[LTP_res_ptri] = int16(smulwb_result)
 

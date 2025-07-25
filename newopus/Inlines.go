@@ -14,12 +14,12 @@ func OpusAssertMsg(condition bool, message string) {
 	}
 }
 
-func CapToUInt32(val int) int {
-	return int(uint32(val))
+func CapToUint(val int) int {
+	return int(uint(val))
 }
 
-func CapToUInt32Long(val int64) int {
-	return int(uint32(val))
+func CapToUintLong(val int64) int {
+	return int(uint(val))
 }
 
 func MULT16_16SU(a, b int) int {
@@ -941,8 +941,8 @@ func silk_LSHIFT_ovflw(a, shift int) int {
 }
 
 func silk_LSHIFT_SAT32(a, shift int) int {
-	limit1 := silk_RSHIFT32(math.MinInt32, shift)
-	limit2 := silk_RSHIFT32(math.MaxInt32, shift)
+	limit1 := silk_RSHIFT32(math.Minint, shift)
+	limit2 := silk_RSHIFT32(math.Maxint, shift)
 	if a < limit1 {
 		a = limit1
 	} else if a > limit2 {
@@ -972,7 +972,7 @@ func silk_RSHIFT64(a int64, shift int) int64 {
 }
 
 func silk_RSHIFT_uint(a int64, shift int) int64 {
-	return int64(uint32(a)) >> shift
+	return int64(uint(a)) >> shift
 }
 
 func silk_ADD_LSHIFT(a, b, shift int) int {
@@ -992,7 +992,7 @@ func silk_ADD_RSHIFT32(a, b, shift int) int {
 }
 
 func silk_ADD_RSHIFT_uint(a, b int64, shift int) int64 {
-	return int64(uint32(a)) + (int64(uint32(b)) >> shift)
+	return int64(uint(a)) + (int64(uint(b)) >> shift)
 }
 
 func silk_SUB_LSHIFT32(a, b, shift int) int {
@@ -1175,7 +1175,7 @@ func silk_abs_int16(a int) int {
 	return (a ^ (a >> 15)) - (a >> 15)
 }
 
-func silk_abs_int32(a int) int {
+func silk_abs_int(a int) int {
 	return (a ^ (a >> 31)) - (a >> 31)
 }
 

@@ -30,11 +30,11 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int32, order int) int32 {
-	const A_LIMIT = int32(0.99975*float64(int32(1)<<QA) + 0.5)
+func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
+	const A_LIMIT = int(0.99975*float64(int(1)<<QA) + 0.5)
 
 	var k, n, mult2Q int
-	var invGain_Q30, rc_Q31, rc_mult1_Q30, rc_mult2, tmp_QA int32
+	var invGain_Q30, rc_Q31, rc_mult1_Q30, rc_mult2, tmp_QA int
 	currentRowIndex := order & 1
 
 	invGain_Q30 = 1 << 30
@@ -79,14 +79,14 @@ func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int32, order int) int
 	return invGain_Q30
 }
 
-func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int32 {
-	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int32
-	var DC_resp int32
+func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
+	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
+	var DC_resp int
 
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
-		DC_resp += int32(A_Q12[k])
-		Atmp_QA[currentRowIndex][k] = silk_LSHIFT32(int32(A_Q12[k]), QA-12)
+		DC_resp += int(A_Q12[k])
+		Atmp_QA[currentRowIndex][k] = silk_LSHIFT32(int(A_Q12[k]), QA-12)
 	}
 	if DC_resp >= 4096 {
 		return 0
@@ -94,8 +94,8 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int32 {
 	return LPC_inverse_pred_gain_QA(&Atmp_QA, order)
 }
 
-func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int32, order int) int32 {
-	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int32
+func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int, order int) int {
+	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
 
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {

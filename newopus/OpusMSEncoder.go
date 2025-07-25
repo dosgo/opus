@@ -13,8 +13,8 @@ type OpusMSEncoder struct {
 	bitrate_bps       int
 	subframe_mem      [3]float32
 	encoders          []*OpusEncoder
-	window_mem        []int32
-	preemph_mem       []int32
+	window_mem        []int
+	preemph_mem       []int
 }
 
 func NewOpusMSEncoder(nb_streams, nb_coupled_streams int) (*OpusMSEncoder, error) {
@@ -30,8 +30,8 @@ func NewOpusMSEncoder(nb_streams, nb_coupled_streams int) (*OpusMSEncoder, error
 	}
 
 	nb_channels := nb_coupled_streams*2 + (nb_streams - nb_coupled_streams)
-	st.window_mem = make([]int32, nb_channels*120)
-	st.preemph_mem = make([]int32, nb_channels)
+	st.window_mem = make([]int, nb_channels*120)
+	st.preemph_mem = make([]int, nb_channels)
 	return st, nil
 }
 
@@ -111,7 +111,7 @@ func logSum(a, b int) int {
 	return max + int(diff_table[low]) + MULT16_16_Q15(frac, SUB16(diff_table[low+1], diff_table[low]))
 }
 
-func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE []int, mem, preemph_mem []int32, len, overlap, channels, rate int) {
+func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE []int, mem, preemph_mem []int, len, overlap, channels, rate int) {
 	var pos [8]int
 	upsample := resampling_factor(rate)
 	frame_size := len * upsample
@@ -123,10 +123,10 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		}
 	}
 
-	input := make([]int32, frame_size+overlap)
+	input := make([]int, frame_size+overlap)
 	x := make([]int16, len)
-	freq := make([][]int32, 1)
-	freq[0] = make([]int32, frame_size)
+	freq := make([][]int, 1)
+	freq[0] = make([]int, frame_size)
 
 	channel_pos(channels, &pos)
 
@@ -149,15 +149,15 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		if upsample != 1 {
 			bound := len
 			for i := 0; i < bound; i++ {
-				freq[0][i] *= int32(upsample)
+				freq[0][i] *= int(upsample)
 			}
 			for i := bound; i < frame_size; i++ {
 				freq[0][i] = 0
 			}
 		}
 
-		bandE := make([][]int32, 1)
-		bandE[0] = make([]int32, 21)
+		bandE := make([][]int, 1)
+		bandE[0] = make([]int, 21)
 		compute_band_energies(celt_mode, freq, bandE, 21, 1, LM)
 		amp2Log2(celt_mode, 21, 21, bandE[0], bandLogE, 21*c, 1)
 		for i := 1; i < 21; i++ {
@@ -185,7 +185,7 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 	for i := 0; i < 21; i++ {
 		maskLogE[1][i] = MIN32(maskLogE[0][i], maskLogE[2][i])
 	}
-	channel_offset := HALF16(celt_log2(int32(QCONST32(2.0, 14)) / (channels - 1)))
+	channel_offset := HALF16(celt_log2(int(QCONST32(2.0, 14)) / (channels - 1)))
 	for c := 0; c < 3; c++ {
 		for i := 0; i < 21; i++ {
 			maskLogE[c][i] += channel_offset
@@ -415,7 +415,7 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 	var vbr int
 	var celt_mode *CeltMode
 	var bandLogE []int
-	var mem, preemph_mem []int32
+	var mem, preemph_mem []int
 
 	if st.surround != 0 {
 		preemph_mem = st.preemph_mem

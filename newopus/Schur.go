@@ -39,7 +39,7 @@ func silk_schur(rc_Q15 []int16, c []int, order int) int {
 	}
 
 	for k = 0; k < order; k++ {
-		if silk_abs_int32(C[k+1][0]) >= C[0][1] {
+		if silk_abs_int(C[k+1][0]) >= C[0][1] {
 			if C[k+1][0] > 0 {
 				rc_Q15[k] = -SILK_CONST_0_99_Q15
 			} else {
@@ -88,7 +88,7 @@ func silk_schur64(rc_Q16 []int, c []int, order int) int {
 	}
 
 	for k = 0; k < order; k++ {
-		if silk_abs_int32(C[k+1][0]) >= C[0][1] {
+		if silk_abs_int(C[k+1][0]) >= C[0][1] {
 			if C[k+1][0] > 0 {
 				rc_Q16[k] = -SILK_CONST_0_99_Q16
 			} else {

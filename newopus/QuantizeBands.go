@@ -223,7 +223,7 @@ func quant_fine_energy(m *CeltMode, start int, end int, oldEBands [][]int16, err
 			if q2 < 0 {
 				q2 = 0
 			}
-			enc.enc_bits(uint32(q2), fine_quant[i])
+			enc.enc_bits(uint(q2), fine_quant[i])
 			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (CeltConstants.DB_SHIFT - 1))) >> fine_quant[i]
 			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
 			oldEBands[c][i] += int16(offset)
@@ -243,7 +243,7 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int16,
 				if error[c][i] >= 0 {
 					q2 = 1
 				}
-				enc.enc_bits(uint32(q2), 1)
+				enc.enc_bits(uint(q2), 1)
 				offset := (q2<<CeltConstants.DB_SHIFT - (1 << (CeltConstants.DB_SHIFT - 1))) >> (fine_quant[i] + 1)
 				oldEBands[c][i] += int16(offset)
 				bits_left--
