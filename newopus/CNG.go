@@ -3,9 +3,9 @@ package opus
 const MaxInt16 = 32767
 
 func silk_CNG_exc(
-	exc_Q10 []int32,
+	exc_Q10 []int,
 	exc_Q10_ptr int,
-	exc_buf_Q14 []int32,
+	exc_buf_Q14 []int,
 	Gain_Q16 int,
 	length int,
 	rand_seed *int) {
@@ -22,7 +22,7 @@ func silk_CNG_exc(
 		idx := int(silk_RSHIFT(seed, 24) & exc_mask)
 		OpusAssert(idx >= 0)
 		OpusAssert(idx <= CNG_BUF_MASK_MAX)
-		exc_Q10[i] = int32(silk_SAT16(silk_SMULWW(int(exc_buf_Q14[idx]), Gain_Q16>>4)))
+		exc_Q10[i] = int(silk_SAT16(silk_SMULWW(int(exc_buf_Q14[idx]), Gain_Q16>>4)))
 	}
 
 	*rand_seed = seed
@@ -78,7 +78,7 @@ func silk_CNG(
 	}
 
 	if psDec.lossCnt != 0 {
-		CNG_sig_Q10 := make([]int32, length+MAX_LPC_ORDER)
+		CNG_sig_Q10 := make([]int, length+MAX_LPC_ORDER)
 		gain_Q16 := silk_SMULWW(psDec.sPLC.randScale_Q14, psDec.sPLC.prevGain_Q16[1])
 
 		if gain_Q16 >= (1<<21) || psCNG.CNG_smth_Gain_Q16 > (1<<23) {

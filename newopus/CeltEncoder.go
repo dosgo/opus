@@ -114,13 +114,13 @@ func (this *CeltEncoder) ResetState() {
 	this.oldLogE2 = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
 
 	for i := 0; i < this.mode.nbEBands; i++ {
-		val := -int(0.5 + 28.0*float64(1<<CeltConstants.DB_SHIFT))
+		val := -int(0.5 + 28.0*int(1<<CeltConstants.DB_SHIFT))
 		this.oldLogE[0][i] = val
 		this.oldLogE2[0][i] = val
 	}
 	if this.channels == 2 {
 		for i := 0; i < this.mode.nbEBands; i++ {
-			val := -int(0.5 + 28.0*float64(1<<CeltConstants.DB_SHIFT))
+			val := -int(0.5 + 28.0*int(1<<CeltConstants.DB_SHIFT))
 			this.oldLogE[1][i] = val
 			this.oldLogE2[1][i] = val
 		}

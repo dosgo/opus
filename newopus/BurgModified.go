@@ -10,16 +10,16 @@ const (
 
 var SILK_CONST_FIND_LPC_COND_FAC_32 int32 = 42950
 
-func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []int32, x []int16, x_ptr int, minInvGain_Q30 int32, subfr_length int32, nb_subfr int32, D int32) {
+func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValueInt, A_Q16 []int32, x []int16, x_ptr int, minInvGain_Q30 int32, subfr_length int32, nb_subfr int32, D int32) {
 	var k, n, s, lz, rshifts, reached_max_gain int
-	var C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2 int32
+	var C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2 int
 	var x_offset int
-	C_first_row := make([]int32, SILK_MAX_ORDER_LPC)
-	C_last_row := make([]int32, SILK_MAX_ORDER_LPC)
-	Af_QA := make([]int32, SILK_MAX_ORDER_LPC)
-	CAf := make([]int32, SILK_MAX_ORDER_LPC+1)
-	CAb := make([]int32, SILK_MAX_ORDER_LPC+1)
-	xcorr := make([]int32, SILK_MAX_ORDER_LPC)
+	C_first_row := make([]int, SILK_MAX_ORDER_LPC)
+	C_last_row := make([]int, SILK_MAX_ORDER_LPC)
+	Af_QA := make([]int, SILK_MAX_ORDER_LPC)
+	CAf := make([]int, SILK_MAX_ORDER_LPC+1)
+	CAb := make([]int, SILK_MAX_ORDER_LPC+1)
+	xcorr := make([]int, SILK_MAX_ORDER_LPC)
 	var C0_64 int64
 
 	for i := range C_first_row {
@@ -37,12 +37,14 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 	}
 
 	if rshifts > 0 {
-		C0 = int32(C0_64 >> uint(rshifts))
+		C0 = int(C0_64 >> uint(rshifts))
 	} else {
-		C0 = int32(C0_64) << uint(-rshifts)
+		C0 = int(C0_64) << uint(-rshifts)
 	}
 
-	CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
+	//CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
+	CAf[0] = C0 + silk_SMMUL(int(TuningParameters.FIND_LPC_COND_FAC*int64(1<<(32))+0.5), C0) + 1
+
 	CAb[0] = CAf[0]
 
 	if rshifts > 0 {
@@ -71,7 +73,9 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 	}
 	copy(C_last_row, C_first_row)
 
-	CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
+	//CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
+	CAf[0] = C0 + silk_SMMUL((TuningParameters.FIND_LPC_COND_FAC*(1<<(32))+0.5), C0) + 1
+
 	CAb[0] = CAf[0]
 
 	invGain_Q30 = 1 << 30
@@ -80,31 +84,31 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 		if rshifts > -2 {
 			for s = 0; s < int(nb_subfr); s++ {
 				x_offset = x_ptr + s*int(subfr_length)
-				x1 = -silk_LSHIFT32(int32(x[x_offset+n]), 16-rshifts)
-				x2 = -silk_LSHIFT32(int32(x[x_offset+int(subfr_length)-n-1]), 16-rshifts)
-				tmp1 = silk_LSHIFT32(int32(x[x_offset+n]), QA-16)
-				tmp2 = silk_LSHIFT32(int32(x[x_offset+int(subfr_length)-n-1]), QA-16)
+				x1 = -silk_LSHIFT32(int(x[x_offset+n]), 16-rshifts)
+				x2 = -silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), 16-rshifts)
+				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), QA-16)
+				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), QA-16)
 				for k = 0; k < n; k++ {
 					C_first_row[k] = silk_SMLAWB(C_first_row[k], x1, int32(x[x_offset+n-k-1]))
 					C_last_row[k] = silk_SMLAWB(C_last_row[k], x2, int32(x[x_offset+int(subfr_length)-n+k]))
 					Atmp_QA = Af_QA[k]
-					tmp1 = silk_SMLAWB(tmp1, Atmp_QA, int32(x[x_offset+n-k-1]))
-					tmp2 = silk_SMLAWB(tmp2, Atmp_QA, int32(x[x_offset+int(subfr_length)-n+k]))
+					tmp1 = silk_SMLAWB(tmp1, Atmp_QA, int(x[x_offset+n-k-1]))
+					tmp2 = silk_SMLAWB(tmp2, Atmp_QA, int(x[x_offset+int(subfr_length)-n+k]))
 				}
 				tmp1 = silk_LSHIFT32(-tmp1, 32-QA-rshifts)
 				tmp2 = silk_LSHIFT32(-tmp2, 32-QA-rshifts)
 				for k = 0; k <= n; k++ {
-					CAf[k] = silk_SMLAWB(CAf[k], tmp1, int32(x[x_offset+n-k]))
-					CAb[k] = silk_SMLAWB(CAb[k], tmp2, int32(x[x_offset+int(subfr_length)-n+k-1]))
+					CAf[k] = silk_SMLAWB(CAf[k], tmp1, int(x[x_offset+n-k]))
+					CAb[k] = silk_SMLAWB(CAb[k], tmp2, int(x[x_offset+int(subfr_length)-n+k-1]))
 				}
 			}
 		} else {
 			for s = 0; s < int(nb_subfr); s++ {
 				x_offset = x_ptr + s*int(subfr_length)
-				x1 = -silk_LSHIFT32(int32(x[x_offset+n]), -rshifts)
-				x2 = -silk_LSHIFT32(int32(x[x_offset+int(subfr_length)-n-1]), -rshifts)
-				tmp1 = silk_LSHIFT32(int32(x[x_offset+n]), 17)
-				tmp2 = silk_LSHIFT32(int32(x[x_offset+int(subfr_length)-n-1]), 17)
+				x1 = -silk_LSHIFT32(int(x[x_offset+n]), -rshifts)
+				x2 = -silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), -rshifts)
+				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), 17)
+				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), 17)
 				for k = 0; k < n; k++ {
 					C_first_row[k] = silk_MLA(C_first_row[k], x1, int32(x[x_offset+n-k-1]))
 					C_last_row[k] = silk_MLA(C_last_row[k], x2, int32(x[x_offset+int(subfr_length)-n+k]))
@@ -206,8 +210,8 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 				C0 -= silk_LSHIFT32(silk_inner_prod_self(x, x_offset, int(D)), -rshifts)
 			}
 		}
-		*res_nrg = silk_LSHIFT(silk_SMMUL(invGain_Q30, C0), 2)
-		*res_nrg_Q = int32(0 - rshifts)
+		res_nrg.Val = silk_LSHIFT(silk_SMMUL(invGain_Q30, C0), 2)
+		res_nrg_Q.Val = int(0 - rshifts)
 	} else {
 		nrg = CAf[0]
 		tmp1 = 1 << 16
@@ -217,7 +221,9 @@ func BurgModified_silk_burg_modified(res_nrg *int32, res_nrg_Q *int32, A_Q16 []i
 			tmp1 = silk_SMLAWW(tmp1, Atmp1, Atmp1)
 			A_Q16[k] = -Atmp1
 		}
-		*res_nrg = silk_SMLAWW(nrg, silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0), -tmp1)
-		*res_nrg_Q = int32(-rshifts)
+		//res_nrg.Val = silk_SMLAWW(nrg, silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0), -tmp1)
+		res_nrg.Val = silk_SMLAWW(nrg, silk_SMMUL(((TuningParameters.FIND_LPC_COND_FAC)*(1<<(32))+0.5), C0), -tmp1)
+
+		res_nrg_Q.Val = int(-rshifts)
 	}
 }

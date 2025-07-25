@@ -12,8 +12,8 @@ func CELT_PVQ_V(_n, _k int) int64 {
 	return CELT_PVQ_U(_n, _k) + CELT_PVQ_U(_n, _k+1)
 }
 
-func icwrs(_n int, _y []int) uint64 {
-	var i uint64
+func icwrs(_n int, _y []int) int64 {
+	var i int64
 	OpusAssert(_n >= 2)
 	j := _n - 1
 	if _y[j] < 0 {

@@ -26,14 +26,14 @@ func silk_find_LPC(
 
 	psEncC.indices.NLSFInterpCoef_Q2 = 4
 
-	silk_burg_modified(scratch_box1, scratch_box2, a_Q16, x, 0, minInvGain_Q30, subfr_length, psEncC.nb_subfr, psEncC.predictLPCOrder)
+	BurgModified_silk_burg_modified(scratch_box1, scratch_box2, a_Q16, x, 0, minInvGain_Q30, subfr_length, psEncC.nb_subfr, psEncC.predictLPCOrder)
 	res_nrg = scratch_box1.Val
 	res_nrg_Q = scratch_box2.Val
 
 	if psEncC.useInterpolatedNLSFs != 0 && psEncC.first_frame_after_reset == 0 && psEncC.nb_subfr == MAX_NB_SUBFR {
 		var LPC_res []int16
 
-		silk_burg_modified(scratch_box1, scratch_box2, a_tmp_Q16, x, 2*subfr_length, minInvGain_Q30, subfr_length, 2, psEncC.predictLPCOrder)
+		BurgModified_silk_burg_modified(scratch_box1, scratch_box2, a_tmp_Q16, x, 2*subfr_length, minInvGain_Q30, subfr_length, 2, psEncC.predictLPCOrder)
 		res_tmp_nrg = scratch_box1.Val
 		res_tmp_nrg_Q = scratch_box2.Val
 
@@ -59,9 +59,9 @@ func silk_find_LPC(
 
 			silk_LPC_analysis_filter(LPC_res, 0, x, 0, a_tmp_Q12, 0, 2*subfr_length, psEncC.predictLPCOrder)
 
-			silk_sum_sqr_shift(res_nrg0, rshift0, LPC_res, psEncC.predictLPCOrder, subfr_length-psEncC.predictLPCOrder)
+			silk_sum_sqr_shift5(*res_nrg0, *rshift0, LPC_res, psEncC.predictLPCOrder, subfr_length-psEncC.predictLPCOrder)
 
-			silk_sum_sqr_shift(res_nrg1, rshift1, LPC_res, psEncC.predictLPCOrder+subfr_length, subfr_length-psEncC.predictLPCOrder)
+			silk_sum_sqr_shift5(*res_nrg1, *rshift1, LPC_res, psEncC.predictLPCOrder+subfr_length, subfr_length-psEncC.predictLPCOrder)
 
 			shift = rshift0.Val - rshift1.Val
 			if shift >= 0 {

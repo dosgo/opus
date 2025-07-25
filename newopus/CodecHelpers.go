@@ -11,10 +11,10 @@ func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int
 		period++
 	}
 	if mode == MODE_SILK_ONLY {
-		toc = int16((OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_NARROWBAND)) << 5)
+		toc = int16((GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_NARROWBAND)) << 5)
 		toc |= int16((period - 2) << 3)
 	} else if mode == MODE_CELT_ONLY {
-		tmp := OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND)
+		tmp := GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND)
 		if tmp < 0 {
 			tmp = 0
 		}
@@ -23,7 +23,7 @@ func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int
 		toc |= int16(period << 3)
 	} else {
 		toc = 0x60
-		toc |= int16((OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND)) << 4)
+		toc |= int16((GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND)) << 4)
 		toc |= int16((period - 2) << 3)
 	}
 	toc |= int16((map[bool]int{true: 1, false: 0}[channels == 2]) << 2)
@@ -31,15 +31,15 @@ func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int
 }
 
 func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int32, len int, channels int, Fs int) {
-	var B_Q28 [3]int32
-	var A_Q28 [2]int32
-	var Fc_Q19, r_Q28, r_Q22 int32
+	var B_Q28 [3]int
+	var A_Q28 [2]int
+	var Fc_Q19, r_Q28, r_Q22 int
 
-	OpusAssert(cutoff_Hz <= 2147483647/((int32)((1.5*3.14159/1000)*(1<<19)+0.5)))
-	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int32)((1.5*3.14159/1000)*(1<<19)+0.5, int32(cutoff_Hz)), int32(Fs/1000)))
+	OpusAssert(cutoff_Hz <= 2147483647/((int)((1.5*3.14159/1000)*(1<<19)+0.5)))
+	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int)((1.5*3.14159/1000)*(1<<19)+0.5, int32(cutoff_Hz)), int32(Fs/1000)))
 	OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
 
-	r_Q28 = (int32)((1.0)*(1<<28)+0.5) - silk_MUL((int32)((0.92)*(1<<9)+0.5), Fc_Q19)
+	r_Q28 = (int)((1.0)*(1<<28)+0.5) - silk_MUL((int)((0.92)*(1<<9)+0.5), Fc_Q19)
 
 	B_Q28[0] = r_Q28
 	B_Q28[1] = silk_LSHIFT(-r_Q28, 1)
@@ -339,9 +339,9 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		yy += SHR32(pyy, 10)
 	}
 
-	mem.XX += MULT16_32_Q15(int32(short_alpha), xx-mem.XX)
-	mem.XY += MULT16_32_Q15(int32(short_alpha), xy-mem.XY)
-	mem.YY += MULT16_32_Q15(int32(short_alpha), yy-mem.YY)
+	mem.XX += MULT16_32_Q15Int(int(short_alpha), xx-mem.XX)
+	mem.XY += MULT16_32_Q15Int(int(short_alpha), xy-mem.XY)
+	mem.YY += MULT16_32_Q15Int(int(short_alpha), yy-mem.YY)
 	mem.XX = MAX32(0, mem.XX)
 	mem.XY = MAX32(0, mem.XY)
 	mem.YY = MAX32(0, mem.YY)
