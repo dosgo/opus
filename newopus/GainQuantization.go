@@ -44,10 +44,10 @@ func silk_gains_quant(ind []byte, gain_Q16 []int32, prev_ind *byte, conditional 
 			ind[k]++
 		}
 
-		ind[k] = byte(silk_LIMIT_int(int32(ind[k]), 0, N_LEVELS_QGAIN-1))
+		ind[k] = byte(silk_LIMIT_int(int(ind[k]), 0, N_LEVELS_QGAIN-1))
 
 		if k == 0 && conditional == 0 {
-			ind[k] = byte(silk_LIMIT_int(int32(ind[k]), int32(*prev_ind)+MIN_DELTA_GAIN_QUANT, N_LEVELS_QGAIN-1))
+			ind[k] = byte(silk_LIMIT_int(int(ind[k]), int(*prev_ind)+MIN_DELTA_GAIN_QUANT, N_LEVELS_QGAIN-1))
 			*prev_ind = ind[k]
 		} else {
 			ind[k] -= *prev_ind
@@ -57,15 +57,15 @@ func silk_gains_quant(ind []byte, gain_Q16 []int32, prev_ind *byte, conditional 
 				ind[k] = byte(double_step_size_threshold + silk_RSHIFT(int(ind[k])-double_step_size_threshold+1, 1))
 			}
 
-			ind[k] = byte(silk_LIMIT_int(int32(ind[k]), MIN_DELTA_GAIN_QUANT, MAX_DELTA_GAIN_QUANT))
+			ind[k] = byte(silk_LIMIT_int(int(ind[k]), MIN_DELTA_GAIN_QUANT, MAX_DELTA_GAIN_QUANT))
 
 			if int(ind[k]) > double_step_size_threshold {
-				*prev_ind = byte(int(*prev_ind) + (int(silk_LSHIFT(uint32(ind[k]), 1)) - double_step_size_threshold))
+				*prev_ind = byte(int(*prev_ind) + (int(silk_LSHIFT(int(ind[k]), 1)) - double_step_size_threshold))
 			} else {
 				*prev_ind = byte(int(*prev_ind) + int(ind[k]))
 			}
 
-			ind[k] -= MIN_DELTA_GAIN_QUANT
+			ind[k] -= byte(SilkConstants.MIN_DELTA_GAIN_QUANT)
 		}
 
 		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int32(*prev_ind))+OFFSET, 3967))
@@ -75,7 +75,7 @@ func silk_gains_quant(ind []byte, gain_Q16 []int32, prev_ind *byte, conditional 
 func silk_gains_dequant(gain_Q16 []int32, ind []byte, prev_ind *byte, conditional int, nb_subfr int) {
 	for k := 0; k < nb_subfr; k++ {
 		if k == 0 && conditional == 0 {
-			*prev_ind = byte(silk_max_int(int32(ind[k]), int32(*prev_ind)-16))
+			*prev_ind = byte(silk_max_int(int(ind[k]), int(*prev_ind)-16))
 		} else {
 			ind_tmp := int(ind[k]) + MIN_DELTA_GAIN_QUANT
 
@@ -96,7 +96,7 @@ func silk_gains_dequant(gain_Q16 []int32, ind []byte, prev_ind *byte, conditiona
 func silk_gains_ID(ind []byte, nb_subfr int) int32 {
 	gainsID := int32(0)
 	for k := 0; k < nb_subfr; k++ {
-		gainsID = silk_ADD_LSHIFT32(int32(ind[k]), gainsID, 8)
+		gainsID = silk_ADD_LSHIFT32(int(ind[k]), gainsID, 8)
 	}
 	return gainsID
 }

@@ -147,7 +147,7 @@ func silk_Decode(
 						} else {
 							condCoding = SilkConstants.CODE_INDEPENDENTLY
 						}
-						silk_decode_indices(channel_state[n], psRangeDec, i, 1, condCoding)
+						silk_decode_indices(channel_state[n], *psRangeDec, i, 1, condCoding)
 						silk_decode_pulses(psRangeDec, pulses, channel_state[n].indices.signalType, channel_state[n].indices.quantOffsetType, channel_state[n].frame_length)
 					}
 				}

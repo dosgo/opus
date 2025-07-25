@@ -261,8 +261,8 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		psShapeSt.HarmBoost_smth_Q16 = silk_SMLAWB(psShapeSt.HarmBoost_smth_Q16, HarmBoost_Q16-psShapeSt.HarmBoost_smth_Q16, int32(SUBFR_SMTH_COEF<<16))
 		psShapeSt.HarmShapeGain_smth_Q16 = silk_SMLAWB(psShapeSt.HarmShapeGain_smth_Q16, HarmShapeGain_Q16-psShapeSt.HarmShapeGain_smth_Q16, int32(SUBFR_SMTH_COEF<<16))
 		psShapeSt.Tilt_smth_Q16 = silk_SMLAWB(psShapeSt.Tilt_smth_Q16, Tilt_Q16-psShapeSt.Tilt_smth_Q16, int32(SUBFR_SMTH_COEF<<16))
-		psEncCtrl.HarmBoost_Q14[k] = int16(silk_RSHIFT_ROUND(psShapeSt.HarmBoost_smth_Q16, 2))
-		psEncCtrl.HarmShapeGain_Q14[k] = int16(silk_RSHIFT_ROUND(psShapeSt.HarmShapeGain_smth_Q16, 2))
-		psEncCtrl.Tilt_Q14[k] = int16(silk_RSHIFT_ROUND(psShapeSt.Tilt_smth_Q16, 2))
+		psEncCtrl.HarmBoost_Q14[k] = int32(silk_RSHIFT_ROUND(psShapeSt.HarmBoost_smth_Q16, 2))
+		psEncCtrl.HarmShapeGain_Q14[k] = int32(silk_RSHIFT_ROUND(psShapeSt.HarmShapeGain_smth_Q16, 2))
+		psEncCtrl.Tilt_Q14[k] = int32(silk_RSHIFT_ROUND(psShapeSt.Tilt_smth_Q16, 2))
 	}
 }

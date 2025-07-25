@@ -118,7 +118,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	F5 := F10 >> 1
 	F2_5 := F5 >> 1
 	if frame_size < F2_5 {
-		return OPUS_BUFFER_TOO_SMALL
+		return OpusError.OPUS_BUFFER_TOO_SMALL
 	}
 	frame_size = IMIN(frame_size, this.Fs/25*3)
 	if len <= 1 {

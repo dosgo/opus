@@ -275,7 +275,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 				if pi > 40 {
 					pi = 40
 				}
-				qi = Laplace.ec_laplace_decode(*dec, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				qi = Laplace.ec_laplace_decode(*dec, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 			} else if budget-tell >= 2 {
 				val := dec.dec_icdf(small_energy_icdf, 2)
 				qi = (val >> 1)
@@ -337,7 +337,7 @@ func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16,
 func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]int16, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[c][i] = int16(celt_log2(int32(bandE[c][i])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[c][i] = int16(celt_log2(int(bandE[c][i])<<2) - int(CeltTables.EMeans[i])<<6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[c][i] = -(14 << CeltConstants.DB_SHIFT)

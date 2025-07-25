@@ -307,7 +307,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	if st.force_channels != OPUS_AUTO && st.channels == 2 {
 		st.stream_channels = st.force_channels
 	} else if st.channels == 2 {
-		stereo_threshold := STEREO_MUSIC_THRESHOLD + ((voice_est * voice_est * (STEREO_VOICE_THRESHOLD - STEREO_MUSIC_THRESHOLD)) >> 14)
+		stereo_threshold := stereo_music_threshold + ((voice_est * voice_est * (stereo_voice_threshold - stereo_music_threshold)) >> 14)
 		if st.stream_channels == 2 {
 			stereo_threshold -= 1000
 		} else {
@@ -546,7 +546,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	if st.mode == MODE_CELT_ONLY {
 		hp_freq_smth1 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 	} else {
-		hp_freq_smth1 = silk_enc.State_Fxx[0].Variable_HP_smth1_Q15
+		hp_freq_smth1 = int(silk_enc.state_Fxx[0].variable_HP_smth1_Q15)
 	}
 	st.variable_HP_smth2_Q15 = silk_SMLAWB(st.variable_HP_smth2_Q15, hp_freq_smth1-st.variable_HP_smth2_Q15, int(VARIABLE_HP_SMTH_COEF2*(1<<16)+0.5))
 	cutoff_Hz := silk_log2lin(st.variable_HP_smth2_Q15 >> 8)
@@ -685,7 +685,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	nb_compr_bytes := 0
 	if st.mode != MODE_SILK_ONLY {
 		if st.mode == MODE_HYBRID {
-			len := (enc.Tell() + 7) >> 3
+			len := (enc.tell() + 7) >> 3
 			if redundancy != 0 {
 				if st.mode == MODE_HYBRID {
 					len += 3
@@ -748,8 +748,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		stereo_fade(pcm_buf, g1, g2, celt_mode.overlap, frame_size, st.channels, celt_mode.window, st.Fs)
 		st.hybrid_stereo_width_Q14 = int16(st.silk_mode.stereoWidth_Q14)
 	}
-	if st.mode != MODE_CELT_ONLY && enc.Tell()+17+20*btol(st.mode == MODE_HYBRID) <= 8*(max_data_bytes-1) {
-		if st.mode == MODE_HYBRID && (redundancy != 0 || enc.Tell()+37 <= 8*nb_compr_bytes) {
+	if st.mode != MODE_CELT_ONLY && enc.tell()+17+20*btol(st.mode == MODE_HYBRID) <= 8*(max_data_bytes-1) {
+		if st.mode == MODE_HYBRID && (redundancy != 0 || enc.tell()+37 <= 8*nb_compr_bytes) {
 			enc.EncBitLogp(redundancy, 12)
 		}
 		if redundancy != 0 {
@@ -769,7 +769,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.silk_bw_switch = 0
 	}
 	if st.mode == MODE_SILK_ONLY {
-		ret := (enc.Tell() + 7) >> 3
+		ret := (enc.tell() + 7) >> 3
 		enc.EncDone()
 		nb_compr_bytes = ret
 	} else {
@@ -795,7 +795,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			celt_enc.celt_encode_with_ec(tmp_prefill, 0, st.Fs/400, dummy, 0, 2, nil)
 			celt_enc.SetPrediction(0)
 		}
-		if enc.Tell() <= 8*nb_compr_bytes {
+		if enc.tell() <= 8*nb_compr_bytes {
 			ret := celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
@@ -827,8 +827,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	st.prev_channels = st.stream_channels
 	st.prev_framesize = frame_size
 	st.first = 0
-	ret := (enc.Tell() + 7) >> 3
-	if enc.Tell() > (max_data_bytes-1)*8 {
+	ret := (enc.tell() + 7) >> 3
+	if enc.tell() > (max_data_bytes-1)*8 {
 		if max_data_bytes < 2 {
 			return OpusError.OPUS_BUFFER_TOO_SMALL
 		}

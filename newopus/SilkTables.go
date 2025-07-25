@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 var silk_LSFCosTab_Q12 = []int16{
 	8192, 8190, 8182, 8170, 8152, 8130, 8104, 8072, 8034, 7994, 7946, 7896,
 	7840, 7778, 7714, 7644, 7568, 7490, 7406, 7318, 7226, 7128, 7026, 6922,
@@ -618,32 +620,36 @@ var silk_nb_cbk_searchs_stage3 = []int8{
 
 func init() {
 	silk_NLSF_CB_NB_MB = &NLSFCodebook{
-		nVectors:            32,
-		order:               10,
-		quantStepSize_Q16:    (short) (((int) ((0.15f) * (int64(1 << (16))) + 0.5)),
-		invQuantStepSize_Q6: int16(1.0/0.18*64 + 0.5),
-		CB1_NLSF_Q8:         silk_NLSF_CB1_NB_MB_Q8,
-		CB1_iCDF:            silk_NLSF_CB1_iCDF_NB_MB,
-		pred_Q8:             silk_NLSF_PRED_NB_MB_Q8,
-		ec_sel:              silk_NLSF_CB2_SELECT_NB_MB,
-		ec_iCDF:             silk_NLSF_CB2_iCDF_NB_MB,
-		ec_Rates_Q5:         silk_NLSF_CB2_BITS_NB_MB_Q5,
-		deltaMin_Q15:        silk_NLSF_DELTA_MIN_NB_MB_Q15,
+		nVectors: 32,
+		order:    10,
+		//quantStepSize_Q16: int16(0.15*float32(int64(1<<(16))) + 0.5),
+		///	invQuantStepSize_Q6: int16(1.0/0.18*64 + 0.5),
+		CB1_NLSF_Q8:  silk_NLSF_CB1_NB_MB_Q8,
+		CB1_iCDF:     silk_NLSF_CB1_iCDF_NB_MB,
+		pred_Q8:      silk_NLSF_PRED_NB_MB_Q8,
+		ec_sel:       silk_NLSF_CB2_SELECT_NB_MB,
+		ec_iCDF:      silk_NLSF_CB2_iCDF_NB_MB,
+		ec_Rates_Q5:  silk_NLSF_CB2_BITS_NB_MB_Q5,
+		deltaMin_Q15: silk_NLSF_DELTA_MIN_NB_MB_Q15,
 	}
+	silk_NLSF_CB_NB_MB.quantStepSize_Q16 = int16(math.Round(0.15 * (1<<(16) + 0.5)))
+	silk_NLSF_CB_NB_MB.invQuantStepSize_Q6 = int16(math.Round(1.0/0.18*64 + 0.5))
 
 	silk_NLSF_CB_WB = &NLSFCodebook{
-		nVectors:            32,
-		order:               16,
-		quantStepSize_Q16:   int16(int(0.15*65536 + 0.5)),
-		invQuantStepSize_Q6: int16(1.0/0.15*64 + 0.5),
-		CB1_NLSF_Q8:         silk_NLSF_CB1_WB_Q8,
-		CB1_iCDF:            silk_NLSF_CB1_iCDF_WB,
-		pred_Q8:             silk_NLSF_PRED_WB_Q8,
-		ec_sel:              silk_NLSF_CB2_SELECT_WB,
-		ec_iCDF:             silk_NLSF_CB2_iCDF_WB,
-		ec_Rates_Q5:         silk_NLSF_CB2_BITS_WB_Q5,
-		deltaMin_Q15:        silk_NLSF_DELTA_MIN_WB_Q15,
+		nVectors: 32,
+		order:    16,
+		//quantStepSize_Q16:   int16(int(0.15*65536 + 0.5)),
+		//invQuantStepSize_Q6: int16(1.0/0.15*64 + 0.5),
+		CB1_NLSF_Q8:  silk_NLSF_CB1_WB_Q8,
+		CB1_iCDF:     silk_NLSF_CB1_iCDF_WB,
+		pred_Q8:      silk_NLSF_PRED_WB_Q8,
+		ec_sel:       silk_NLSF_CB2_SELECT_WB,
+		ec_iCDF:      silk_NLSF_CB2_iCDF_WB,
+		ec_Rates_Q5:  silk_NLSF_CB2_BITS_WB_Q5,
+		deltaMin_Q15: silk_NLSF_DELTA_MIN_WB_Q15,
 	}
+	silk_NLSF_CB_WB.quantStepSize_Q16 = int16(math.Round(0.15*65536 + 0.5))
+	silk_NLSF_CB_WB.invQuantStepSize_Q6 = int16(math.Round(1.0/0.15*64 + 0.5))
 }
 
 var SilkTables = struct {

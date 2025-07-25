@@ -85,7 +85,7 @@ func silk_NLSF_unpack(ec_ix []int16, pred_Q8 []int16, psNLSF_CB *NLSFCodebook, C
 	var entry int16
 	ec_sel_ptr := CB1_index * psNLSF_CB.order / 2
 
-	for i := 0; i < psNLSF_CB.order; i += 2 {
+	for i := 0; i < int(psNLSF_CB.order); i += 2 {
 		entry = psNLSF_CB.ec_sel[ec_sel_ptr]
 		ec_sel_ptr++
 		ec_ix[i] = int16(silk_SMULBB(int32((entry>>1)&7), int32(2*SilkConstants.NLSF_QUANT_MAX_AMPLITUDE+1)))
@@ -133,18 +133,18 @@ func silk_NLSF_stabilize(NLSF_Q15 []int16, NDeltaMin_Q15 []int16, L int) {
 			for k = 0; k < I; k++ {
 				min_center_Q15 += int32(NDeltaMin_Q15[k])
 			}
-			min_center_Q15 += int32(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			min_center_Q15 += int32(silk_RSHIFT(int(NDeltaMin_Q15[I]), 1))
 
 			max_center_Q15 = 1 << 15
 			for k = L; k > I; k-- {
 				max_center_Q15 -= int32(NDeltaMin_Q15[k])
 			}
-			max_center_Q15 -= int32(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			max_center_Q15 -= int32(silk_RSHIFT(int(NDeltaMin_Q15[I]), 1))
 
 			center_freq_Q15 = int16(silk_LIMIT_32(
-				silk_RSHIFT_ROUND(int32(NLSF_Q15[I-1])+int32(NLSF_Q15[I]), 1),
+				silk_RSHIFT_ROUND(int(NLSF_Q15[I-1])+int(NLSF_Q15[I]), 1),
 				min_center_Q15, max_center_Q15))
-			NLSF_Q15[I-1] = center_freq_Q15 - int16(silk_RSHIFT(int32(NDeltaMin_Q15[I]), 1))
+			NLSF_Q15[I-1] = center_freq_Q15 - int16(silk_RSHIFT(int(NDeltaMin_Q15[I]), 1))
 			NLSF_Q15[I] = NLSF_Q15[I-1] + NDeltaMin_Q15[I]
 		}
 	}
@@ -170,7 +170,7 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 	var W_tmp_Q9, NLSF_Q15_tmp int32
 
 	pCB_element := int(NLSFIndices[0]) * psNLSF_CB.order
-	for i := 0; i < psNLSF_CB.order; i++ {
+	for i := 0; i < int(psNLSF_CB.order); i++ {
 		pNLSF_Q15[i] = int16(psNLSF_CB.CB1_NLSF_Q8[pCB_element+i] << 7)
 	}
 
@@ -178,7 +178,7 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 	silk_NLSF_residual_dequant(res_Q10, NLSFIndices, 1, pred_Q8, psNLSF_CB.quantStepSize_Q16, int16(psNLSF_CB.order))
 	silk_NLSF_VQ_weights_laroia(W_tmp_QW, pNLSF_Q15, psNLSF_CB.order)
 
-	for i := 0; i < psNLSF_CB.order; i++ {
+	for i := 0; i < int(psNLSF_CB.order); i++ {
 		W_tmp_Q9 = silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants.NLSF_W_Q))
 		NLSF_Q15_tmp = int32(pNLSF_Q15[i]) + silk_DIV32_16(int32(res_Q10[i])<<14, int16(W_tmp_Q9))
 		pNLSF_Q15[i] = int16(silk_LIMIT(NLSF_Q15_tmp, 0, 32767))
@@ -410,12 +410,12 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 		}
 
 		silk_NLSF_VQ_weights_laroia(W_tmp_QW, NLSF_tmp_Q15, psNLSF_CB.order)
-		for i := 0; i < psNLSF_CB.order; i++ {
+		for i := 0; i < int(psNLSF_CB.order); i++ {
 			W_tmp_Q9 = silk_SQRT_APPROX(int32(W_tmp_QW[i]) << (18 - SilkConstants.NLSF_W_Q))
 			res_Q10[i] = int16(silk_RSHIFT(int32(silk_SMULBB(int32(res_Q15[i]), int16(W_tmp_Q9)), 14)))
 		}
 
-		for i := 0; i < psNLSF_CB.order; i++ {
+		for i := 0; i < int(psNLSF_CB.order); i++ {
 			W_adj_Q5[i] = int16(silk_DIV32_16(int32(pW_QW[i])<<5, int16(W_tmp_QW[i])))
 		}
 

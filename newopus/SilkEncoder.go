@@ -16,7 +16,7 @@ type SilkEncoder struct {
 func NewSilkEncoder() *SilkEncoder {
 	enc := new(SilkEncoder)
 	for c := 0; c < ENCODER_NUM_CHANNELS; c++ {
-		enc.state_Fxx[c] = *NewSilkChannelEncoder()
+		enc.state_Fxx[c] = SilkChannelEncoder{}
 	}
 	return enc
 }
@@ -44,6 +44,6 @@ func silk_init_encoder(psEnc *SilkChannelEncoder) int {
 	psEnc.variable_HP_smth1_Q15 = int32(silk_LSHIFT(logVal-(16<<7), 8))
 	psEnc.variable_HP_smth2_Q15 = psEnc.variable_HP_smth1_Q15
 	psEnc.first_frame_after_reset = 1
-	ret += silk_VAD_Init(psEnc.sVAD)
+	ret += silk_VAD_Init(&psEnc.sVAD)
 	return ret
 }

@@ -39,7 +39,7 @@ func silk_quant_LTP_gains(
 			max_gain_Q7 = silk_log2lin(((SILK_CONST(TuningParameters.MAX_SUM_LOG_GAIN_DB/6.0, 7) - sum_log_gain_tmp_Q7) + SILK_CONST(7, 7)) - gain_safety)
 
 			var tempIdxVal byte
-			var rate_dist_Q14_subfr int
+			//var rate_dist_Q14_subfr int
 			var gain_Q7 int
 			silk_VQ_WMat_EC(
 				&tempIdxVal,

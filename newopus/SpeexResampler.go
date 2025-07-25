@@ -189,7 +189,7 @@ func (st *SpeexResampler) resampler_basic_interpolate_single(channel_index int, 
 	for !(last_sample >= in_len.Val || out_sample >= out_len.Val) {
 		iptr := input_ptr + last_sample
 		offset := samp_frac_num * st.oversample / st.den_rate
-		frac := int16(PDIV32(SHL32(int32((samp_frac_num*st.oversample)%st.den_rate), 15), int32(st.den_rate)))
+		frac := int16(PDIV32(SHL32(int((samp_frac_num*st.oversample)%st.den_rate), 15), int32(st.den_rate)))
 
 		accum0 := 0
 		accum1 := 0
@@ -204,12 +204,12 @@ func (st *SpeexResampler) resampler_basic_interpolate_single(channel_index int, 
 		}
 
 		cubic_coef(frac, interp0, interp1, interp2, interp3)
-		sum := int(MULT16_32_Q15(interp0.Val, int32(accum0)>>1)) +
-			int(MULT16_32_Q15(interp1.Val, int32(accum1)>>1)) +
-			int(MULT16_32_Q15(interp2.Val, int32(accum2)>>1)) +
-			int(MULT16_32_Q15(interp3.Val, int32(accum3)>>1))
+		sum := int(MULT16_32_Q15(interp0.Val, int(accum0)>>1)) +
+			int(MULT16_32_Q15(interp1.Val, int(accum1)>>1)) +
+			int(MULT16_32_Q15(interp2.Val, int(accum2)>>1)) +
+			int(MULT16_32_Q15(interp3.Val, int(accum3)>>1))
 
-		output[output_ptr+st.out_stride*out_sample] = SATURATE16(PSHR32(int32(sum), 14))
+		output[output_ptr+st.out_stride*out_sample] = SATURATE16(PSHR32(int(sum), 14))
 		out_sample++
 		last_sample += st.int_advance
 		samp_frac_num += st.frac_advance
