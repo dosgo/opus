@@ -941,8 +941,8 @@ func silk_LSHIFT_ovflw(a, shift int) int {
 }
 
 func silk_LSHIFT_SAT32(a, shift int) int {
-	limit1 := silk_RSHIFT32(math.Minint, shift)
-	limit2 := silk_RSHIFT32(math.Maxint, shift)
+	limit1 := silk_RSHIFT32(math.MinInt32, shift)
+	limit2 := silk_RSHIFT32(math.MinInt32, shift)
 	if a < limit1 {
 		a = limit1
 	} else if a > limit2 {

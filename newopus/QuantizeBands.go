@@ -1,7 +1,5 @@
 package opus
 
-import "math"
-
 var pred_coef = []int{29440, 26112, 21248, 16384}
 var beta_coef = []int{30147, 22282, 12124, 6554}
 var beta_intra = 4915
@@ -113,7 +111,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				qi = -1
 			}
 			error[c][i] = (f >> 7) - (qi << CeltConstants.DB_SHIFT)
-			badness += int(math.Abs(float64(qi0 - qi)))
+			badness += int(abs(float64(qi0 - qi)))
 			q := qi << CeltConstants.DB_SHIFT
 			tmp := ((coef * int(oldE)) >> 8) + prev[c] + (q << 7)
 			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {

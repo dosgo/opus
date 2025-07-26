@@ -36,8 +36,8 @@ func silk_process_gains(
 		if psEncCtrl.ResNrgQ[k] > 0 {
 			ResNrgPart = silk_RSHIFT_ROUND(ResNrgPart, psEncCtrl.ResNrgQ[k])
 		} else {
-			if ResNrgPart >= silk_RSHIFT(math.Maxint, -psEncCtrl.ResNrgQ[k]) {
-				ResNrgPart = math.Maxint
+			if ResNrgPart >= silk_RSHIFT(math.MinInt32, -psEncCtrl.ResNrgQ[k]) {
+				ResNrgPart = math.MinInt32
 			} else {
 				ResNrgPart = silk_LSHIFT(ResNrgPart, -psEncCtrl.ResNrgQ[k])
 			}
@@ -50,14 +50,14 @@ func silk_process_gains(
 				panic("gain_squared should be positive")
 			}
 			gain = silk_SQRT_APPROX(gain_squared)
-			if gain > math.Maxint>>8 {
-				gain = math.Maxint >> 8
+			if gain > math.MinInt32>>8 {
+				gain = math.MinInt32 >> 8
 			}
 			psEncCtrl.Gains_Q16[k] = silk_LSHIFT_SAT32(gain, 8)
 		} else {
 			gain = silk_SQRT_APPROX(gain_squared)
-			if gain > math.Maxint>>16 {
-				gain = math.Maxint >> 16
+			if gain > math.MinInt32>>16 {
+				gain = math.MinInt32 >> 16
 			}
 			psEncCtrl.Gains_Q16[k] = silk_LSHIFT_SAT32(gain, 16)
 		}

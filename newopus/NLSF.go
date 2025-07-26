@@ -314,7 +314,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			}
 
 			for {
-				min_max_Q25 = math.Maxint
+				min_max_Q25 = math.MinInt32
 				max_min_Q25 = 0
 				ind_min_max = 0
 				ind_max_min = 0
@@ -338,7 +338,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 				RD_Q25[ind_max_min] = RD_Q25[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
 				prev_out_Q10[ind_max_min] = prev_out_Q10[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
 				RD_min_Q25[ind_max_min] = 0
-				RD_max_Q25[ind_min_max] = math.Maxint
+				RD_max_Q25[ind_min_max] = math.MinInt32
 				copy(ind[ind_max_min], ind[ind_min_max])
 			}
 
@@ -352,7 +352,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 	}
 
 	ind_tmp = 0
-	min_Q25 = math.Maxint
+	min_Q25 = math.MinInt32
 	for j := 0; j < 2*NLSF_QUANT_DEL_DEC_STATES; j++ {
 		if min_Q25 > RD_Q25[j] {
 			min_Q25 = RD_Q25[j]
