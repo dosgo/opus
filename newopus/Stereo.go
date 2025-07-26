@@ -40,7 +40,7 @@ func silk_stereo_decode_mid_only(
 func silk_stereo_encode_pred(psRangeEnc *EntropyCoder, ix [2][3]byte) {
 	var n int
 
-	n := 5*int(ix[0][2]) + int(ix[1][2])
+	n = 5*int(ix[0][2]) + int(ix[1][2])
 	OpusAssert(n < 25)
 	psRangeEnc.enc_icdf(n, SilkTables.Silk_stereo_pred_joint_iCDF[:], 8)
 	for n = 0; n < 2; n++ {
@@ -64,21 +64,21 @@ func silk_stereo_find_predictor(
 	length int,
 	smooth_coef_Q16 int) int {
 	var scale int
-	nrgx := new(int)
-	nrgy := new(int)
-	scale1 := new(int)
-	scale2 := new(int)
+	nrgx := BoxedValueInt{0}
+	nrgy := BoxedValueInt{0}
+	scale1 := BoxedValueInt{0}
+	scale2 := BoxedValueInt{0}
 	var corr, pred_Q13, pred2_Q10 int
 
 	silk_sum_sqr_shift4(nrgx, scale1, x, length)
 	silk_sum_sqr_shift4(nrgy, scale2, y, length)
-	scale = silk_max_int(*scale1, *scale2)
+	scale = silk_max_int(scale1.Val, scale2.Val)
 	scale = scale + (scale & 1)
-	*nrgy = silk_RSHIFT32(*nrgy, scale-*scale2)
-	*nrgx = silk_RSHIFT32(*nrgx, scale-*scale1)
-	*nrgx = silk_max_int(*nrgx, 1)
+	nrgy.Val = silk_RSHIFT32(nrgy.Val, scale-scale2.Val)
+	nrgx.Val = silk_RSHIFT32(nrgx.Val, scale-scale1.Val)
+	nrgx.Val = silk_max_int(nrgx.Val, 1)
 	corr = silk_inner_prod_aligned_scale(x, y, scale, length)
-	pred_Q13 = silk_DIV32_varQ(corr, *nrgx, 13)
+	pred_Q13 = silk_DIV32_varQ(corr, nrgx.Val, 13)
 	pred_Q13 = silk_LIMIT(pred_Q13, -(1 << 14), 1<<14)
 	pred2_Q10 = silk_SMULWB(pred_Q13, pred_Q13)
 
@@ -87,11 +87,11 @@ func silk_stereo_find_predictor(
 	OpusAssert(smooth_coef_Q16 < 32768)
 	scale = silk_RSHIFT(scale, 1)
 	mid_res_amp_Q0[mid_res_amp_Q0_ptr] = silk_SMLAWB(mid_res_amp_Q0[mid_res_amp_Q0_ptr],
-		silk_LSHIFT(silk_SQRT_APPROX(*nrgx), scale)-mid_res_amp_Q0[mid_res_amp_Q0_ptr], smooth_coef_Q16)
-	*nrgy = silk_SUB_LSHIFT32(*nrgy, silk_SMULWB(corr, pred_Q13), 3+1)
-	*nrgy = silk_ADD_LSHIFT32(*nrgy, silk_SMULWB(*nrgx, pred2_Q10), 6)
+		silk_LSHIFT(silk_SQRT_APPROX(nrgx.Val), scale)-mid_res_amp_Q0[mid_res_amp_Q0_ptr], smooth_coef_Q16)
+	nrgy.Val = silk_SUB_LSHIFT32(nrgy.Val, silk_SMULWB(corr, pred_Q13), 3+1)
+	nrgy.Val = silk_ADD_LSHIFT32(nrgy.Val, silk_SMULWB(nrgx.Val, pred2_Q10), 6)
 	mid_res_amp_Q0[mid_res_amp_Q0_ptr+1] = silk_SMLAWB(mid_res_amp_Q0[mid_res_amp_Q0_ptr+1],
-		silk_LSHIFT(silk_SQRT_APPROX(*nrgy), scale)-mid_res_amp_Q0[mid_res_amp_Q0_ptr+1], smooth_coef_Q16)
+		silk_LSHIFT(silk_SQRT_APPROX(nrgy.Val), scale)-mid_res_amp_Q0[mid_res_amp_Q0_ptr+1], smooth_coef_Q16)
 
 	*ratio_Q14 = silk_DIV32_varQ(mid_res_amp_Q0[mid_res_amp_Q0_ptr+1], silk_max(mid_res_amp_Q0[mid_res_amp_Q0_ptr], 1), 14)
 	*ratio_Q14 = silk_LIMIT(*ratio_Q14, 0, 32767)
@@ -105,7 +105,7 @@ func silk_stereo_LR_to_MS(
 	x1_ptr int,
 	x2 []int16,
 	x2_ptr int,
-	ix *[2][3]byte,
+	ix [][]byte,
 	mid_only_flag *byte,
 	mid_side_rates_bps []int,
 	total_rate_bps int,
@@ -325,41 +325,41 @@ func silk_stereo_MS_to_LR(
 
 func silk_stereo_quant_pred(
 	pred_Q13 []int,
-	ix *[2][3]byte) {
+	ix [][]byte) {
 	var i, j byte
 	var n int
 	var low_Q13, step_Q13, lvl_Q13, err_min_Q13, err_Q13, quant_pred_Q13 int
 
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 3; j++ {
-			(*ix)[i][j] = 0
+			(ix)[i][j] = 0
 		}
 	}
 
 	for n = 0; n < 2; n++ {
 		done := false
 		err_min_Q13 = math.MinInt32
-		for i = 0; !done && i < SilkConstants.STEREO_QUANT_TAB_SIZE-1; i++ {
-			low_Q13 = SilkTables.Silk_stereo_pred_quant_Q13[i]
-			step_Q13 = silk_SMULWB(SilkTables.Silk_stereo_pred_quant_Q13[i+1]-low_Q13,
+		for i = 0; !done && i < byte(SilkConstants.STEREO_QUANT_TAB_SIZE)-1; i++ {
+			low_Q13 = int(SilkTables.Silk_stereo_pred_quant_Q13[i])
+			step_Q13 = silk_SMULWB(int(SilkTables.Silk_stereo_pred_quant_Q13[i+1])-low_Q13,
 				int(0.5/SilkConstants.STEREO_QUANT_SUB_STEPS*float64(1<<16)+0.5))
 
-			for j = 0; !done && j < SilkConstants.STEREO_QUANT_SUB_STEPS; j++ {
+			for j = 0; !done && j < byte(SilkConstants.STEREO_QUANT_SUB_STEPS); j++ {
 				lvl_Q13 = silk_SMLABB(low_Q13, step_Q13, 2*int(j)+1)
 				err_Q13 = silk_abs(pred_Q13[n] - lvl_Q13)
 				if err_Q13 < err_min_Q13 {
 					err_min_Q13 = err_Q13
 					quant_pred_Q13 = lvl_Q13
-					(*ix)[n][0] = i
-					(*ix)[n][1] = j
+					(ix)[n][0] = i
+					(ix)[n][1] = j
 				} else {
 					done = true
 				}
 			}
 		}
 
-		(*ix)[n][2] = silk_DIV32_16(int((*ix)[n][0]), 3)
-		(*ix)[n][0] = (*ix)[n][0] - byte((*ix)[n][2]*3)
+		ix[n][2] = byte(silk_DIV32_16(int(ix[n][0]), 3))
+		ix[n][0] = ix[n][0] - byte(ix[n][2]*3)
 		pred_Q13[n] = quant_pred_Q13
 	}
 
