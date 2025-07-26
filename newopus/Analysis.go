@@ -12,14 +12,6 @@ const (
 	cE   = float32(M_PI / 2)
 )
 
-var OpusTables_analysis_window []float32
-var OpusTables_tbands []int
-var OpusTables_extra_bands []int
-var OpusTables_dct_table []float32
-var OpusTables_net *MLP
-
-type MLP struct{}
-
 func fast_atan2f(y float32, x float32) float32 {
 	if ABS16(x)+ABS16(y) < 1e-9 {
 		x *= 1e12
@@ -174,7 +166,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	}
 
 	for i := 0; i < N2; i++ {
-		w := OpusTables_analysis_window[i]
+		w := OpusTables.Analysis_window[i]
 		input[2*i] = int(w * float32(tonal.inmem[i]))
 		input[2*i+1] = int(w * float32(tonal.inmem[N2+i]))
 		input[2*(N-i-1)] = int(w * float32(tonal.inmem[N-i-1]))
@@ -238,7 +230,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 		tE := float32(0)
 		nE := float32(0)
 		var L1, L2 float32
-		for i := OpusTables_tbands[b]; i < OpusTables_tbands[b+1]; i++ {
+		for i := OpusTables.Tbands[b]; i < OpusTables.Tbands[b+1]; i++ {
 			binE := float32(output[2*i])*float32(output[2*i]) + float32(output[2*(N-i)])*float32(output[2*(N-i)]) +
 				float32(output[2*i+1])*float32(output[2*i+1]) + float32(output[2*(N-i)+1])*float32(output[2*(N-i)+1])
 			binE *= 5.55e-17
@@ -289,8 +281,8 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	noise_floor *= noise_floor
 	for b := 0; b < NB_TOT_BANDS; b++ {
 		E := float32(0)
-		band_start := OpusTables_extra_bands[b]
-		band_end := OpusTables_extra_bands[b+1]
+		band_start := OpusTables.Extra_bands[b]
+		band_end := OpusTables.Extra_bands[b+1]
 		for i := band_start; i < band_end; i++ {
 			binE := float32(output[2*i])*float32(output[2*i]) + float32(output[2*(N-i)])*float32(output[2*(N-i)]) +
 				float32(output[2*i+1])*float32(output[2*i+1]) + float32(output[2*(N-i)+1])*float32(output[2*(N-i)+1])
@@ -317,7 +309,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	for i := 0; i < 8; i++ {
 		sum := float32(0)
 		for b := 0; b < 16; b++ {
-			sum += OpusTables_dct_table[i*16+b] * logE[b]
+			sum += OpusTables.Dct_table[i*16+b] * logE[b]
 		}
 		BFCC[i] = sum
 	}
@@ -377,7 +369,7 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	features[24] = tonal.lowECount
 
 	if info.enabled {
-		mlp_process(OpusTables_net, features, frame_probs)
+		mlp_process(OpusTables.Net, features, frame_probs)
 		frame_probs[0] = 0.5 * (frame_probs[0] + 1)
 		frame_probs[0] = 0.01 + 1.21*frame_probs[0]*frame_probs[0] - 0.23*float32(math.Pow(float64(frame_probs[0]), 10))
 		frame_probs[1] = 0.5*frame_probs[1] + 0.5

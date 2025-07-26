@@ -230,12 +230,20 @@ var mode_thresholds = [][]int{
 	{36000, 16000},
 }
 
-var net *MLPState
-
-func init() {
-	net = &MLPState{
+var OpusTables = struct {
+	Dct_table       []float32
+	Net             *MLPState
+	Tbands          []int
+	Extra_bands     []int
+	Analysis_window []float32
+}{
+	Dct_table:       dct_table,
+	Tbands:          tbands,
+	Extra_bands:     extra_bands,
+	Analysis_window: analysis_window,
+	Net: &MLPState{
 		layers:  3,
 		topo:    topo,
 		weights: weights,
-	}
+	},
 }

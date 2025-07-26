@@ -166,13 +166,13 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 
 	if lostFlag == FLAG_DECODE_NORMAL || (lostFlag == FLAG_DECODE_LBRR && d.LBRR_flags[d.nFramesDecoded] == 1) {
 		pulses := make([]int16, (L+SHELL_CODEC_FRAME_LENGTH-1)&^(SHELL_CODEC_FRAME_LENGTH-1))
-		silk_decode_indices(d, psRangeDec, d.nFramesDecoded, lostFlag, condCoding)
-		silk_decode_pulses(psRangeDec, pulses, d.indices.signalType, d.indices.quantOffsetType, d.frame_length)
+		silk_decode_indices(d, *psRangeDec, d.nFramesDecoded, lostFlag, condCoding)
+		silk_decode_pulses(psRangeDec, pulses, int(d.indices.signalType), int(d.indices.quantOffsetType), d.frame_length)
 		silk_decode_parameters(d, &thisCtrl, condCoding)
 		silk_decode_core(d, &thisCtrl, pOut, pOut_ptr, pulses)
 		silk_PLC(d, &thisCtrl, pOut, pOut_ptr, 0)
 		d.lossCnt = 0
-		d.prevSignalType = d.indices.signalType
+		d.prevSignalType = int(d.indices.signalType)
 		OpusAssert(d.prevSignalType >= 0 && d.prevSignalType <= 2)
 		d.first_frame_after_reset = 0
 	} else {

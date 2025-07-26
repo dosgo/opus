@@ -579,7 +579,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 }
 
 func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
-	sEncCtrl := NewSilkEncoderControl()
+	sEncCtrl := SilkEncoderControl{}
 	var iter, maxIter, found_upper, found_lower, ret int
 	var x_frame int
 	sRangeEnc_copy := &EntropyCoder{}

@@ -1,4 +1,5 @@
 package opus
+
 /* Copyright (c) 2006-2011 Skype Limited. All Rights Reserved
    Ported to Java by Logan Stromberg
 
@@ -35,27 +36,27 @@ package opus
 /// Decoder super struct
 /// </summary>
 type SilkDecoder struct {
-    channel_state          [DECODER_NUM_CHANNELS]*SilkChannelDecoder
-    sStereo                StereoDecodeState
-    nChannelsAPI           int
-    nChannelsInternal      int
-    prev_decode_only_middle int
+	channel_state           [DECODER_NUM_CHANNELS]*SilkChannelDecoder
+	sStereo                 StereoDecodeState
+	nChannelsAPI            int
+	nChannelsInternal       int
+	prev_decode_only_middle int
 }
 
 func NewSilkDecoder() *SilkDecoder {
-    d := new(SilkDecoder)
-    for c := 0; c < DECODER_NUM_CHANNELS; c++ {
-        d.channel_state[c] = NewSilkChannelDecoder()
-    }
-    return d
+	d := new(SilkDecoder)
+	for c := 0; c < DECODER_NUM_CHANNELS; c++ {
+		d.channel_state[c] = &SilkChannelDecoder{}
+	}
+	return d
 }
 
 func (d *SilkDecoder) Reset() {
-    for c := 0; c < DECODER_NUM_CHANNELS; c++ {
-        d.channel_state[c].Reset()
-    }
-    d.sStereo.Reset()
-    d.nChannelsAPI = 0
-    d.nChannelsInternal = 0
-    d.prev_decode_only_middle = 0
+	for c := 0; c < DECODER_NUM_CHANNELS; c++ {
+		d.channel_state[c].Reset()
+	}
+	d.sStereo.Reset()
+	d.nChannelsAPI = 0
+	d.nChannelsInternal = 0
+	d.prev_decode_only_middle = 0
 }
