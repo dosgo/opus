@@ -33,10 +33,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-type OpusBandwidth int
-
 const (
-	OPUS_BANDWIDTH_UNKNOWN OpusBandwidth = iota
+	OPUS_BANDWIDTH_UNKNOWN int = iota
 	OPUS_BANDWIDTH_AUTO
 	OPUS_BANDWIDTH_NARROWBAND
 	OPUS_BANDWIDTH_MEDIUMBAND
@@ -45,7 +43,7 @@ const (
 	OPUS_BANDWIDTH_FULLBAND
 )
 
-func GetOrdinal(bw OpusBandwidth) int {
+func GetOrdinal(bw int) int {
 	switch bw {
 	case OPUS_BANDWIDTH_NARROWBAND:
 		return 1
@@ -61,7 +59,7 @@ func GetOrdinal(bw OpusBandwidth) int {
 	return -1
 }
 
-func GetBandwidth(ordinal int) OpusBandwidth {
+func GetBandwidth(ordinal int) int {
 	switch ordinal {
 	case 1:
 		return OPUS_BANDWIDTH_NARROWBAND
@@ -77,6 +75,6 @@ func GetBandwidth(ordinal int) OpusBandwidth {
 	return OPUS_BANDWIDTH_AUTO
 }
 
-func SUBTRACT(a OpusBandwidth, b int) OpusBandwidth {
+func SUBTRACT(a int, b int) int {
 	return GetBandwidth(GetOrdinal(a) - b)
 }

@@ -12,8 +12,8 @@ type OpusEncoder struct {
 	delay_compensation      int
 	force_channels          int
 	signal_type             OpusSignal
-	user_bandwidth          OpusBandwidth
-	max_bandwidth           OpusBandwidth
+	user_bandwidth          int
+	max_bandwidth           int
 	user_forced_mode        OpusMode
 	voice_ratio             int
 	Fs                      int
@@ -35,13 +35,13 @@ type OpusEncoder struct {
 	prev_mode               OpusMode
 	prev_channels           int
 	prev_framesize          int
-	bandwidth               OpusBandwidth
+	bandwidth               int
 	silk_bw_switch          int
 	first                   int
 	energy_masking          []int
 	width_mem               StereoWidthState
 	delay_buffer            [MAX_ENCODER_BUFFER * 2]int16
-	detected_bandwidth      OpusBandwidth
+	detected_bandwidth      int
 	rangeFinal              int
 	SilkEncoder             SilkEncoder
 	Celt_Encoder            CeltEncoder
@@ -449,7 +449,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.bandwidth = st.user_bandwidth
 	}
 	if st.mode != MODE_CELT_ONLY && max_rate < 15000 {
-		st.bandwidth = MinBandwidth(st.bandwidth, OPUS_BANDWIDTH_WIDEBAND)
+		st.bandwidth = MIN(st.bandwidth, OPUS_BANDWIDTH_WIDEBAND)
 	}
 	if st.Fs <= 24000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND
@@ -464,7 +464,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.bandwidth = OPUS_BANDWIDTH_NARROWBAND
 	}
 	if st.detected_bandwidth != OPUS_BANDWIDTH_UNKNOWN && st.user_bandwidth == OPUS_BANDWIDTH_AUTO {
-		var min_detected_bandwidth OpusBandwidth
+		var min_detected_bandwidth int
 		if equiv_rate <= 18000*st.stream_channels && st.mode == MODE_CELT_ONLY {
 			min_detected_bandwidth = OPUS_BANDWIDTH_NARROWBAND
 		} else if equiv_rate <= 24000*st.stream_channels && st.mode == MODE_CELT_ONLY {
@@ -911,11 +911,11 @@ func (st *OpusEncoder) SetForceChannels(value int) {
 	st.force_channels = value
 }
 
-func (st *OpusEncoder) GetMaxBandwidth() OpusBandwidth {
+func (st *OpusEncoder) GetMaxBandwidth() int {
 	return st.max_bandwidth
 }
 
-func (st *OpusEncoder) SetMaxBandwidth(value OpusBandwidth) {
+func (st *OpusEncoder) SetMaxBandwidth(value int) {
 	st.max_bandwidth = value
 	if value == OPUS_BANDWIDTH_NARROWBAND {
 		st.silk_mode.maxInternalSampleRate = 8000
@@ -926,11 +926,11 @@ func (st *OpusEncoder) SetMaxBandwidth(value OpusBandwidth) {
 	}
 }
 
-func (st *OpusEncoder) GetBandwidth() OpusBandwidth {
+func (st *OpusEncoder) GetBandwidth() int {
 	return st.bandwidth
 }
 
-func (st *OpusEncoder) SetBandwidth(value OpusBandwidth) {
+func (st *OpusEncoder) SetBandwidth(value int) {
 	st.user_bandwidth = value
 	if value == OPUS_BANDWIDTH_NARROWBAND {
 		st.silk_mode.maxInternalSampleRate = 8000

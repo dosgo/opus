@@ -81,7 +81,7 @@ func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind *byte, conditional 
 
 			double_step_size_threshold := 2*MAX_DELTA_GAIN_QUANT - N_LEVELS_QGAIN + int(*prev_ind)
 			if ind_tmp > double_step_size_threshold {
-				*prev_ind = byte(int(*prev_ind) + (silk_LSHIFT(uint(ind_tmp), 1) - double_step_size_threshold))
+				*prev_ind = byte(int(*prev_ind) + (silk_LSHIFT(int(ind_tmp), 1) - double_step_size_threshold))
 			} else {
 				*prev_ind = byte(int(*prev_ind) + ind_tmp)
 			}

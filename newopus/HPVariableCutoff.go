@@ -6,7 +6,7 @@ func silk_HP_variable_cutoff(state_Fxx []SilkChannelEncoder) {
 	psEncC1 := state_Fxx[0]
 
 	if psEncC1.prevSignalType == TYPE_VOICED {
-		pitch_freq_Hz_Q16 = silk_DIV32_16(silk_LSHIFT(silk_MUL(psEncC1.fs_kHz, 1000), 16, psEncC1.prevLag))
+		pitch_freq_Hz_Q16 = silk_DIV32_16(silk_LSHIFT(silk_MUL(psEncC1.fs_kHz, 1000), 16), psEncC1.prevLag)
 		pitch_freq_log_Q7 = silk_lin2log(pitch_freq_Hz_Q16) - (16 << 7)
 
 		quality_Q15 = psEncC1.input_quality_bands_Q15[0]

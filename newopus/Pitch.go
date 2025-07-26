@@ -51,18 +51,18 @@ func celt_fir5(x []int, num []int, y []int, N int, mem []int) {
 	mem4 := mem[4]
 
 	for i := 0; i < N; i++ {
-		sum := SHL32(EXTEND32(x[i]), CeltConstants.SIG_SHIFT)
-		sum = MAC16_16(sum, num0, mem0)
-		sum = MAC16_16(sum, num1, mem1)
-		sum = MAC16_16(sum, num2, mem2)
-		sum = MAC16_16(sum, num3, mem3)
-		sum = MAC16_16(sum, num4, mem4)
+		sum := SHL32(EXTEND32Int(x[i]), CeltConstants.SIG_SHIFT)
+		sum = MAC16_16IntAll(sum, num0, mem0)
+		sum = MAC16_16IntAll(sum, num1, mem1)
+		sum = MAC16_16IntAll(sum, num2, mem2)
+		sum = MAC16_16IntAll(sum, num3, mem3)
+		sum = MAC16_16IntAll(sum, num4, mem4)
 		mem4 = mem3
 		mem3 = mem2
 		mem2 = mem1
 		mem1 = mem0
 		mem0 = x[i]
-		y[i] = ROUND16(sum, CeltConstants.SIG_SHIFT)
+		y[i] = ROUND16Int(sum, CeltConstants.SIG_SHIFT)
 	}
 
 	mem[0] = mem0
@@ -118,15 +118,15 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 
 	celt_lpc(lpc, ac, 4)
 	for i := 0; i < 4; i++ {
-		tmp = MULT16_16_Q15(int(0.5+0.9*float32(1<<15)), tmp)
-		lpc[i] = MULT16_16_Q15(lpc[i], tmp)
+		tmp = MULT16_16_Q15Int(int(0.5+0.9*float32(1<<15)), tmp)
+		lpc[i] = MULT16_16_Q15Int(lpc[i], tmp)
 	}
 
-	lpc2[0] = lpc[0] + int(0.5+0.8*float32(1<<SIG_SHIFT))
-	lpc2[1] = lpc[1] + MULT16_16_Q15(c1, lpc[0])
-	lpc2[2] = lpc[2] + MULT16_16_Q15(c1, lpc[1])
-	lpc2[3] = lpc[3] + MULT16_16_Q15(c1, lpc[2])
-	lpc2[4] = MULT16_16_Q15(c1, lpc[3])
+	lpc2[0] = lpc[0] + int(0.5+0.8*float32(1<<CeltConstants.SIG_SHIFT))
+	lpc2[1] = lpc[1] + MULT16_16_Q15Int(c1, lpc[0])
+	lpc2[2] = lpc[2] + MULT16_16_Q15Int(c1, lpc[1])
+	lpc2[3] = lpc[3] + MULT16_16_Q15Int(c1, lpc[2])
+	lpc2[4] = MULT16_16_Q15Int(c1, lpc[3])
 
 	celt_fir5(x_lp, lpc2, x_lp, halflen, mem)
 }

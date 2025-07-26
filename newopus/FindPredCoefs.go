@@ -12,7 +12,7 @@ func silk_find_pred_coefs(
 	invGains_Q16 := make([]int, MAX_NB_SUBFR)
 	local_gains := make([]int, MAX_NB_SUBFR)
 	Wght_Q15 := make([]int, MAX_NB_SUBFR)
-	NLSF_Q15 := make([]int, MAX_LPC_ORDER)
+	NLSF_Q15 := make([]int16, MAX_LPC_ORDER)
 	var x_ptr2, x_pre_ptr int
 	var LPC_in_pre []int16
 	var tmp, min_gain_Q16, minInvGain_Q30 int
@@ -46,9 +46,10 @@ func silk_find_pred_coefs(
 
 		WLTP = make([]int, psEnc.nb_subfr*LTP_ORDER*LTP_ORDER)
 
-		codgain := psEncCtrl.LTPredCodGain_Q7
-		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, &codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
-		psEncCtrl.LTPredCodGain_Q7 = codgain
+		//codgain := psEncCtrl.LTPredCodGain_Q7
+		codgain := BoxedValueInt{psEncCtrl.LTPredCodGain_Q7}
+		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
+		psEncCtrl.LTPredCodGain_Q7 = codgain.Val
 
 		periodicity := psEnc.indices.PERIndex
 		sum_log_gain := psEnc.sum_log_gain_Q7

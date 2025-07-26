@@ -1,8 +1,8 @@
 package opus
 
 type SideInfoIndices struct {
-	GainsIndices      [MAX_NB_SUBFR]byte
-	LTPIndex          [MAX_NB_SUBFR]byte
+	GainsIndices      []byte
+	LTPIndex          []byte
 	NLSFIndices       []byte
 	lagIndex          int16
 	contourIndex      byte

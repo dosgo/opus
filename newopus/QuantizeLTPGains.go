@@ -61,7 +61,7 @@ func silk_quant_LTP_gains(
 
 			rate_dist_Q14 = silk_ADD_POS_SAT32(rate_dist_Q14, rate_dist_Q14_subfr.Val)
 			//sum_log_gain_tmp_Q7 = silk_max_32(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7)-SILK_CONST(7, 7))
-			sum_log_gain_tmp_Q7 = silk_max(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7.Val)-(int(7*(1<<7)+0.5)))
+			sum_log_gain_tmp_Q7 = silk_max(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7.Val)-(7*(1<<7)+0.5))
 
 			temp_idx[j] = byte(tempIdxVal.Val)
 			b_Q14_ptr += LTP_ORDER

@@ -3,9 +3,9 @@ package opus
 type SilkEncoderControl struct {
 	Gains_Q16          [MAX_NB_SUBFR]int
 	PredCoef_Q12       [][]int16
-	LTPCoef_Q14        [LTP_ORDER * MAX_NB_SUBFR]int16
+	LTPCoef_Q14        []int16
 	LTP_scale_Q14      int
-	pitchL             [MAX_NB_SUBFR]int
+	pitchL             []int
 	AR1_Q13            [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16
 	AR2_Q13            [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16
 	LF_shp_Q14         []int
