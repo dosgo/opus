@@ -174,7 +174,7 @@ func (s *SilkNSQState) silk_NSQ(
 		s.silk_nsq_scale_states(psEncC, x_Q3, x_Q3_ptr, x_sc_Q10, sLTP, sLTP_Q15, k, LTP_scale_Q14, Gains_Q16, pitchL, psIndices.signalType)
 
 		s.silk_noise_shape_quantizer(
-			psIndices.signalType,
+			int(psIndices.signalType),
 			x_sc_Q10,
 			pulses,
 			pulses_ptr,
@@ -587,7 +587,7 @@ func (s *SilkNSQState) silk_NSQ_del_dec(
 		s.silk_nsq_del_dec_scale_states(psEncC, psDelDec, x_Q3, x_Q3_ptr, x_sc_Q10, sLTP, sLTP_Q15, k, psEncC.nStatesDelayedDecision, LTP_scale_Q14, Gains_Q16, pitchL, psIndices.signalType, decisionDelay)
 
 		smpl_buf_idx_boxed := &BoxedValueInt{Val: smpl_buf_idx}
-		s.silk_noise_shape_quantizer_del_dec(psDelDec, psIndices.signalType, x_sc_Q10, pulses, pulses_ptr, s.xq[:], pxq, sLTP_Q15, delayedGain_Q10, PredCoef_Q12[A_Q12], LTPCoef_Q14, k*LTP_ORDER, AR2_Q13, k*MAX_SHAPE_LPC_ORDER, lag, HarmShapeFIRPacked_Q14, Tilt_Q14[k], LF_shp_Q14[k], Gains_Q16[k], Lambda_Q10, offset_Q10, psEncC.subfr_length, subfr, psEncC.shapingLPCOrder, psEncC.predictLPCOrder, psEncC.warping_Q16, psEncC.nStatesDelayedDecision, smpl_buf_idx_boxed, decisionDelay)
+		s.silk_noise_shape_quantizer_del_dec(psDelDec, int(psIndices.signalType), x_sc_Q10, pulses, pulses_ptr, s.xq[:], pxq, sLTP_Q15, delayedGain_Q10, PredCoef_Q12[A_Q12], LTPCoef_Q14, k*LTP_ORDER, AR2_Q13, k*MAX_SHAPE_LPC_ORDER, lag, HarmShapeFIRPacked_Q14, Tilt_Q14[k], LF_shp_Q14[k], Gains_Q16[k], Lambda_Q10, offset_Q10, psEncC.subfr_length, subfr, psEncC.shapingLPCOrder, psEncC.predictLPCOrder, psEncC.warping_Q16, psEncC.nStatesDelayedDecision, smpl_buf_idx_boxed, decisionDelay)
 		smpl_buf_idx = smpl_buf_idx_boxed.Val
 
 		x_Q3_ptr += psEncC.subfr_length

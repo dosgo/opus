@@ -34,7 +34,7 @@ package opus
 
 func silk_regularize_correlations(XX []int, XX_ptr int, xx []int, xx_ptr int, noise int, D int) {
 	for i := 0; i < D; i++ {
-		MatrixSet(XX, XX_ptr, i, i, D, silk_ADD32(MatrixGet(XX, XX_ptr, i, i, D), noise))
+		MatrixSet(XX, XX_ptr, i, i, D, silk_ADD32(MatrixGetPtr(XX, XX_ptr, i, i, D), noise))
 	}
 	xx[xx_ptr] += noise
 }

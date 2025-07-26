@@ -688,6 +688,14 @@ var SilkTables = struct {
 	Silk_shell_code_table_offsets       []int16
 	Silk_lsb_iCDF                       []int16
 	Silk_gain_iCDF                      [][]int16
+	Silk_pitch_contour_10_ms_NB_iCDF    []int16
+	Silk_pitch_contour_NB_iCDF          []int16
+	Silk_pitch_contour_iCDF             []int16
+	Silk_pitch_contour_10_ms_iCDF       []int16
+	Silk_TargetRate_table_NB            []int
+	Silk_TargetRate_table_MB            []int
+	Silk_TargetRate_table_WB            []int
+	Silk_SNR_table_Q1                   []int16
 }{
 	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
@@ -723,4 +731,12 @@ var SilkTables = struct {
 	Silk_shell_code_table_offsets:       silk_shell_code_table_offsets,
 	Silk_lsb_iCDF:                       silk_lsb_iCDF,
 	Silk_gain_iCDF:                      silk_gain_iCDF,
+	Silk_pitch_contour_10_ms_NB_iCDF:    silk_pitch_contour_10_ms_NB_iCDF,
+	Silk_pitch_contour_NB_iCDF:          silk_pitch_contour_NB_iCDF,
+	Silk_pitch_contour_iCDF:             silk_pitch_contour_iCDF,
+	Silk_pitch_contour_10_ms_iCDF:       silk_pitch_contour_10_ms_iCDF,
+	Silk_TargetRate_table_NB:            silk_TargetRate_table_NB,
+	Silk_TargetRate_table_MB:            silk_TargetRate_table_MB,
+	Silk_TargetRate_table_WB:            silk_TargetRate_table_WB,
+	Silk_SNR_table_Q1:                   silk_SNR_table_Q1,
 }
