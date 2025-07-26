@@ -4,7 +4,7 @@ func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
 	ret := SilkError.SILK_NO_ERROR
 	encState.Reset()
 	for n := 0; n < ENCODER_NUM_CHANNELS; n++ {
-		ret += silk_init_encoder(encState.state_Fxx[n])
+		ret += silk_init_encoder(&encState.state_Fxx[n])
 		OpusAssert(ret == SilkError.SILK_NO_ERROR)
 	}
 	encState.nChannelsAPI = 1
@@ -76,7 +76,7 @@ func silk_Encode(
 	encControl.switchReady = 0
 
 	if encControl.nChannelsInternal > psEnc.nChannelsInternal {
-		ret += silk_init_encoder(psEnc.state_Fxx[1])
+		ret += silk_init_encoder(&psEnc.state_Fxx[1])
 		for i := range psEnc.sStereo.pred_prev_Q13 {
 			psEnc.sStereo.pred_prev_Q13[i] = 0
 		}
@@ -90,12 +90,12 @@ func silk_Encode(
 		psEnc.sStereo.width_prev_Q14 = 0
 		psEnc.sStereo.smth_width_Q14 = int16(SILK_CONST(1.0, 14))
 		if psEnc.nChannelsAPI == 2 {
-			*psEnc.state_Fxx[1].resampler_state = *psEnc.state_Fxx[0].resampler_state
+			psEnc.state_Fxx[1].resampler_state = psEnc.state_Fxx[0].resampler_state
 			copy(psEnc.state_Fxx[1].In_HP_State[:], psEnc.state_Fxx[0].In_HP_State[:])
 		}
 	}
 
-	transition := 0
+	transition = 0
 	if encControl.payloadSize_ms != psEnc.state_Fxx[0].PacketSize_ms || psEnc.nChannelsInternal != encControl.nChannelsInternal {
 		transition = 1
 	}
@@ -159,7 +159,7 @@ func silk_Encode(
 	OpusAssert(encControl.nChannelsInternal == 1 || psEnc.state_Fxx[0].fs_kHz == psEnc.state_Fxx[1].fs_kHz)
 
 	nSamplesToBufferMax = 10 * nBlocksOf10ms * psEnc.state_Fxx[0].fs_kHz
-	nSamplesFromInputMax = silk_DIV32_16(nSamplesToBufferMax*psEnc.state_Fxx[0].API_fs_Hz, int16(psEnc.state_Fxx[0].fs_kHz*1000))
+	nSamplesFromInputMax = silk_DIV32_16(nSamplesToBufferMax*psEnc.state_Fxx[0].API_fs_Hz, int(psEnc.state_Fxx[0].fs_kHz*1000))
 
 	buf = make([]int16, nSamplesFromInputMax)
 
@@ -287,8 +287,8 @@ func silk_Encode(
 								condCoding = CODE_CONDITIONALLY
 							}
 
-							silk_encode_indices(psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
-							silk_encode_pulses(psRangeEnc, psEnc.state_Fxx[n].indices_LBRR[i].signalType, psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType,
+							silk_encode_indices(&psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
+							silk_encode_pulses(*psRangeEnc, psEnc.state_Fxx[n].indices_LBRR[i].signalType, psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType,
 								psEnc.state_Fxx[n].pulses_LBRR[i][:], psEnc.state_Fxx[n].frame_length)
 						}
 					}
@@ -315,10 +315,10 @@ func silk_Encode(
 			} else {
 				TargetRate_bps = nBits * 50
 			}
-			TargetRate_bps -= silk_DIV32_16(int(psEnc.nBitsExceeded*1000), BITRESERVOIR_DECAY_TIME_MS)
+			TargetRate_bps -= silk_DIV32_16(int(psEnc.nBitsExceeded*1000), TuningParameters.BITRESERVOIR_DECAY_TIME_MS)
 			if prefillFlag == 0 && psEnc.state_Fxx[0].nFramesEncoded > 0 {
 				bitsBalance := psRangeEnc.tell() - psEnc.nBitsUsedLBRR - nBits*psEnc.state_Fxx[0].nFramesEncoded
-				TargetRate_bps -= silk_DIV32_16(int(bitsBalance*1000), BITRESERVOIR_DECAY_TIME_MS)
+				TargetRate_bps -= silk_DIV32_16(int(bitsBalance*1000), TuningParameters.BITRESERVOIR_DECAY_TIME_MS)
 			}
 			if TargetRate_bps > encControl.bitRate {
 				TargetRate_bps = encControl.bitRate
@@ -493,7 +493,7 @@ func silk_Encode(
 	if encControl.toMono != 0 {
 		encControl.stereoWidth_Q14 = 0
 	} else {
-		encControl.stereoWidth_Q14 = psEnc.sStereo.smth_width_Q14
+		encControl.stereoWidth_Q14 = int(psEnc.sStereo.smth_width_Q14)
 	}
 
 	if prefillFlag != 0 {

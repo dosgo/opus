@@ -462,9 +462,9 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 	pulse_cap := m.logN[i] + LM*(1<<BITRES)
 	offset := (pulse_cap >> 1)
 	if stereo != 0 && N == 2 {
-		offset -= QTHETA_OFFSET_TWOPHASE
+		offset -= CeltConstants.QTHETA_OFFSET_TWOPHASE
 	} else {
-		offset -= QTHETA_OFFSET
+		offset -= CeltConstants.QTHETA_OFFSET
 	}
 	qn := compute_qn(N, b.Val, offset, pulse_cap, stereo)
 	if stereo != 0 && i >= intensity {

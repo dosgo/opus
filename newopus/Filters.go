@@ -61,7 +61,10 @@ func silk_prefilter(
 		silk_warped_LPC_analysis_filter(P.sAR_shp[:], st_res_Q2, psEncCtrl.AR1_Q13[:], AR1_shp_Q13, x, px, int16(psEnc.warping_Q16), psEnc.subfr_length, psEnc.shapingLPCOrder)
 		B_Q10 := [2]int16{int16(silk_RSHIFT_ROUND(int(psEncCtrl.GainsPre_Q14[k]), 4)), 0}
 		tmp_32 := silk_SMLABB(int(TuningParameters.INPUT_TILT), int(psEncCtrl.HarmBoost_Q14[k]), HarmShapeGain_Q12)
-		tmp_32 = silk_SMLABB(tmp_32, int(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
+		//tmp_32 = silk_SMLABB(tmp_32, int(psEncCtrl.coding_quality_Q14), HIGH_RATE_INPUT_TILT_Q12)
+		tmp_32 = silk_SMLABB(tmp_32, psEncCtrl.coding_quality_Q14, int((TuningParameters.HIGH_RATE_INPUT_TILT)*(1<<(12))+0.5))
+		/* Q26 */
+
 		tmp_32 = silk_SMULWB(tmp_32, -int(psEncCtrl.GainsPre_Q14[k]))
 		tmp_32 = silk_RSHIFT_ROUND(tmp_32, 14)
 		B_Q10[1] = int16(silk_SAT16(tmp_32))

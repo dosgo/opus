@@ -130,7 +130,7 @@ func sinc(cutoff, x float32, N int, window_func *FuncDef) int16 {
 	}
 	xx := x * cutoff
 	sinc_val := float32(math.Sin(math.Pi*float64(xx))) / (math.Pi * float32(xx))
-	window_val := float32(compute_func(float32(math.Abs(float64(2*x))/float32(N), window_func)))
+	window_val := float32(compute_func(float32(abs(float64(2*x))/float32(N), window_func)))
 	return WORD2INT(32768.0 * cutoff * sinc_val * window_val)
 }
 

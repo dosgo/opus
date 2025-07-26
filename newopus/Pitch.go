@@ -168,7 +168,7 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 
 	maxcorr = 1
 	for i := 0; i < max_pitch>>1; i++ {
-		if Abs(i-2*best_pitch[0]) > 2 && Abs(i-2*best_pitch[1]) > 2 {
+		if abs(i-2*best_pitch[0]) > 2 && abs(i-2*best_pitch[1]) > 2 {
 			xcorr[i] = 0
 			continue
 		}
@@ -259,9 +259,9 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 		g1 := VSHR32(MULT16_32_Q15(celt_rsqrt_norm(t), xy), sh+1)
 
 		cont := 0
-		if Abs(T1-prev_period) <= 1 {
+		if abs(T1-prev_period) <= 1 {
 			cont = prev_gain
-		} else if Abs(T1-prev_period) <= 2 && 5*k*k < T0 {
+		} else if abs(T1-prev_period) <= 2 && 5*k*k < T0 {
 			cont = HALF16(prev_gain)
 		}
 

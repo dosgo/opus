@@ -28,14 +28,14 @@ func silk_resampler_init(S *SilkResamplerState, Fs_Hz_in int, Fs_Hz_out int, for
 			OpusAssert(false)
 			return -1
 		}
-		S.inputDelay = delay_matrix_enc[rateID(Fs_Hz_in)][rateID(Fs_Hz_out)]
+		S.inputDelay = int(delay_matrix_enc[rateID(Fs_Hz_in)][rateID(Fs_Hz_out)])
 	} else {
 		if (Fs_Hz_in != 8000 && Fs_Hz_in != 12000 && Fs_Hz_in != 16000) ||
 			(Fs_Hz_out != 8000 && Fs_Hz_out != 12000 && Fs_Hz_out != 16000 && Fs_Hz_out != 24000 && Fs_Hz_out != 48000) {
 			OpusAssert(false)
 			return -1
 		}
-		S.inputDelay = delay_matrix_dec[rateID(Fs_Hz_in)][rateID(Fs_Hz_out)]
+		S.inputDelay = int(delay_matrix_dec[rateID(Fs_Hz_in)][rateID(Fs_Hz_out)])
 	}
 
 	S.Fs_in_kHz = silk_DIV32_16(Fs_Hz_in, 1000)
@@ -127,13 +127,13 @@ func silk_resampler_down2(S []int, output []int16, input []int16, inLen int) {
 	for k := 0; k < len2; k++ {
 		in32 := silk_LSHIFT(int(input[2*k]), 10)
 		Y := silk_SUB32(in32, S[0])
-		X := silk_SMLAWB(Y, Y, silk_resampler_down2_1)
+		X := silk_SMLAWB(Y, Y, int(silk_resampler_down2_1))
 		out32 := silk_ADD32(S[0], X)
 		S[0] = silk_ADD32(in32, X)
 
 		in32 = silk_LSHIFT(int(input[2*k+1]), 10)
 		Y = silk_SUB32(in32, S[1])
-		X = silk_SMULWB(Y, silk_resampler_down2_0)
+		X = silk_SMULWB(Y, int(silk_resampler_down2_0))
 		out32 = silk_ADD32(out32, S[1])
 		out32 = silk_ADD32(out32, X)
 		S[1] = silk_ADD32(in32, X)
@@ -148,25 +148,25 @@ func silk_resampler_down2_3(S []int, output []int16, input []int16, inLen int) {
 	output_ptr := 0
 
 	copy(buf[:ORDER_FIR], S[:ORDER_FIR])
-
+	var nSamplesIn = 0
 	for {
-		nSamplesIn := silk_min(inLen, RESAMPLER_MAX_BATCH_SIZE_IN)
+		nSamplesIn = silk_min(inLen, RESAMPLER_MAX_BATCH_SIZE_IN)
 		silk_resampler_private_AR2(S, 0, buf, ORDER_FIR, input, input_ptr, silk_Resampler_2_3_COEFS_LQ, nSamplesIn)
 
 		buf_ptr := 0
 		counter := nSamplesIn
 		for counter > 2 {
-			res_Q6 := silk_SMULWB(buf[buf_ptr], silk_Resampler_2_3_COEFS_LQ[2])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+1], silk_Resampler_2_3_COEFS_LQ[3])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], silk_Resampler_2_3_COEFS_LQ[5])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], silk_Resampler_2_3_COEFS_LQ[4])
+			res_Q6 := silk_SMULWB(buf[buf_ptr], int(silk_Resampler_2_3_COEFS_LQ[2]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+1], int(silk_Resampler_2_3_COEFS_LQ[3]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], int(silk_Resampler_2_3_COEFS_LQ[5]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], int(silk_Resampler_2_3_COEFS_LQ[4]))
 			output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q6, 6)))
 			output_ptr++
 
-			res_Q6 = silk_SMULWB(buf[buf_ptr+1], silk_Resampler_2_3_COEFS_LQ[4])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], silk_Resampler_2_3_COEFS_LQ[5])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], silk_Resampler_2_3_COEFS_LQ[3])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+4], silk_Resampler_2_3_COEFS_LQ[2])
+			res_Q6 = silk_SMULWB(buf[buf_ptr+1], int(silk_Resampler_2_3_COEFS_LQ[4]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], int(silk_Resampler_2_3_COEFS_LQ[5]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], int(silk_Resampler_2_3_COEFS_LQ[3]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+4], int(silk_Resampler_2_3_COEFS_LQ[2]))
 			output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q6, 6)))
 			output_ptr++
 
@@ -204,67 +204,67 @@ func silk_resampler_private_down_FIR_INTERPOL(output []int16, output_ptr int, bu
 			buf_ptr := silk_RSHIFT(index_Q16, 16)
 			interpol_ind := silk_SMULWB(index_Q16&0xFFFF, FIR_Fracs)
 			interpol_ptr := FIR_Coefs_ptr + (RESAMPLER_DOWN_ORDER_FIR0/2)*interpol_ind
-			res_Q6 := silk_SMULWB(buf[buf_ptr+0], FIR_Coefs[interpol_ptr+0])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+1], FIR_Coefs[interpol_ptr+1])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], FIR_Coefs[interpol_ptr+2])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], FIR_Coefs[interpol_ptr+3])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+4], FIR_Coefs[interpol_ptr+4])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+5], FIR_Coefs[interpol_ptr+5])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+6], FIR_Coefs[interpol_ptr+6])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+7], FIR_Coefs[interpol_ptr+7])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+8], FIR_Coefs[interpol_ptr+8])
+			res_Q6 := silk_SMULWB(buf[buf_ptr+0], int(FIR_Coefs[interpol_ptr+0]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+1], int(FIR_Coefs[interpol_ptr+1]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+2], int(FIR_Coefs[interpol_ptr+2]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+3], int(FIR_Coefs[interpol_ptr+3]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+4], int(FIR_Coefs[interpol_ptr+4]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+5], int(FIR_Coefs[interpol_ptr+5]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+6], int(FIR_Coefs[interpol_ptr+6]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+7], int(FIR_Coefs[interpol_ptr+7]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+8], int(FIR_Coefs[interpol_ptr+8]))
 			interpol_ptr = FIR_Coefs_ptr + (RESAMPLER_DOWN_ORDER_FIR0/2)*(FIR_Fracs-1-interpol_ind)
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+17], FIR_Coefs[interpol_ptr+0])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+16], FIR_Coefs[interpol_ptr+1])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+15], FIR_Coefs[interpol_ptr+2])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+14], FIR_Coefs[interpol_ptr+3])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+13], FIR_Coefs[interpol_ptr+4])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+12], FIR_Coefs[interpol_ptr+5])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+11], FIR_Coefs[interpol_ptr+6])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+10], FIR_Coefs[interpol_ptr+7])
-			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+9], FIR_Coefs[interpol_ptr+8])
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+17], int(FIR_Coefs[interpol_ptr+0]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+16], int(FIR_Coefs[interpol_ptr+1]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+15], int(FIR_Coefs[interpol_ptr+2]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+14], int(FIR_Coefs[interpol_ptr+3]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+13], int(FIR_Coefs[interpol_ptr+4]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+12], int(FIR_Coefs[interpol_ptr+5]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+11], int(FIR_Coefs[interpol_ptr+6]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+10], int(FIR_Coefs[interpol_ptr+7]))
+			res_Q6 = silk_SMLAWB(res_Q6, buf[buf_ptr+9], int(FIR_Coefs[interpol_ptr+8]))
 			output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q6, 6)))
 			output_ptr++
 		}
 	case RESAMPLER_DOWN_ORDER_FIR1:
 		for index_Q16 := 0; index_Q16 < max_index_Q16; index_Q16 += index_increment_Q16 {
 			buf_ptr := silk_RSHIFT(index_Q16, 16)
-			res_Q6 := silk_SMULWB(silk_ADD32(buf[buf_ptr+0], buf[buf_ptr+23]), FIR_Coefs[FIR_Coefs_ptr+0])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+1], buf[buf_ptr+22]), FIR_Coefs[FIR_Coefs_ptr+1])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+2], buf[buf_ptr+21]), FIR_Coefs[FIR_Coefs_ptr+2])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+3], buf[buf_ptr+20]), FIR_Coefs[FIR_Coefs_ptr+3])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+4], buf[buf_ptr+19]), FIR_Coefs[FIR_Coefs_ptr+4])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+5], buf[buf_ptr+18]), FIR_Coefs[FIR_Coefs_ptr+5])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+6], buf[buf_ptr+17]), FIR_Coefs[FIR_Coefs_ptr+6])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+7], buf[buf_ptr+16]), FIR_Coefs[FIR_Coefs_ptr+7])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+8], buf[buf_ptr+15]), FIR_Coefs[FIR_Coefs_ptr+8])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+9], buf[buf_ptr+14]), FIR_Coefs[FIR_Coefs_ptr+9])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+10], buf[buf_ptr+13]), FIR_Coefs[FIR_Coefs_ptr+10])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+11], buf[buf_ptr+12]), FIR_Coefs[FIR_Coefs_ptr+11])
+			res_Q6 := silk_SMULWB(silk_ADD32(buf[buf_ptr+0], buf[buf_ptr+23]), int(FIR_Coefs[FIR_Coefs_ptr+0]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+1], buf[buf_ptr+22]), int(FIR_Coefs[FIR_Coefs_ptr+1]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+2], buf[buf_ptr+21]), int(FIR_Coefs[FIR_Coefs_ptr+2]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+3], buf[buf_ptr+20]), int(FIR_Coefs[FIR_Coefs_ptr+3]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+4], buf[buf_ptr+19]), int(FIR_Coefs[FIR_Coefs_ptr+4]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+5], buf[buf_ptr+18]), int(FIR_Coefs[FIR_Coefs_ptr+5]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+6], buf[buf_ptr+17]), int(FIR_Coefs[FIR_Coefs_ptr+6]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+7], buf[buf_ptr+16]), int(FIR_Coefs[FIR_Coefs_ptr+7]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+8], buf[buf_ptr+15]), int(FIR_Coefs[FIR_Coefs_ptr+8]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+9], buf[buf_ptr+14]), int(FIR_Coefs[FIR_Coefs_ptr+9]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+10], buf[buf_ptr+13]), int(FIR_Coefs[FIR_Coefs_ptr+10]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+11], buf[buf_ptr+12]), int(FIR_Coefs[FIR_Coefs_ptr+11]))
 			output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q6, 6)))
 			output_ptr++
 		}
 	case RESAMPLER_DOWN_ORDER_FIR2:
 		for index_Q16 := 0; index_Q16 < max_index_Q16; index_Q16 += index_increment_Q16 {
 			buf_ptr := silk_RSHIFT(index_Q16, 16)
-			res_Q6 := silk_SMULWB(silk_ADD32(buf[buf_ptr+0], buf[buf_ptr+35]), FIR_Coefs[FIR_Coefs_ptr+0])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+1], buf[buf_ptr+34]), FIR_Coefs[FIR_Coefs_ptr+1])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+2], buf[buf_ptr+33]), FIR_Coefs[FIR_Coefs_ptr+2])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+3], buf[buf_ptr+32]), FIR_Coefs[FIR_Coefs_ptr+3])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+4], buf[buf_ptr+31]), FIR_Coefs[FIR_Coefs_ptr+4])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+5], buf[buf_ptr+30]), FIR_Coefs[FIR_Coefs_ptr+5])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+6], buf[buf_ptr+29]), FIR_Coefs[FIR_Coefs_ptr+6])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+7], buf[buf_ptr+28]), FIR_Coefs[FIR_Coefs_ptr+7])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+8], buf[buf_ptr+27]), FIR_Coefs[FIR_Coefs_ptr+8])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+9], buf[buf_ptr+26]), FIR_Coefs[FIR_Coefs_ptr+9])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+10], buf[buf_ptr+25]), FIR_Coefs[FIR_Coefs_ptr+10])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+11], buf[buf_ptr+24]), FIR_Coefs[FIR_Coefs_ptr+11])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+12], buf[buf_ptr+23]), FIR_Coefs[FIR_Coefs_ptr+12])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+13], buf[buf_ptr+22]), FIR_Coefs[FIR_Coefs_ptr+13])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+14], buf[buf_ptr+21]), FIR_Coefs[FIR_Coefs_ptr+14])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+15], buf[buf_ptr+20]), FIR_Coefs[FIR_Coefs_ptr+15])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+16], buf[buf_ptr+19]), FIR_Coefs[FIR_Coefs_ptr+16])
-			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+17], buf[buf_ptr+18]), FIR_Coefs[FIR_Coefs_ptr+17])
+			res_Q6 := silk_SMULWB(silk_ADD32(buf[buf_ptr+0], buf[buf_ptr+35]), int(FIR_Coefs[FIR_Coefs_ptr+0]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+1], buf[buf_ptr+34]), int(FIR_Coefs[FIR_Coefs_ptr+1]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+2], buf[buf_ptr+33]), int(FIR_Coefs[FIR_Coefs_ptr+2]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+3], buf[buf_ptr+32]), int(FIR_Coefs[FIR_Coefs_ptr+3]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+4], buf[buf_ptr+31]), int(FIR_Coefs[FIR_Coefs_ptr+4]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+5], buf[buf_ptr+30]), int(FIR_Coefs[FIR_Coefs_ptr+5]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+6], buf[buf_ptr+29]), int(FIR_Coefs[FIR_Coefs_ptr+6]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+7], buf[buf_ptr+28]), int(FIR_Coefs[FIR_Coefs_ptr+7]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+8], buf[buf_ptr+27]), int(FIR_Coefs[FIR_Coefs_ptr+8]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+9], buf[buf_ptr+26]), int(FIR_Coefs[FIR_Coefs_ptr+9]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+10], buf[buf_ptr+25]), int(FIR_Coefs[FIR_Coefs_ptr+10]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+11], buf[buf_ptr+24]), int(FIR_Coefs[FIR_Coefs_ptr+11]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+12], buf[buf_ptr+23]), int(FIR_Coefs[FIR_Coefs_ptr+12]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+13], buf[buf_ptr+22]), int(FIR_Coefs[FIR_Coefs_ptr+13]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+14], buf[buf_ptr+21]), int(FIR_Coefs[FIR_Coefs_ptr+14]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+15], buf[buf_ptr+20]), int(FIR_Coefs[FIR_Coefs_ptr+15]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+16], buf[buf_ptr+19]), int(FIR_Coefs[FIR_Coefs_ptr+16]))
+			res_Q6 = silk_SMLAWB(res_Q6, silk_ADD32(buf[buf_ptr+17], buf[buf_ptr+18]), int(FIR_Coefs[FIR_Coefs_ptr+17]))
 			output[output_ptr] = int16(silk_SAT16(silk_RSHIFT_ROUND(res_Q6, 6)))
 			output_ptr++
 		}
@@ -279,6 +279,7 @@ func silk_resampler_private_down_FIR(S *SilkResamplerState, output []int16, outp
 	copy(buf[:S.FIR_Order], S.sFIR_i32[:S.FIR_Order])
 
 	index_increment_Q16 := S.invRatio_Q16
+	var nSamplesIn = 0
 	for {
 		nSamplesIn := silk_min(inLen, S.batchSize)
 		silk_resampler_private_AR2(S.sIIR[:], 0, buf, S.FIR_Order, input, input_ptr, S.Coefs, nSamplesIn)
@@ -323,8 +324,9 @@ func silk_resampler_private_IIR_FIR(S *SilkResamplerState, output []int16, outpu
 	copy(buf[:RESAMPLER_ORDER_FIR_12], S.sFIR_i16[:RESAMPLER_ORDER_FIR_12])
 
 	index_increment_Q16 := S.invRatio_Q16
+	var nSamplesIn = 0
 	for {
-		nSamplesIn := silk_min(inLen, S.batchSize)
+		nSamplesIn = silk_min(inLen, S.batchSize)
 		silk_resampler_private_up2_HQ(S.sIIR[:], buf, RESAMPLER_ORDER_FIR_12, input, input_ptr, nSamplesIn)
 
 		max_index_Q16 := silk_LSHIFT32(nSamplesIn, 16+1)
@@ -353,33 +355,33 @@ func silk_resampler_private_up2_HQ(S []int, output []int16, output_ptr int, inpu
 	for k := 0; k < len; k++ {
 		in32 := silk_LSHIFT(int(input[input_ptr+k]), 10)
 		Y := silk_SUB32(in32, S[0])
-		X := silk_SMULWB(Y, silk_resampler_up2_hq_0[0])
+		X := silk_SMULWB(Y, int(silk_resampler_up2_hq_0[0]))
 		out32_1 := silk_ADD32(S[0], X)
 		S[0] = silk_ADD32(in32, X)
 
 		Y = silk_SUB32(out32_1, S[1])
-		X = silk_SMULWB(Y, silk_resampler_up2_hq_0[1])
+		X = silk_SMULWB(Y, int(silk_resampler_up2_hq_0[1]))
 		out32_2 := silk_ADD32(S[1], X)
 		S[1] = silk_ADD32(out32_1, X)
 
 		Y = silk_SUB32(out32_2, S[2])
-		X = silk_SMLAWB(Y, Y, silk_resampler_up2_hq_0[2])
+		X = silk_SMLAWB(Y, Y, int(silk_resampler_up2_hq_0[2]))
 		out32_1 = silk_ADD32(S[2], X)
 		S[2] = silk_ADD32(out32_2, X)
 		output[output_ptr+2*k] = int16(silk_SAT16(silk_RSHIFT_ROUND(out32_1, 10)))
 
 		Y = silk_SUB32(in32, S[3])
-		X = silk_SMULWB(Y, silk_resampler_up2_hq_1[0])
+		X = silk_SMULWB(Y, int(silk_resampler_up2_hq_1[0]))
 		out32_1 = silk_ADD32(S[3], X)
 		S[3] = silk_ADD32(in32, X)
 
 		Y = silk_SUB32(out32_1, S[4])
-		X = silk_SMULWB(Y, silk_resampler_up2_hq_1[1])
+		X = silk_SMULWB(Y, int(silk_resampler_up2_hq_1[1]))
 		out32_2 = silk_ADD32(S[4], X)
 		S[4] = silk_ADD32(out32_1, X)
 
 		Y = silk_SUB32(out32_2, S[5])
-		X = silk_SMLAWB(Y, Y, silk_resampler_up2_hq_1[2])
+		X = silk_SMLAWB(Y, Y, int(silk_resampler_up2_hq_1[2]))
 		out32_1 = silk_ADD32(S[5], X)
 		S[5] = silk_ADD32(out32_2, X)
 		output[output_ptr+2*k+1] = int16(silk_SAT16(silk_RSHIFT_ROUND(out32_1, 10)))
