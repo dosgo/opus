@@ -156,7 +156,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 	return ret
 }
 
-func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN *int, lostFlag, condCoding int) int {
+func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN BoxedValueInt, lostFlag, condCoding int) int {
 	thisCtrl := SilkDecoderControl{}
 	L := d.frame_length
 	thisCtrl.LTP_scale_Q14 = 0
@@ -185,6 +185,6 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 	silk_CNG(d, &thisCtrl, pOut, pOut_ptr, L)
 	silk_PLC_glue_frames(d, pOut, pOut_ptr, L)
 	d.lagPrev = thisCtrl.pitchL[d.nb_subfr-1]
-	*pN = L
+	pN.Val = L
 	return ret
 }

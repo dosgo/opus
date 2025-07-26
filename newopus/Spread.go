@@ -41,3 +41,15 @@ const (
 	SPREAD_NORMAL
 	SPREAD_AGGRESSIVE
 )
+
+var Spread = struct {
+	SPREAD_NONE       int
+	SPREAD_LIGHT      int
+	SPREAD_NORMAL     int
+	SPREAD_AGGRESSIVE int
+}{
+	SPREAD_NONE:       0,
+	SPREAD_LIGHT:      1,
+	SPREAD_NORMAL:     2,
+	SPREAD_AGGRESSIVE: 3,
+}

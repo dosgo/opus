@@ -43,7 +43,7 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 	}
 
 	//CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
-	CAf[0] = C0 + silk_SMMUL(int(TuningParameters.FIND_LPC_COND_FAC*int64(1<<(32))+0.5), C0) + 1
+	CAf[0] = C0 + silk_SMMUL(int(TuningParameters.FIND_LPC_COND_FAC*float32(1<<(32))+0.5), C0) + 1
 
 	CAb[0] = CAf[0]
 
@@ -74,7 +74,7 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 	copy(C_last_row, C_first_row)
 
 	//CAf[0] = C0 + silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0) + 1
-	CAf[0] = C0 + silk_SMMUL((TuningParameters.FIND_LPC_COND_FAC*(1<<(32))+0.5), C0) + 1
+	CAf[0] = C0 + silk_SMMUL(int(TuningParameters.FIND_LPC_COND_FAC*float32(1<<(32))+0.5), C0) + 1
 
 	CAb[0] = CAf[0]
 
@@ -222,7 +222,7 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 			A_Q16[k] = -Atmp1
 		}
 		//res_nrg.Val = silk_SMLAWW(nrg, silk_SMMUL(SILK_CONST_FIND_LPC_COND_FAC_32, C0), -tmp1)
-		res_nrg.Val = silk_SMLAWW(nrg, silk_SMMUL(((TuningParameters.FIND_LPC_COND_FAC)*(1<<(32))+0.5), C0), -tmp1)
+		res_nrg.Val = silk_SMLAWW(nrg, silk_SMMUL(int((TuningParameters.FIND_LPC_COND_FAC)*float32(1<<(32))+0.5), C0), -tmp1)
 
 		res_nrg_Q.Val = int(-rshifts)
 	}

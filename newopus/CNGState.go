@@ -33,9 +33,9 @@
 package opus
 
 type CNGState struct {
-	CNG_exc_buf_Q14   [MAX_FRAME_LENGTH]int
-	CNG_smth_NLSF_Q15 [MAX_LPC_ORDER]int16
-	CNG_synth_state   [MAX_LPC_ORDER]int
+	CNG_exc_buf_Q14   []int
+	CNG_smth_NLSF_Q15 []int16
+	CNG_synth_state   []int
 	CNG_smth_Gain_Q16 int
 	rand_seed         int
 	fs_kHz            int

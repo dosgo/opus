@@ -53,7 +53,7 @@ func pulses2bits(m *CeltMode, band int, LM int, pulses int) int {
 	return int(m.cache.bits[m.cache.index[LM*m.nbEBands+band]+pulses]) + 1
 }
 
-func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance *int, skip_rsv int, intensity *int, intensity_rsv int, dual_stereo *int, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
+func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance BoxedValueInt, skip_rsv int, intensity BoxedValueInt, intensity_rsv int, dual_stereo BoxedValueInt, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
 	psum := 0
 	lo := 0
 	hi := 1 << ALLOC_STEPS
@@ -144,29 +144,29 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	OpusAssert(codedBands > start)
 	if intensity_rsv > 0 {
 		if encode != 0 {
-			if *intensity > codedBands {
-				*intensity = codedBands
+			if intensity.Val > codedBands {
+				intensity.Val = codedBands
 			}
-			ec.enc_uint(*intensity-start, codedBands+1-start)
+			ec.enc_uint(int64(intensity.Val-start), int64(codedBands+1-start))
 		} else {
-			*intensity = start + ec.dec_uint(codedBands+1-start)
+			intensity.Val = start + int(ec.dec_uint(int64(codedBands+1-start)))
 		}
 	} else {
-		*intensity = 0
+		intensity.Val = 0
 	}
 
-	if *intensity <= start {
+	if intensity.Val <= start {
 		total += dual_stereo_rsv
 		dual_stereo_rsv = 0
 	}
 	if dual_stereo_rsv > 0 {
 		if encode != 0 {
-			ec.enc_bit_logp(*dual_stereo, 1)
+			ec.enc_bit_logp(dual_stereo.Val, 1)
 		} else {
-			*dual_stereo = ec.dec_bit_logp(1)
+			dual_stereo.Val = ec.dec_bit_logp(1)
 		}
 	} else {
-		*dual_stereo = 0
+		dual_stereo.Val = 0
 	}
 
 	left := total - psum
@@ -187,12 +187,12 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		N0 := m.eBands[j+1] - m.eBands[j]
 		N := N0 << LM
 		bit := bits[j] + balance
-
+		var excess = 0
 		if N > 1 {
-			excess := MAX32(bit-cap[j], 0)
+			excess = int(MAX32(bit-cap[j], 0))
 			bits[j] = bit - excess
 			den := C * N
-			if C == 2 && N > 2 && *dual_stereo == 0 && j < *intensity {
+			if C == 2 && N > 2 && dual_stereo.Val == 0 && j < intensity.Val {
 				den++
 			}
 			NClogN := den * (m.logN[j] + logM)
@@ -218,7 +218,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 			}
 			bits[j] -= C * ebits[j] << BITRES
 		} else {
-			excess := MAX32(bit-(C<<BITRES), 0)
+			excess = MAX32(bit-(C<<BITRES), 0)
 			bits[j] = bit - excess
 			ebits[j] = 0
 			fine_priority[j] = 1
@@ -238,7 +238,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		OpusAssert(bits[j] >= 0)
 		OpusAssert(ebits[j] >= 0)
 	}
-	*_balance = balance
+	_balance.Val = balance
 
 	for ; j < end; j++ {
 		ebits[j] = bits[j] >> stereo >> BITRES

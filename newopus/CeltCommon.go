@@ -292,7 +292,7 @@ func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int,
 	for i := 0; i < N; i++ {
 		x := inp[inp_ptr+i]
 		inp[inp_ptr+i] = SHL32(x, CeltConstants.SIG_SHIFT) - m
-		m = SHR32(MULT16_16(int16(coef0), int16(x)), 15-CeltConstants.SIG_SHIFT)
+		m = SHR32(MULT16_16(int(coef0), int(x)), 15-CeltConstants.SIG_SHIFT)
 	}
 	mem.Val = m
 }
@@ -707,10 +707,10 @@ func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []i
 		freq2 := out_syn_ptrs[1] + overlap/2
 		copy(out_syn[1][freq2:freq2+N], freq)
 		for b := 0; b < B; b++ {
-			MDCT_clt_mdct_backward(mode.mdct, out_syn[1], freq2+b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
+			clt_mdct_backward(mode.mdct, out_syn[1], freq2+b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
 		}
 		for b := 0; b < B; b++ {
-			MDCT_clt_mdct_backward(mode.mdct, freq, b, out_syn[1], out_syn_ptrs[1]+NB*b, mode.window, overlap, shift, B)
+			clt_mdct_backward(mode.mdct, freq, b, out_syn[1], out_syn_ptrs[1]+NB*b, mode.window, overlap, shift, B)
 		}
 	} else if CC == 1 && C == 2 {
 		freq2 := out_syn_ptrs[0] + overlap/2
@@ -772,7 +772,7 @@ func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *E
 	}
 
 	for i := start; i < end; i++ {
-		tf_res[i] = CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]]
+		tf_res[i] = int(CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+tf_res[i]])
 	}
 }
 

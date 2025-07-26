@@ -148,7 +148,7 @@ func silk_Decode(
 							condCoding = SilkConstants.CODE_INDEPENDENTLY
 						}
 						silk_decode_indices(channel_state[n], *psRangeDec, i, 1, condCoding)
-						silk_decode_pulses(psRangeDec, pulses, channel_state[n].indices.signalType, channel_state[n].indices.quantOffsetType, channel_state[n].frame_length)
+						silk_decode_pulses(psRangeDec, pulses, int(channel_state[n].indices.signalType), channel_state[n].indices.quantOffsetType, channel_state[n].frame_length)
 					}
 				}
 			}
@@ -244,7 +244,7 @@ func silk_Decode(
 	}
 
 	if decControl.nChannelsAPI == 2 && decControl.nChannelsInternal == 2 {
-		silk_stereo_MS_to_LR(psDec.sStereo, samplesOut_tmp, samplesOut_tmp_ptrs[0], samplesOut_tmp, samplesOut_tmp_ptrs[1], MS_pred_Q13[:], channel_state[0].fs_kHz, nSamplesOutDec.Val)
+		silk_stereo_MS_to_LR(&psDec.sStereo, samplesOut_tmp, samplesOut_tmp_ptrs[0], samplesOut_tmp, samplesOut_tmp_ptrs[1], MS_pred_Q13[:], channel_state[0].fs_kHz, nSamplesOutDec.Val)
 	} else {
 		copy(samplesOut_tmp[samplesOut_tmp_ptrs[0]:samplesOut_tmp_ptrs[0]+2], psDec.sStereo.sMid[:2])
 		copy(psDec.sStereo.sMid[:2], samplesOut_tmp[samplesOut_tmp_ptrs[0]+nSamplesOutDec.Val:samplesOut_tmp_ptrs[0]+nSamplesOutDec.Val+2])
@@ -275,7 +275,7 @@ func silk_Decode(
 		minChannels = decControl.nChannelsInternal
 	}
 	for n = 0; n < minChannels; n++ {
-		ret += silk_resampler(channel_state[n].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[n]+1, nSamplesOutDec.Val)
+		ret += silk_resampler(&channel_state[n].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[n]+1, nSamplesOutDec.Val)
 
 		if decControl.nChannelsAPI == 2 {
 			for i = 0; i < nSamplesOut.Val; i++ {
@@ -286,7 +286,7 @@ func silk_Decode(
 
 	if decControl.nChannelsAPI == 2 && decControl.nChannelsInternal == 1 {
 		if stereo_to_mono != 0 {
-			ret += silk_resampler(channel_state[1].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[0]+1, nSamplesOutDec.Val)
+			ret += silk_resampler(&channel_state[1].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[0]+1, nSamplesOutDec.Val)
 			for i = 0; i < nSamplesOut.Val; i++ {
 				samplesOut[samplesOut_ptr+1+2*i] = resample_out[resample_out_ptr+i]
 			}

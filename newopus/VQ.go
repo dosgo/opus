@@ -3,7 +3,7 @@ package opus
 var SPREAD_FACTOR = [3]int{15, 10, 5}
 
 func exp_rotation1(X []int, X_ptr int, len int, stride int, c int, s int) {
-	ms := NEG16(s)
+	ms := NEG16Int(s)
 	Xptr := X_ptr
 	for i := 0; i < len-stride; i++ {
 		x1 := X[Xptr]
@@ -28,10 +28,10 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 	}
 
 	factor := SPREAD_FACTOR[spread-1]
-	gain := Celt_div(int(MULT16_16(CeltConstants.Q15_ONE, len)), (len + factor*K))
+	gain := celt_div(int(MULT16_16(CeltConstants.Q15_ONE, len)), (len + factor*K))
 	theta := HALF16(MULT16_16_Q15(gain, gain))
-	c := Celt_cos_norm(EXTEND32(theta))
-	s := Celt_cos_norm(EXTEND32(SUB16(CeltConstants.Q15ONE, theta)))
+	c := celt_cos_norm(EXTEND32(theta))
+	s := celt_cos_norm(EXTEND32(SUB16(CeltConstants.Q15ONE, theta)))
 	stride2 := 0
 	if len >= 8*stride {
 		stride2 = 1
@@ -40,7 +40,7 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 		}
 	}
 
-	len = Celt_udiv(len, stride)
+	len = celt_udiv(len, stride)
 	for i := 0; i < stride; i++ {
 		if dir < 0 {
 			if stride2 != 0 {
@@ -59,7 +59,7 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 func normalise_residual(iy []int, X []int, X_ptr int, N int, Ryy int, gain int) {
 	k := celt_ilog2(Ryy) >> 1
 	t := VSHR32(Ryy, 2*(k-7))
-	g := MULT16_16_P15(Celt_rsqrt_norm(t), gain)
+	g := MULT16_16_P15(celt_rsqrt_norm(t), gain)
 	for i := 0; i < N; i++ {
 		X[X_ptr+i] = EXTRACT16(PSHR32(MULT16_16(g, iy[i]), k+1))
 	}
@@ -69,7 +69,7 @@ func extract_collapse_mask(iy []int, N int, B int) int {
 	if B <= 1 {
 		return 1
 	}
-	N0 := Celt_udiv(N, B)
+	N0 := celt_udiv(N, B)
 	collapse_mask := 0
 	for i := 0; i < B; i++ {
 		tmp := 0
@@ -173,16 +173,16 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 		}
 	}
 
-	CWRS.Encode_pulses(iy, N, K, enc)
+	encode_pulses(iy, N, K, enc)
 	collapse_mask := extract_collapse_mask(iy, N, B)
 	return collapse_mask
 }
 
 func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec EntropyCoder, gain int) int {
-	OpusAssert(K > 0, "alg_unquant() needs at least one pulse")
-	OpusAssert(N > 1, "alg_unquant() needs at least two dimensions")
+	OpusAssertMsg(K > 0, "alg_unquant() needs at least one pulse")
+	OpusAssertMsg(N > 1, "alg_unquant() needs at least two dimensions")
 	iy := make([]int, N)
-	Ryy := CWRS.Decode_pulses(iy, N, K, dec)
+	Ryy := decode_pulses(iy, N, K, dec)
 	normalise_residual(iy, X, X_ptr, N, Ryy, gain)
 	exp_rotation(X, X_ptr, N, -1, B, K, spread)
 	collapse_mask := extract_collapse_mask(iy, N, B)
@@ -191,7 +191,7 @@ func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec Entrop
 
 func renormalise_vector(X []int, X_ptr int, N int, gain int) {
 	xptr := X_ptr
-	E := CeltConstants.EPSILON + Kernels.Celt_inner_prod(X, X_ptr, X, X_ptr, N)
+	E := CeltConstants.EPSILON + celt_inner_prod(X, X_ptr, X, X_ptr, N)
 	k := celt_ilog2(E) >> 1
 	t := VSHR32(E, 2*(k-7))
 	g := MULT16_16_P15(celt_rsqrt_norm(t), gain)

@@ -29,7 +29,7 @@ func silk_decode_core(
 	res_Q14 = make([]int, psDec.subfr_length)
 	sLPC_Q14 = make([]int, psDec.subfr_length+MAX_LPC_ORDER)
 
-	offset_Q10 = int(SilkTables.Quantization_Offsets_Q10[psDec.indices.SignalType>>1][psDec.indices.QuantOffsetType])
+	offset_Q10 = int(SilkTables.Quantization_Offsets_Q10[psDec.indices.signalType>>1][psDec.indices.quantOffsetType])
 
 	if psDec.indices.NLSFInterpCoef_Q2 < 1<<2 {
 		NLSF_interpolation_flag = 1
@@ -40,20 +40,20 @@ func silk_decode_core(
 	rand_seed = int(psDec.indices.Seed)
 	for i = 0; i < psDec.frame_length; i++ {
 		rand_seed = silk_RAND(rand_seed)
-		psDec.Exc_Q14[i] = int(pulses[i]) << 14
-		if psDec.Exc_Q14[i] > 0 {
-			psDec.Exc_Q14[i] -= QUANT_LEVEL_ADJUST_Q10 << 4
-		} else if psDec.Exc_Q14[i] < 0 {
-			psDec.Exc_Q14[i] += QUANT_LEVEL_ADJUST_Q10 << 4
+		psDec.exc_Q14[i] = int(pulses[i]) << 14
+		if psDec.outBuf[i] > 0 {
+			psDec.outBuf[i] -= QUANT_LEVEL_ADJUST_Q10 << 4
+		} else if psDec.outBuf[i] < 0 {
+			psDec.outBuf[i] += QUANT_LEVEL_ADJUST_Q10 << 4
 		}
-		psDec.Exc_Q14[i] += offset_Q10 << 4
+		psDec.exc_Q14[i] += offset_Q10 << 4
 		if rand_seed < 0 {
-			psDec.Exc_Q14[i] = -psDec.Exc_Q14[i]
+			psDec.exc_Q14[i] = -psDec.exc_Q14[i]
 		}
 		rand_seed = silk_ADD32_ovflw(rand_seed, int(pulses[i]))
 	}
 
-	copy(sLPC_Q14[:MAX_LPC_ORDER], psDec.SLPC_Q14_buf[:MAX_LPC_ORDER])
+	copy(sLPC_Q14[:MAX_LPC_ORDER], psDec.sLPC_Q14_buf[:MAX_LPC_ORDER])
 
 	pexc_Q14 = 0
 	pxq = xq_ptr
@@ -63,7 +63,7 @@ func silk_decode_core(
 		pres_Q14_ptr = 0
 		A_Q12 = psDecCtrl.PredCoef_Q12[k>>1]
 		B_Q14_ptr = k * LTP_ORDER
-		signalType = psDec.indices.SignalType
+		signalType = psDec.indices.signalType
 
 		Gain_Q10 = silk_RSHIFT(psDecCtrl.Gains_Q16[k], 6)
 		inv_gain_Q31 = silk_INVERSE32_varQ(psDecCtrl.Gains_Q16[k], 47)
@@ -81,7 +81,7 @@ func silk_decode_core(
 		psDec.prev_gain_Q16 = psDecCtrl.Gains_Q16[k]
 
 		if psDec.lossCnt != 0 && psDec.prevSignalType == TYPE_VOICED &&
-			psDec.indices.SignalType != TYPE_VOICED && k < MAX_NB_SUBFR/2 {
+			psDec.indices.signalType != TYPE_VOICED && k < MAX_NB_SUBFR/2 {
 
 			for i := 0; i < LTP_ORDER; i++ {
 				B_Q14[B_Q14_ptr+i] = 0
@@ -89,21 +89,21 @@ func silk_decode_core(
 			B_Q14[B_Q14_ptr+(LTP_ORDER/2)] = 4096
 
 			signalType = TYPE_VOICED
-			psDecCtrl.PitchL[k] = psDec.lagPrev
+			psDecCtrl.pitchL[k] = psDec.lagPrev
 		}
 
 		if signalType == TYPE_VOICED {
-			lag = psDecCtrl.PitchL[k]
+			lag = psDecCtrl.pitchL[k]
 
 			if k == 0 || (k == 2 && NLSF_interpolation_flag != 0) {
 				start_idx = psDec.ltp_mem_length - lag - psDec.LPC_order - LTP_ORDER/2
 				OpusAssert(start_idx > 0)
 
 				if k == 2 {
-					copy(psDec.OutBuf[psDec.ltp_mem_length:], xq[xq_ptr:xq_ptr+2*psDec.subfr_length])
+					copy(psDec.outBuf[psDec.ltp_mem_length:], xq[xq_ptr:xq_ptr+2*psDec.subfr_length])
 				}
 
-				silk_LPC_analysis_filter(sLTP, start_idx, psDec.OutBuf, start_idx+k*psDec.subfr_length, A_Q12, 0, psDec.ltp_mem_length-start_idx, psDec.LPC_order)
+				silk_LPC_analysis_filter(sLTP, start_idx, psDec.outBuf, start_idx+k*psDec.subfr_length, A_Q12, 0, psDec.ltp_mem_length-start_idx, psDec.LPC_order)
 
 				if k == 0 {
 					inv_gain_Q31 = silk_LSHIFT(silk_SMULWB(inv_gain_Q31, psDecCtrl.LTP_scale_Q14), 2)
@@ -135,7 +135,7 @@ func silk_decode_core(
 				sLTP_buf_idx++
 			}
 		} else {
-			pres_Q14 = psDec.Exc_Q14
+			pres_Q14 = psDec.exc_Q14
 			pres_Q14_ptr = pexc_Q14
 		}
 
@@ -170,5 +170,5 @@ func silk_decode_core(
 		pxq += psDec.subfr_length
 	}
 
-	copy(psDec.SLPC_Q14_buf[:MAX_LPC_ORDER], sLPC_Q14[:MAX_LPC_ORDER])
+	copy(psDec.sLPC_Q14_buf[:MAX_LPC_ORDER], sLPC_Q14[:MAX_LPC_ORDER])
 }

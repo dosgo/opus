@@ -11,7 +11,7 @@ func silk_decode_parameters(
 
 	boxedLastGainIndex := &BoxedValueByte{Val: psDec.LastGainIndex}
 	silk_gains_dequant(psDecCtrl.Gains_Q16, psDec.indices.GainsIndices,
-		boxedLastGainIndex, condCoding == CODE_CONDITIONALLY, psDec.nb_subfr)
+		boxedLastGainIndex, condCoding == SilkConstants.CODE_CONDITIONALLY, psDec.nb_subfr)
 	psDec.LastGainIndex = boxedLastGainIndex.Val
 
 	silk_NLSF_decode(pNLSF_Q15, psDec.indices.NLSFIndices, psDec.psNLSF_CB)
@@ -52,8 +52,8 @@ func silk_decode_parameters(
 		Ix := psDec.indices.LTP_scaleIndex
 		psDecCtrl.LTP_scale_Q14 = silk_LTPScales_table_Q14[Ix]
 	} else {
-		Arrays_MemSet(psDecCtrl.pitchL, 0, psDec.nb_subfr)
-		Arrays_MemSet(psDecCtrl.LTPCoef_Q14, 0, LTP_ORDER*psDec.nb_subfr)
+		MemSet(psDecCtrl.pitchL, 0, psDec.nb_subfr)
+		MemSet(psDecCtrl.LTPCoef_Q14, 0, SilkConstants.LTP_ORDER*psDec.nb_subfr)
 		psDec.indices.PERIndex = 0
 		psDecCtrl.LTP_scale_Q14 = 0
 	}

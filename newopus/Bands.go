@@ -100,8 +100,8 @@ func normalise_bands(m *CeltMode, freq [][]int, X [][]int, bandE [][]int, end in
 			shift := celt_zlog2(bandE[c][i]) - 13
 			E := VSHR32(bandE[c][i], shift)
 			g := EXTRACT16(celt_rcp(SHL32(E, 3)))
-			j := M * eBands[i]
-			endBand := M * eBands[i+1]
+			j := M * int(eBands[i])
+			endBand := M * int(eBands[i+1])
 			for j < endBand {
 				X[c][j] = MULT16_16_Q15(VSHR32(freq[c][j], shift-1), g)
 				j++
@@ -168,7 +168,7 @@ func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE 
 
 func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C int, size int, start int, end int, logE []int, prev1logE []int, prev2logE []int, pulses []int, seed int) {
 	for i := start; i < end; i++ {
-		N0 := m.eBands[i+1] - m.eBands[i]
+		N0 := int(m.eBands[i+1] - m.eBands[i])
 		OpusAssert(pulses[i] >= 0)
 		depth := celt_udiv(1+pulses[i], N0) >> LM
 		thresh32 := SHR32(celt_exp2(-SHL16(depth, 10-BITRES)), 1)
@@ -510,9 +510,9 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 			}
 		} else if B0 > 1 || stereo != 0 {
 			if encode != 0 {
-				ec.enc_uint(itheta, qn+1)
+				ec.enc_uint(int64(itheta), int64(qn+1))
 			} else {
-				itheta = int(ec.dec_uint(qn + 1))
+				itheta = int(ec.dec_uint(int64(qn + 1)))
 			}
 		} else {
 			ft := ((qn >> 1) + 1) * ((qn >> 1) + 1)
@@ -634,9 +634,9 @@ func quant_band_n1(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, b int,
 		}
 		if resynth != 0 {
 			if sign != 0 {
-				x[x_ptr] = -NORM_SCALING
+				x[x_ptr] = -CeltConstants.NORM_SCALING
 			} else {
-				x[x_ptr] = NORM_SCALING
+				x[x_ptr] = CeltConstants.NORM_SCALING
 			}
 		}
 		x = Y

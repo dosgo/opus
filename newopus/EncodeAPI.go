@@ -178,13 +178,22 @@ func silk_Encode(
 			}
 
 			if psEnc.nPrevChannelsInternal == 1 && id == 0 {
-				*psEnc.state_Fxx[1].resampler_state = *psEnc.state_Fxx[0].resampler_state
+				psEnc.state_Fxx[1].resampler_state = psEnc.state_Fxx[0].resampler_state
 			}
+			/*
 
+				ret += silk_resampler(
+					psEnc.state_Fxx[0].resampler_state,
+					psEnc.state_Fxx[0].inputBuf[psEnc.state_Fxx[0].inputBufIx+2:],
+					buf[:nSamplesFromInput],
+					nSamplesFromInput)
+			*/
 			ret += silk_resampler(
-				psEnc.state_Fxx[0].resampler_state,
-				psEnc.state_Fxx[0].inputBuf[psEnc.state_Fxx[0].inputBufIx+2:],
-				buf[:nSamplesFromInput],
+				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].inputBuf,
+				psEnc.state_Fxx[0].inputBufIx+2,
+				buf,
+				0,
 				nSamplesFromInput)
 
 			psEnc.state_Fxx[0].inputBufIx += nSamplesToBuffer
@@ -197,9 +206,11 @@ func silk_Encode(
 				buf[n] = samplesIn[samplesIn_ptr+2*n+1]
 			}
 			ret += silk_resampler(
-				psEnc.state_Fxx[1].resampler_state,
-				psEnc.state_Fxx[1].inputBuf[psEnc.state_Fxx[1].inputBufIx+2:],
-				buf[:nSamplesFromInput],
+				&psEnc.state_Fxx[1].resampler_state,
+				psEnc.state_Fxx[1].inputBuf,
+				psEnc.state_Fxx[1].inputBufIx+2,
+				buf,
+				0,
 				nSamplesFromInput)
 
 			psEnc.state_Fxx[1].inputBufIx += nSamplesToBuffer
@@ -210,16 +221,20 @@ func silk_Encode(
 			}
 
 			ret += silk_resampler(
-				psEnc.state_Fxx[0].resampler_state,
-				psEnc.state_Fxx[0].inputBuf[psEnc.state_Fxx[0].inputBufIx+2:],
-				buf[:nSamplesFromInput],
+				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].inputBuf,
+				psEnc.state_Fxx[0].inputBufIx+2,
+				buf,
+				0,
 				nSamplesFromInput)
 
 			if psEnc.nPrevChannelsInternal == 2 && psEnc.state_Fxx[0].nFramesEncoded == 0 {
 				ret += silk_resampler(
-					psEnc.state_Fxx[1].resampler_state,
-					psEnc.state_Fxx[1].inputBuf[psEnc.state_Fxx[1].inputBufIx+2:],
-					buf[:nSamplesFromInput],
+					&psEnc.state_Fxx[1].resampler_state,
+					psEnc.state_Fxx[1].inputBuf,
+					psEnc.state_Fxx[1].inputBufIx+2,
+					buf,
+					0,
 					nSamplesFromInput)
 
 				for n := 0; n < psEnc.state_Fxx[0].frame_length; n++ {
@@ -234,9 +249,11 @@ func silk_Encode(
 			OpusAssert(encControl.nChannelsAPI == 1 && encControl.nChannelsInternal == 1)
 			copy(buf, samplesIn[samplesIn_ptr:samplesIn_ptr+nSamplesFromInput])
 			ret += silk_resampler(
-				psEnc.state_Fxx[0].resampler_state,
-				psEnc.state_Fxx[0].inputBuf[psEnc.state_Fxx[0].inputBufIx+2:],
-				buf[:nSamplesFromInput],
+				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].inputBuf,
+				psEnc.state_Fxx[0].inputBufIx+2,
+				buf,
+				0,
 				nSamplesFromInput)
 			psEnc.state_Fxx[0].inputBufIx += nSamplesToBuffer
 		}
