@@ -236,11 +236,13 @@ var OpusTables = struct {
 	Tbands          []int
 	Extra_bands     []int
 	Analysis_window []float32
+	MODE_THRESHOLDS [][]int
 }{
 	Dct_table:       dct_table,
 	Tbands:          tbands,
 	Extra_bands:     extra_bands,
 	Analysis_window: analysis_window,
+	MODE_THRESHOLDS: mode_thresholds,
 	Net: &MLPState{
 		layers:  3,
 		topo:    topo,

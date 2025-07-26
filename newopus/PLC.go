@@ -117,8 +117,8 @@ func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []
 		exc_buf_ptr += subfr_length
 	}
 
-	silk_sum_sqr_shift(energy1, shift1, exc_buf[:subfr_length])
-	silk_sum_sqr_shift(energy2, shift2, exc_buf[subfr_length:subfr_length*2])
+	silk_sum_sqr_shift4(*energy1, *shift1, exc_buf, subfr_length)
+	silk_sum_sqr_shift5(*energy2, *shift2, exc_buf, subfr_length, subfr_length)
 }
 
 func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, frame []int16, frame_ptr int) {
@@ -130,7 +130,8 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	energy2 := &BoxedValueInt{0}
 	shift1 := &BoxedValueInt{0}
 	shift2 := &BoxedValueInt{0}
-
+	sLTP_Q14 := make([]int, psDec.ltp_mem_length+psDec.frame_length)
+	var rand_ptr = 0
 	psPLC := &psDec.sPLC
 	prevGain_Q10 := [2]int{
 		psPLC.prevGain_Q16[0] >> 6,
@@ -148,9 +149,9 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	energy1_shifted := energy1.Val >> shift2.Val
 	energy2_shifted := energy2.Val >> shift1.Val
 	if energy1_shifted < energy2_shifted {
-		rand_ptr := max(0, (psPLC.nb_subfr-1)*psPLC.subfr_length-RAND_BUF_SIZE)
+		rand_ptr = max(0, (psPLC.nb_subfr-1)*psPLC.subfr_length-RAND_BUF_SIZE)
 	} else {
-		rand_ptr := max(0, psPLC.nb_subfr*psPLC.subfr_length-RAND_BUF_SIZE)
+		rand_ptr = max(0, psPLC.nb_subfr*psPLC.subfr_length-RAND_BUF_SIZE)
 	}
 
 	B_Q14 := psPLC.LTPCoef_Q14[:]
@@ -279,13 +280,13 @@ func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr in
 	psPLC := &psDec.sPLC
 
 	if psDec.lossCnt != 0 {
-		silk_sum_sqr_shift(&energy, &energy_shift, frame[frame_ptr:frame_ptr+length])
+		silk_sum_sqr_shift5(&energy, &energy_shift, frame[frame_ptr:frame_ptr+length])
 		psPLC.conc_energy = energy.Val
 		psPLC.conc_energy_shift = energy_shift.Val
 		psPLC.last_frame_lost = 1
 	} else {
 		if psPLC.last_frame_lost != 0 {
-			silk_sum_sqr_shift(&energy, &energy_shift, frame[frame_ptr:frame_ptr+length])
+			silk_sum_sqr_shift5(&energy, &energy_shift, frame[frame_ptr:frame_ptr+length])
 
 			if energy_shift.Val > psPLC.conc_energy_shift {
 				psPLC.conc_energy >>= uint(energy_shift.Val - psPLC.conc_energy_shift)
@@ -297,14 +298,14 @@ func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr in
 				var frac_Q24, LZ int
 				var gain_Q16, slope_Q16 int
 
-				LZ = int(silk_CLZ32(uint(psPLC.conc_energy)))
+				LZ = int(silk_CLZ32(int(psPLC.conc_energy)))
 				LZ--
 				psPLC.conc_energy <<= LZ
 				energy.Val >>= max(0, 24-int(LZ))
 
 				frac_Q24 = psPLC.conc_energy / max(energy.Val, 1)
 
-				gain_Q16 = int(silk_SQRT_APPROX(uint(frac_Q24))) << 4
+				gain_Q16 = int(silk_SQRT_APPROX(int(frac_Q24))) << 4
 				slope_Q16 = ((1 << 16) - gain_Q16) / int(length)
 				slope_Q16 <<= 2
 

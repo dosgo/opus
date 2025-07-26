@@ -696,6 +696,7 @@ var SilkTables = struct {
 	Silk_TargetRate_table_MB            []int
 	Silk_TargetRate_table_WB            []int
 	Silk_SNR_table_Q1                   []int16
+	Silk_LTP_gain_middle_avg_RD_Q14     int16
 }{
 	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
@@ -739,4 +740,5 @@ var SilkTables = struct {
 	Silk_TargetRate_table_MB:            silk_TargetRate_table_MB,
 	Silk_TargetRate_table_WB:            silk_TargetRate_table_WB,
 	Silk_SNR_table_Q1:                   silk_SNR_table_Q1,
+	Silk_LTP_gain_middle_avg_RD_Q14:     silk_LTP_gain_middle_avg_RD_Q14,
 }

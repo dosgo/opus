@@ -147,11 +147,13 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	}
 
 	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(FIND_PITCH_WHITE_NOISE_FRACTION<<16))
-	BWExp1_Q16 = silk_DIV32_varQ(int(BANDWIDTH_EXPANSION<<16),
-		silk_SMLAWW(1<<16, strength_Q16, strength_Q16), 16)
+
+	BWExp1_Q16 = silk_DIV32_varQ(((TuningParameters.BANDWIDTH_EXPANSION)*(1<<(16)) + 0.5),
+		silk_SMLAWW((1.0*(1<<(16))+0.5), strength_Q16, strength_Q16), 16)
 	BWExp2_Q16 = BWExp1_Q16
-	delta_Q16 = silk_SMULWB((1<<16)-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
-		int(LOW_RATE_BANDWIDTH_EXPANSION_DELTA<<16))
+	delta_Q16 = silk_SMULWB(((1.0)*(1<<(16))+0.5)-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
+		((TuningParameters.LOW_RATE_BANDWIDTH_EXPANSION_DELTA)*(1<<(16)) + 0.5))
+
 	BWExp1_Q16 -= delta_Q16
 	BWExp2_Q16 += delta_Q16
 	BWExp1_Q16 = silk_DIV32_16(BWExp1_Q16<<14, BWExp2_Q16>>2)

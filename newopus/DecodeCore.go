@@ -63,7 +63,7 @@ func silk_decode_core(
 		pres_Q14_ptr = 0
 		A_Q12 = psDecCtrl.PredCoef_Q12[k>>1]
 		B_Q14_ptr = k * LTP_ORDER
-		signalType = psDec.indices.signalType
+		signalType = int(psDec.indices.signalType)
 
 		Gain_Q10 = silk_RSHIFT(psDecCtrl.Gains_Q16[k], 6)
 		inv_gain_Q31 = silk_INVERSE32_varQ(psDecCtrl.Gains_Q16[k], 47)

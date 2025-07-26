@@ -7,7 +7,7 @@ func silk_VAD_Init(psSilk_VAD *SilkVADState) int {
 	psSilk_VAD.Reset()
 
 	for b := 0; b < VAD_N_BANDS; b++ {
-		bias := max32(silk_DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int16(b+1)), 1)
+		bias := max32(silk_DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int(b+1)), 1)
 		psSilk_VAD.NoiseLevelBias[b] = bias
 	}
 
@@ -86,7 +86,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 		psEncC.sVAD.XnrgSubfr[b] = sumSquared
 	}
 
-	silk_VAD_GetNoiseLevels(Xnrg[:], psEncC.sVAD)
+	silk_VAD_GetNoiseLevels(Xnrg[:], &psEncC.sVAD)
 
 	sumSquared := 0
 	for b := 0; b < VAD_N_BANDS; b++ {
@@ -104,7 +104,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 			if speech_nrg < (1 << 20) {
 				SNR_Q7 = silk_SMULWB(silk_LSHIFT(silk_SQRT_APPROX(speech_nrg), 6), SNR_Q7)
 			}
-			input_tilt = silk_SMULWB(input_tilt, tiltWeights[b], SNR_Q7)
+			input_tilt = silk_SMLAWB(input_tilt, tiltWeights[b], SNR_Q7)
 		} else {
 			NrgToNoiseRatio_Q8[b] = 256
 		}
@@ -114,7 +114,8 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 	pSNR_dB_Q7 = 3 * silk_SQRT_APPROX(sumSquared)
 
 	SA_Q15 = silk_sigm_Q15(silk_SMULWB(VAD_SNR_FACTOR_Q16, int(pSNR_dB_Q7)) - VAD_NEGATIVE_OFFSET_Q5)
-	psEncC.input_tilt_Q15 = silk_LSHIFT(int(silk_sigm_Q15(int(input_tilt))-16384, 1))
+
+	psEncC.input_tilt_Q15 = silk_LSHIFT(silk_sigm_Q15(input_tilt)-16384, 1)
 
 	speech_nrg := 0
 	for b := 0; b < VAD_N_BANDS; b++ {

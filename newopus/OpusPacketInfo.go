@@ -22,12 +22,13 @@ func ParseOpusPacket(packet []byte, packet_offset, _len int) (*OpusPacketInfo, e
 		return nil, errors.New("opus_packet_parse_impl failed")
 	}
 
-	var out_toc byte
+	var out_toc = BoxedValueByte{0}
+	var payload_offset = BoxedValueInt{0}
+
 	frames := make([][]byte, numFrames)
 	sizes := make([]int16, numFrames)
-	var payload_offset, packet_offset_out int
-
-	errCode := opus_packet_parse_impl(packet, packet_offset, _len, 0, &out_toc, frames, sizes, &payload_offset, &packet_offset_out)
+	var packet_offset_out = BoxedValueInt{0}
+	errCode := opus_packet_parse_impl(packet, packet_offset, _len, 0, out_toc, frames, sizes, payload_offset, packet_offset_out)
 	if errCode < 0 {
 		return nil, errors.New("opus_packet_parse_impl failed")
 	}
@@ -38,7 +39,7 @@ func ParseOpusPacket(packet []byte, packet_offset, _len int) (*OpusPacketInfo, e
 		copy(copiedFrames[i], frames[i])
 	}
 
-	return NewOpusPacketInfo(out_toc, copiedFrames, payload_offset), nil
+	return NewOpusPacketInfo(byte(out_toc.Val), copiedFrames, payload_offset.Val), nil
 }
 
 func GetNumSamplesPerFrame(packet []byte, packet_offset, Fs int) int {
@@ -140,16 +141,16 @@ func parse_size(data []byte, data_ptr, len int, size *int16) int {
 	}
 }
 
-func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_toc *byte, frames [][]byte, sizes []int16, payload_offset *int, packet_offset *int) int {
+func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_toc BoxedValueByte, frames [][]byte, sizes []int16, payload_offset BoxedValueInt, packet_offset BoxedValueInt) int {
 	var i, bytes int
 	var count, cbr int
 	var toc byte
 	var ch, framesize, last_size, pad int
 	data0 := data_ptr
 
-	*out_toc = 0
-	*payload_offset = 0
-	*packet_offset = 0
+	out_toc.Val = 0
+	payload_offset.Val = 0
+	packet_offset.Val = 0
 
 	if sizes == nil || len < 0 {
 		return OpusError.OPUS_BAD_ARG
@@ -280,7 +281,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 		sizes[count-1] = int16(last_size)
 	}
 
-	*payload_offset = data_ptr - data0
+	payload_offset.Val = data_ptr - data0
 
 	for i = 0; i < count; i++ {
 		if frames != nil {
@@ -290,8 +291,8 @@ func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_
 		data_ptr += int(sizes[i])
 	}
 
-	*packet_offset = pad + (data_ptr - data0)
-	*out_toc = toc
+	packet_offset.Val = pad + (data_ptr - data0)
+	out_toc.Val = int8(toc)
 
 	return count
 }

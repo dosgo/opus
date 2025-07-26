@@ -8,11 +8,11 @@ type SilkEncoderControl struct {
 	pitchL             [MAX_NB_SUBFR]int
 	AR1_Q13            [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16
 	AR2_Q13            [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16
-	LF_shp_Q14         [MAX_NB_SUBFR]int
-	GainsPre_Q14       [MAX_NB_SUBFR]int
-	HarmBoost_Q14      [MAX_NB_SUBFR]int
-	Tilt_Q14           [MAX_NB_SUBFR]int
-	HarmShapeGain_Q14  [MAX_NB_SUBFR]int
+	LF_shp_Q14         []int
+	GainsPre_Q14       []int
+	HarmBoost_Q14      []int
+	Tilt_Q14           []int
+	HarmShapeGain_Q14  []int
 	Lambda_Q10         int
 	input_quality_Q14  int
 	coding_quality_Q14 int

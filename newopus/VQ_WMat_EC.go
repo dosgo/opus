@@ -2,13 +2,13 @@ package opus
 
 import "math"
 
-func silk_VQ_WMat_EC(ind *byte, rate_dist_Q14 *int, gain_Q7 *int, in_Q14 []int16, in_Q14_ptr int, W_Q18 []int, W_Q18_ptr int, cb_Q7 [][]byte, cb_gain_Q7 []int16, cl_Q5 []int16, mu_Q9 int, max_gain_Q7 int, L int) {
+func silk_VQ_WMat_EC(ind BoxedValueByte, rate_dist_Q14 BoxedValueInt, gain_Q7 BoxedValueInt, in_Q14 []int16, in_Q14_ptr int, W_Q18 []int, W_Q18_ptr int, cb_Q7 [][]int8, cb_gain_Q7 []int16, cl_Q5 []int16, mu_Q9 int, max_gain_Q7 int, L int) {
 	var k, gain_tmp_Q7 int
-	var cb_row_Q7 []byte
+	var cb_row_Q7 []int8
 	diff_Q14 := make([]int16, 5)
 	var sum1_Q14, sum2_Q16 int
 
-	*rate_dist_Q14 = math.MaxInt32
+	rate_dist_Q14.Val = math.MaxInt
 	for k = 0; k < L; k++ {
 		cb_row_Q7 = cb_Q7[k]
 		gain_tmp_Q7 = int(cb_gain_Q7[k])
@@ -64,10 +64,10 @@ func silk_VQ_WMat_EC(ind *byte, rate_dist_Q14 *int, gain_Q7 *int, in_Q14 []int16
 			panic("OpusAssert failed: sum1_Q14 >= 0")
 		}
 
-		if sum1_Q14 < *rate_dist_Q14 {
-			*rate_dist_Q14 = sum1_Q14
-			*ind = byte(k)
-			*gain_Q7 = gain_tmp_Q7
+		if sum1_Q14 < rate_dist_Q14.Val {
+			rate_dist_Q14.Val = sum1_Q14
+			ind.Val = int8(k)
+			gain_Q7.Val = gain_tmp_Q7
 		}
 	}
 }

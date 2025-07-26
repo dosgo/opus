@@ -2,9 +2,9 @@ package opus
 
 type SilkChannelDecoder struct {
 	prev_gain_Q16           int
-	exc_Q14                 [MAX_FRAME_LENGTH]int
-	sLPC_Q14_buf            [MAX_LPC_ORDER]int
-	outBuf                  [MAX_FRAME_LENGTH + 2*MAX_SUB_FRAME_LENGTH]int16
+	exc_Q14                 []int
+	sLPC_Q14_buf            []int
+	outBuf                  []int16
 	lagPrev                 int
 	LastGainIndex           int8
 	fs_kHz                  int
@@ -14,7 +14,7 @@ type SilkChannelDecoder struct {
 	subfr_length            int
 	ltp_mem_length          int
 	LPC_order               int
-	prevNLSF_Q15            [MAX_LPC_ORDER]int16
+	prevNLSF_Q15            []int16
 	first_frame_after_reset int
 	pitch_lag_low_bits_iCDF []int16
 	pitch_contour_iCDF      []int16
@@ -36,9 +36,9 @@ type SilkChannelDecoder struct {
 
 func (d *SilkChannelDecoder) Reset() {
 	d.prev_gain_Q16 = 0
-	d.exc_Q14 = [MAX_FRAME_LENGTH]int{}
-	d.sLPC_Q14_buf = [MAX_LPC_ORDER]int{}
-	d.outBuf = [MAX_FRAME_LENGTH + 2*MAX_SUB_FRAME_LENGTH]int16{}
+	d.exc_Q14 = make([]int, MAX_FRAME_LENGTH)
+	d.sLPC_Q14_buf = make([]int, MAX_LPC_ORDER)
+	d.outBuf = make([]int16, (MAX_FRAME_LENGTH + 2*MAX_SUB_FRAME_LENGTH))
 	d.lagPrev = 0
 	d.LastGainIndex = 0
 	d.fs_kHz = 0
@@ -48,7 +48,7 @@ func (d *SilkChannelDecoder) Reset() {
 	d.subfr_length = 0
 	d.ltp_mem_length = 0
 	d.LPC_order = 0
-	d.prevNLSF_Q15 = [MAX_LPC_ORDER]int16{}
+	d.prevNLSF_Q15 = make([]int16, MAX_LPC_ORDER)
 	d.first_frame_after_reset = 0
 	d.pitch_lag_low_bits_iCDF = nil
 	d.pitch_contour_iCDF = nil
@@ -144,8 +144,8 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 			d.lagPrev = 100
 			d.LastGainIndex = 10
 			d.prevSignalType = TYPE_NO_VOICE_ACTIVITY
-			d.outBuf = [MAX_FRAME_LENGTH + 2*MAX_SUB_FRAME_LENGTH]int16{}
-			d.sLPC_Q14_buf = [MAX_LPC_ORDER]int{}
+			d.outBuf = make([]int16, (MAX_FRAME_LENGTH + 2*MAX_SUB_FRAME_LENGTH))
+			d.sLPC_Q14_buf = make([]int, MAX_LPC_ORDER)
 		}
 		d.fs_kHz = fs_kHz
 		d.frame_length = frame_length

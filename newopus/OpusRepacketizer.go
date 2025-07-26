@@ -41,7 +41,7 @@ func (this *OpusRepacketizer) opus_repacketizer_cat_impl(data []byte, data_ptr i
 		return OpusError.OPUS_INVALID_PACKET
 	}
 
-	ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, &dummy_toc, this.frames[:], this.nb_frames, this.len[:], this.nb_frames, &dummy_offset, &dummy_offset)
+	ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, &dummy_toc, this.frames[:], this.nb_frames, this.len[:], this.nb_frames, dummy_offset, dummy_offset)
 	if ret < 1 {
 		return ret
 	}
@@ -250,7 +250,7 @@ func PadMultistreamPacket(data []byte, data_offset int, len_val int, new_len int
 		if len_val <= 0 {
 			return OpusError.OPUS_INVALID_PACKET
 		}
-		count := opus_packet_parse_impl(data, data_offset, len_val, 1, &dummy_toc, nil, 0, size[:], 0, &dummy_offset, &packet_offset)
+		count := opus_packet_parse_impl(data, data_offset, len_val, 1, &dummy_toc, nil, 0, size[:], 0, dummy_offset, &packet_offset)
 		if count < 0 {
 			return count
 		}
@@ -281,7 +281,7 @@ func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_stream
 			return OpusError.OPUS_INVALID_PACKET
 		}
 		rp := NewOpusRepacketizer()
-		count := opus_packet_parse_impl(data, data_offset, len_val, self_delimited, &dummy_toc, nil, 0, size[:], 0, &dummy_offset, &packet_offset)
+		count := opus_packet_parse_impl(data, data_offset, len_val, self_delimited, &dummy_toc, nil, 0, size[:], 0, dummy_offset, &packet_offset)
 		if count < 0 {
 			return count
 		}

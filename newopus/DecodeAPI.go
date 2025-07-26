@@ -148,7 +148,7 @@ func silk_Decode(
 							condCoding = SilkConstants.CODE_INDEPENDENTLY
 						}
 						silk_decode_indices(channel_state[n], *psRangeDec, i, 1, condCoding)
-						silk_decode_pulses(psRangeDec, pulses, int(channel_state[n].indices.signalType), channel_state[n].indices.quantOffsetType, channel_state[n].frame_length)
+						silk_decode_pulses(psRangeDec, pulses, int(channel_state[n].indices.signalType), int(channel_state[n].indices.quantOffsetType), channel_state[n].frame_length)
 					}
 				}
 			}
@@ -233,7 +233,7 @@ func silk_Decode(
 			} else {
 				condCoding = CODE_CONDITIONALLY
 			}
-			ret += channel_state[n].silk_decode_frame(psRangeDec, samplesOut_tmp, samplesOut_tmp_ptrs[n]+2, nSamplesOutDec, lostFlag, condCoding)
+			ret += channel_state[n].silk_decode_frame(psRangeDec, samplesOut_tmp, samplesOut_tmp_ptrs[n]+2, *nSamplesOutDec, lostFlag, condCoding)
 		} else {
 			start := samplesOut_tmp_ptrs[n] + 2
 			for i := start; i < start+nSamplesOutDec.Val; i++ {
