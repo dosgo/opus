@@ -194,7 +194,7 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	sLTP_buf_idx = psDec.ltp_mem_length
 
 	idx = psDec.ltp_mem_length - lag - psDec.LPC_order - LTP_ORDER/2
-	silk_LPC_analysis_filter(psDec.outBuf[idx:], psDec.outBuf[idx:], psPLC.prevLPC_Q12[:], psDec.ltp_mem_length-idx, psDec.LPC_order)
+	silk_LPC_analysis_filter(psDec.outBuf[idx:], psDec.outBuf[idx:], psPLC.prevLPC_Q12, psDec.ltp_mem_length-idx, psDec.LPC_order)
 
 	inv_gain_Q30 = silk_INVERSE32_varQ(psPLC.prevGain_Q16[1], 46)
 	if inv_gain_Q30 > (1<<30)-1 {

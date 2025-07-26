@@ -180,7 +180,7 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 
 	for i := 0; i < int(psNLSF_CB.order); i++ {
 		W_tmp_Q9 = silk_SQRT_APPROX(int(W_tmp_QW[i]) << (18 - SilkConstants.NLSF_W_Q))
-		NLSF_Q15_tmp = int(pNLSF_Q15[i]) + silk_DIV32_16(int(res_Q10[i])<<14, int16(W_tmp_Q9))
+		NLSF_Q15_tmp = int(pNLSF_Q15[i]) + silk_DIV32_16(int(res_Q10[i])<<14, int(W_tmp_Q9))
 		pNLSF_Q15[i] = int16(silk_LIMIT(NLSF_Q15_tmp, 0, 32767))
 	}
 
@@ -412,11 +412,11 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 		silk_NLSF_VQ_weights_laroia(W_tmp_QW, NLSF_tmp_Q15, psNLSF_CB.order)
 		for i := 0; i < int(psNLSF_CB.order); i++ {
 			W_tmp_Q9 = silk_SQRT_APPROX(int(W_tmp_QW[i]) << (18 - SilkConstants.NLSF_W_Q))
-			res_Q10[i] = int16(silk_RSHIFT(int(silk_SMULBB(int(res_Q15[i]), int16(W_tmp_Q9)), 14)))
+			res_Q10[i] = int16(silk_RSHIFT(int(silk_SMULBB(int(res_Q15[i]), int(W_tmp_Q9)), 14)))
 		}
 
 		for i := 0; i < int(psNLSF_CB.order); i++ {
-			W_adj_Q5[i] = int16(silk_DIV32_16(int(pW_QW[i])<<5, int16(W_tmp_QW[i])))
+			W_adj_Q5[i] = int16(silk_DIV32_16(int(pW_QW[i])<<5, int(W_tmp_QW[i])))
 		}
 
 		silk_NLSF_unpack(ec_ix, pred_Q8, psNLSF_CB, ind1)
@@ -525,12 +525,12 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 
 	if i := 10; i == 10 {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))))
+			a_Q12[k] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))))
 			a32_QA1[k] = int(a_Q12[k]) << (QA + 1 - 12)
 		}
 	} else {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(silk_RSHIFT_ROUND(int64(a32_QA1[k]), int64(QA+1-12)))
+			a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))
 		}
 	}
 
@@ -737,7 +737,7 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 
 	silk_NLSF_encode(
 		psEncC.indices.NLSFIndices, pNLSF_Q15, psEncC.psNLSF_CB, pNLSFW_QW,
-		NLSF_mu_Q20, NLSF_MSVQ_SURVIVORS, psEncC.indices.signalType,
+		NLSF_mu_Q20, NLSF_MSVQ_SURVIVORS, int(psEncC.indices.signalType),
 	)
 
 	silk_NLSF2A(PredCoef_Q12[1], pNLSF_Q15, psEncC.predictLPCOrder)

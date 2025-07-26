@@ -46,8 +46,8 @@ const (
 )
 
 func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
-	ft := CapToUint(32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
-	return CapToUint(ft*(16384-int64(decay))) >> 15
+	ft := (32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
+	return (ft * (16384 - int64(decay))) >> 15
 }
 
 func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
@@ -68,8 +68,8 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 
 		for i = 1; fs > 0 && i < val; i++ {
 			fs *= 2
-			fl = CapToUint(fl + fs + 2*LAPLACE_MINP)
-			fs = CapToUint((fs * int64(decay)) >> 15)
+			fl = (fl + fs + 2*LAPLACE_MINP)
+			fs = ((fs * int64(decay)) >> 15)
 		}
 
 		if fs == 0 {
@@ -78,8 +78,8 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 			ndi_max = int(32768-fl+LAPLACE_MINP-1) >> LAPLACE_LOG_MINP
 			ndi_max = (ndi_max - s) >> 1
 			di = IMIN(val-i, ndi_max-1)
-			fl = CapToUint(fl + int64(2*di+1+s)*LAPLACE_MINP)
-			fs = IMIN(LAPLACE_MINP, int(32768-fl))
+			fl = (fl + int64(2*di+1+s)*LAPLACE_MINP)
+			fs = IMINLong(LAPLACE_MINP, (32768 - fl))
 			value.Val = (i + di + s) ^ s
 		} else {
 			fs += LAPLACE_MINP
@@ -93,7 +93,7 @@ func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs i
 		OpusAssert(fs > 0)
 	}
 
-	enc.encode_bin(uint(fl), uint(fl+fs), 15)
+	enc.encode_bin(int64(fl), int64(fl+fs), 15)
 }
 
 func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
@@ -101,33 +101,33 @@ func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
 	fm := dec.decode_bin(15)
 	fl := int64(0)
 
-	if fm >= uint(fs) {
+	if fm >= int64(fs) {
 		val++
 		fl = fs
 		fs = l.ec_laplace_get_freq1(fs, decay) + LAPLACE_MINP
-		for fs > LAPLACE_MINP && fm >= uint(fl+2*fs) {
+		for fs > LAPLACE_MINP && fm >= int64(fl+2*fs) {
 			fs *= 2
-			fl = CapToUint(fl + fs)
-			fs = CapToUint((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
+			fl = fl + fs
+			fs = ((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
 			val++
 		}
 		if fs <= LAPLACE_MINP {
-			di := int(fm-uint(fl)) >> (LAPLACE_LOG_MINP + 1)
+			di := int(fm-int64(fl)) >> (LAPLACE_LOG_MINP + 1)
 			val += di
-			fl = CapToUint(fl + int64(2*di*LAPLACE_MINP))
+			fl = (fl + int64(2*di*LAPLACE_MINP))
 		}
-		if fm < uint(fl+fs) {
+		if fm < int64(fl+fs) {
 			val = -val
 		} else {
-			fl = CapToUint(fl + fs)
+			fl = (fl + fs)
 		}
 	}
 
 	OpusAssert(fl < 32768)
 	OpusAssert(fs > 0)
-	OpusAssert(uint(fl) <= fm)
-	OpusAssert(fm < uint(IMIN(int(fl+fs), 32768)))
+	OpusAssert(int64(fl) <= fm)
+	OpusAssert(fm < int64(IMIN(int(fl+fs), 32768)))
 
-	dec.dec_update(uint(fl), uint(IMIN(int(fl+fs), 32768)), 32768)
+	dec.dec_update(int64(fl), int64(IMIN(int(fl+fs), 32768)), 32768)
 	return val
 }

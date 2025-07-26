@@ -242,7 +242,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			}
 		}
 	}
-	var stereo_width int16 = 0
+	var stereo_width = 0
 	if st.channels == 2 && st.force_channels != 1 {
 		stereo_width = compute_stereo_width(pcm, pcm_ptr, frame_size, st.Fs, &st.width_mem)
 	}

@@ -18,8 +18,8 @@ func CapToUint(val int) int {
 	return int(uint(val))
 }
 
-func CapToUintLong(val int64) int {
-	return int(uint(val))
+func CapToUintLong(val int64) int64 {
+	return int64(int64(val))
 }
 
 func MULT16_16SU(a, b int) int {
