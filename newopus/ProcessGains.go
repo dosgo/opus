@@ -86,7 +86,7 @@ func silk_process_gains(
 
 	quant_offset_Q10 = SilkTables.Silk_Quantization_Offsets_Q10[psEnc.indices.signalType>>1][psEnc.indices.quantOffsetType]
 	psEncCtrl.Lambda_Q10 = (TuningParameters.LAMBDA_OFFSET * 1024) +
-		silk_SMULBB((TuningParameters.LAMBDA_DELAYED_DECISIONS*1024), psEnc.nStatesDelayedDecision) +
+		silk_SMULBB(int(TuningParameters.LAMBDA_DELAYED_DECISIONS*1024), psEnc.nStatesDelayedDecision) +
 		silk_SMULWB((TuningParameters.LAMBDA_SPEECH_ACT*262144), psEnc.speech_activity_Q8) +
 		silk_SMULWB((TuningParameters.LAMBDA_INPUT_QUALITY*4096), psEncCtrl.input_quality_Q14) +
 		silk_SMULWB((TuningParameters.LAMBDA_CODING_QUALITY*4096), psEncCtrl.coding_quality_Q14) +

@@ -60,11 +60,11 @@ func silk_CNG(
 		}
 
 		max_Gain_Q16 := 0
-		subfr := 0
+		//subfr := 0
 		for i := 0; i < psDec.nb_subfr; i++ {
 			if psDecCtrl.Gains_Q16[i] > max_Gain_Q16 {
 				max_Gain_Q16 = psDecCtrl.Gains_Q16[i]
-				subfr = i
+				//	subfr = i
 			}
 		}
 
@@ -79,7 +79,7 @@ func silk_CNG(
 
 	if psDec.lossCnt != 0 {
 		CNG_sig_Q10 := make([]int, length+MAX_LPC_ORDER)
-		gain_Q16 := silk_SMULWW(psDec.sPLC.randScale_Q14, psDec.sPLC.prevGain_Q16[1])
+		gain_Q16 := silk_SMULWW(int(psDec.sPLC.randScale_Q14), psDec.sPLC.prevGain_Q16[1])
 
 		if gain_Q16 >= (1<<21) || psCNG.CNG_smth_Gain_Q16 > (1<<23) {
 			gain_Q16 = silk_SMULTT(gain_Q16, gain_Q16)

@@ -31,7 +31,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	}
 
 	if analysis.enabled && analysis.valid != 0 && analysis.activity < 0.4 {
-		target -= int(float32(coded_bins<<EntropyCoder_BITRES) * (0.4 - analysis.activity))
+		target -= int(float32(coded_bins<<BITRES) * (0.4 - analysis.activity))
 	}
 
 	if C == 2 {
@@ -40,14 +40,14 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 			coded_stereo_bands = coded_bands
 		}
 		coded_stereo_dof := (mode.eBands[coded_stereo_bands] << LM) - coded_stereo_bands
-		max_frac := DIV32_16(MULT16_16(int16(0.8*32767.5), int16(coded_stereo_dof)), int16(coded_bins))
+		max_frac := DIV32_16(MULT16_16(int(0.8*32767.5), int16(coded_stereo_dof)), int16(coded_bins))
 		stereo_saving_val := stereo_saving
 		if stereo_saving_val > 256 {
 			stereo_saving_val = 256
 		}
 		saving := int(MIN32(
 			MULT16_32_Q15(int16(max_frac), int(target)),
-			SHR32(MULT16_16(int16(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
+			SHR32(MULT16_16(int(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
 		))
 		target -= saving
 	}
@@ -67,15 +67,15 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 			tonal = 0
 		}
 		tonal -= 0.09
-		tonal_target := target + int(float32(coded_bins<<EntropyCoder_BITRES)*1.2*tonal)
+		tonal_target := target + int(float32(coded_bins<<BITRES)*1.2*tonal)
 		if pitch_change != 0 {
-			tonal_target += int(float32(coded_bins<<EntropyCoder_BITRES) * 0.8)
+			tonal_target += int(float32(coded_bins<<BITRES) * 0.8)
 		}
 		target = tonal_target
 	}
 
 	if has_surround_mask != 0 && lfe == 0 {
-		surround_target := target + int(SHR32(MULT16_16(int16(surround_masking), int16(coded_bins<<EntropyCoder_BITRES)), CeltConstants.DB_SHIFT))
+		surround_target := target + int(SHR32(MULT16_16(int(surround_masking), int16(coded_bins<<EntropyCoder_BITRES)), CeltConstants.DB_SHIFT))
 		if surround_target > target/4 {
 			target = surround_target
 		} else {

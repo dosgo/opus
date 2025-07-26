@@ -645,7 +645,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 					s.sNSQ.silk_NSQ(s, &s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
-				silk_encode_pulses(*psRangeEnc, int(s.indices.signalType), s.indices.quantOffsetType, s.pulses[:], s.frame_length)
+				silk_encode_pulses(*psRangeEnc, int(s.indices.signalType), int(s.indices.quantOffsetType), s.pulses[:], s.frame_length)
 				nBits = psRangeEnc.tell()
 				if useCBR == 0 && iter == 0 && nBits <= maxBits {
 					break
