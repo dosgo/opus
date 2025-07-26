@@ -117,10 +117,10 @@ func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueI
 		x_ptr++
 		y_3 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_0)
-		sum1 = MAC16_16(sum1, tmp, y_1)
-		sum2 = MAC16_16(sum2, tmp, y_2)
-		sum3 = MAC16_16(sum3, tmp, y_3)
+		sum0 = MAC16_16Int(sum0, tmp, y_0)
+		sum1 = MAC16_16Int(sum1, tmp, y_1)
+		sum2 = MAC16_16Int(sum2, tmp, y_2)
+		sum3 = MAC16_16Int(sum3, tmp, y_3)
 
 		tmp = x[x_ptr]
 		x_ptr++

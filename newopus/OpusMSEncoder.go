@@ -49,7 +49,7 @@ func (st *OpusMSEncoder) ResetState() {
 	for s := 0; s < st.layout.nb_streams; s++ {
 		enc := st.encoders[encoder_ptr]
 		encoder_ptr++
-		enc.ResetState()
+		enc.resetState()
 	}
 }
 
@@ -599,21 +599,21 @@ func (st *OpusMSEncoder) SetForceChannels(value int) {
 	}
 }
 
-func (st *OpusMSEncoder) GetMaxBandwidth() OpusBandwidth {
+func (st *OpusMSEncoder) GetMaxBandwidth() int {
 	return st.encoders[0].GetMaxBandwidth()
 }
 
-func (st *OpusMSEncoder) SetMaxBandwidth(value OpusBandwidth) {
+func (st *OpusMSEncoder) SetMaxBandwidth(value int) {
 	for i := 0; i < st.layout.nb_streams; i++ {
 		st.encoders[i].SetMaxBandwidth(value)
 	}
 }
 
-func (st *OpusMSEncoder) GetBandwidth() OpusBandwidth {
+func (st *OpusMSEncoder) GetBandwidth() int {
 	return st.encoders[0].GetBandwidth()
 }
 
-func (st *OpusMSEncoder) SetBandwidth(value OpusBandwidth) {
+func (st *OpusMSEncoder) SetBandwidth(value int) {
 	for i := 0; i < st.layout.nb_streams; i++ {
 		st.encoders[i].SetBandwidth(value)
 	}
