@@ -1,7 +1,7 @@
 package opus
 
 type SilkEncoder struct {
-	state_Fxx                 [ENCODER_NUM_CHANNELS]SilkChannelEncoder
+	state_Fxx                 []SilkChannelEncoder
 	sStereo                   StereoEncodeState
 	nBitsUsedLBRR             int
 	nBitsExceeded             int
@@ -15,9 +15,7 @@ type SilkEncoder struct {
 
 func NewSilkEncoder() *SilkEncoder {
 	enc := new(SilkEncoder)
-	for c := 0; c < ENCODER_NUM_CHANNELS; c++ {
-		enc.state_Fxx[c] = SilkChannelEncoder{}
-	}
+	enc.state_Fxx = make([]SilkChannelEncoder, ENCODER_NUM_CHANNELS)
 	return enc
 }
 

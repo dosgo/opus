@@ -37,7 +37,7 @@ func silk_stereo_decode_mid_only(
 	decode_only_mid.Val = psRangeDec.dec_icdf(SilkTables.Silk_stereo_only_code_mid_iCDF[:], 8)
 }
 
-func silk_stereo_encode_pred(psRangeEnc *EntropyCoder, ix [2][3]byte) {
+func silk_stereo_encode_pred(psRangeEnc *EntropyCoder, ix [][]byte) {
 	var n int
 
 	n = 5*int(ix[0][2]) + int(ix[1][2])

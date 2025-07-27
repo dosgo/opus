@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
 	ret := SilkError.SILK_NO_ERROR
 	encState.Reset()
@@ -50,7 +52,7 @@ func silk_Encode(
 	nBytesOut *int,
 	prefillFlag int) int {
 	ret := SilkError.SILK_NO_ERROR
-	var n, i, nBits, flags, tmp_payloadSize_ms, tmp_complexity int
+	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int
 	var nSamplesToBuffer, nSamplesToBufferMax, nBlocksOf10ms int
 	var nSamplesFromInput, nSamplesFromInputMax int
 	var speech_act_thr_for_switch_Q8 int
@@ -169,7 +171,7 @@ func silk_Encode(
 		if nSamplesToBuffer > nSamplesToBufferMax {
 			nSamplesToBuffer = nSamplesToBufferMax
 		}
-		nSamplesFromInput = silk_DIV32_16(nSamplesToBuffer*psEnc.state_Fxx[0].API_fs_Hz, int16(psEnc.state_Fxx[0].fs_kHz*1000))
+		nSamplesFromInput = silk_DIV32_16(nSamplesToBuffer*psEnc.state_Fxx[0].API_fs_Hz, int(psEnc.state_Fxx[0].fs_kHz*1000))
 
 		if encControl.nChannelsAPI == 2 && encControl.nChannelsInternal == 2 {
 			id := psEnc.state_Fxx[0].nFramesEncoded
@@ -305,8 +307,8 @@ func silk_Encode(
 							}
 
 							silk_encode_indices(&psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
-							silk_encode_pulses(*psRangeEnc, psEnc.state_Fxx[n].indices_LBRR[i].signalType, psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType,
-								psEnc.state_Fxx[n].pulses_LBRR[i][:], psEnc.state_Fxx[n].frame_length)
+							silk_encode_pulses(*psRangeEnc, int(psEnc.state_Fxx[n].indices_LBRR[i].signalType), int(psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType),
+								psEnc.state_Fxx[n].pulses_LBRR[i], psEnc.state_Fxx[n].frame_length)
 						}
 					}
 				}
@@ -346,9 +348,11 @@ func silk_Encode(
 			if encControl.nChannelsInternal == 2 {
 				midOnlyFlag := psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]
 				silk_stereo_LR_to_MS(
-					psEnc.sStereo,
-					psEnc.state_Fxx[0].inputBuf[2:],
-					psEnc.state_Fxx[1].inputBuf[2:],
+					&psEnc.sStereo,
+					psEnc.state_Fxx[0].inputBuf,
+					2,
+					psEnc.state_Fxx[1].inputBuf,
+					2,
 					psEnc.sStereo.predIx[psEnc.state_Fxx[0].nFramesEncoded],
 					&midOnlyFlag,
 					MStargetRates_bps[:],
@@ -357,6 +361,7 @@ func silk_Encode(
 					encControl.toMono,
 					psEnc.state_Fxx[0].fs_kHz,
 					psEnc.state_Fxx[0].frame_length)
+
 				psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded] = midOnlyFlag
 
 				if midOnlyFlag == 0 {
@@ -443,7 +448,7 @@ func silk_Encode(
 				psEnc.state_Fxx[n].nFramesEncoded++
 			}
 
-			psEnc.prev_decode_only_middle = psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded-1]
+			psEnc.prev_decode_only_middle = int(psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded-1])
 
 			if *nBytesOut > 0 && psEnc.state_Fxx[0].nFramesEncoded == psEnc.state_Fxx[0].nFramesPerPacket {
 				flags = 0
@@ -461,7 +466,7 @@ func silk_Encode(
 				}
 
 				if prefillFlag == 0 {
-					psRangeEnc.enc_patch_initial_bits(flags, (psEnc.state_Fxx[0].nFramesPerPacket+1)*encControl.nChannelsInternal)
+					psRangeEnc.enc_patch_initial_bits(int64(flags), (psEnc.state_Fxx[0].nFramesPerPacket+1)*encControl.nChannelsInternal)
 				}
 
 				if psEnc.state_Fxx[0].inDTX != 0 && (encControl.nChannelsInternal == 1 || psEnc.state_Fxx[1].inDTX != 0) {
@@ -476,9 +481,15 @@ func silk_Encode(
 					psEnc.nBitsExceeded = 10000
 				}
 
-				speech_act_thr_for_switch_Q8 = SILK_CONST(SPEECH_ACTIVITY_DTX_THRES, 8) +
-					int(SILK_CONST((1.0-SPEECH_ACTIVITY_DTX_THRES)/MAX_BANDWIDTH_SWITCH_DELAY_MS, 16+8)*
-						psEnc.timeSinceSwitchAllowed_ms>>16)
+				speech_act_thr_for_switch_Q8 = silk_SMLAWB(
+					int(math.Round(float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES)*256.0+0.5)),
+					int(math.Round(
+						((1.0-float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES))/
+							float64(TuningParameters.MAX_BANDWIDTH_SWITCH_DELAY_MS))*
+							16777216.0+0.5,
+					)),
+					psEnc.timeSinceSwitchAllowed_ms,
+				)
 				if psEnc.state_Fxx[0].speech_activity_Q8 < speech_act_thr_for_switch_Q8 {
 					psEnc.allowBandwidthSwitch = 1
 					psEnc.timeSinceSwitchAllowed_ms = 0

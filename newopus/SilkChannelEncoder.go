@@ -80,7 +80,7 @@ type SilkChannelEncoder struct {
 	LBRR_enabled                  int
 	LBRR_GainIncreases            int
 	indices_LBRR                  [MAX_FRAMES_PER_PACKET]*SideInfoIndices
-	pulses_LBRR                   [MAX_FRAMES_PER_PACKET][MAX_FRAME_LENGTH]byte
+	pulses_LBRR                   [MAX_FRAMES_PER_PACKET][]int8
 	sShape                        SilkShapeState
 	sPrefilt                      SilkPrefilterState
 	x_buf                         [2*MAX_FRAME_LENGTH + LA_SHAPE_MAX]int16

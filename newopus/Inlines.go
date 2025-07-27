@@ -1214,7 +1214,7 @@ func silk_DIV32_varQ(a32, b32, Qres int) int {
 	a32_nrm := silk_LSHIFT(a32, a_headrm)
 	b_headrm := silk_CLZ32(silk_abs(b32)) - 1
 	b32_nrm := silk_LSHIFT(b32, b_headrm)
-	b32_inv := silk_DIV32_16(2147483647>>2, int16(silk_RSHIFT(b32_nrm, 16)))
+	b32_inv := silk_DIV32_16(2147483647>>2, int(silk_RSHIFT(b32_nrm, 16)))
 	result := silk_SMULWB(a32_nrm, b32_inv)
 	a32_nrm = silk_SUB32_ovflw(a32_nrm, silk_LSHIFT_ovflw(silk_SMMUL(b32_nrm, result), 3))
 	result = silk_SMLAWB(result, a32_nrm, b32_inv)
