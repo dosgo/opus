@@ -104,17 +104,17 @@ func gain_fade(buffer []int16, buf_ptr int, g1 int, g2 int, overlap48 int, frame
 	if channels == 1 {
 		for i := 0; i < overlap; i++ {
 			var g, w int
-			w = MULT16_16_Q15(window[i*inc], window[i*inc])
+			w = MULT16_16_Q15Int(window[i*inc], window[i*inc])
 			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
-			buffer[buf_ptr+i] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i])))
+			buffer[buf_ptr+i] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i])))
 		}
 	} else {
 		for i := 0; i < overlap; i++ {
 			var g, w int
-			w = MULT16_16_Q15(window[i*inc], window[i*inc])
+			w = MULT16_16_Q15Int(window[i*inc], window[i*inc])
 			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
-			buffer[buf_ptr+i*2] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i*2])))
-			buffer[buf_ptr+i*2+1] = int16(MULT16_16_Q15(int(g), int(buffer[buf_ptr+i*2+1])))
+			buffer[buf_ptr+i*2] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i*2])))
+			buffer[buf_ptr+i*2+1] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i*2+1])))
 		}
 	}
 	for c := 0; c < channels; c++ {

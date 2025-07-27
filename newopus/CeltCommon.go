@@ -196,24 +196,24 @@ func patch_transient_decision(newE [][]int, oldE [][]int, nbEBands int, start in
 	if C == 1 {
 		spread_old[start] = oldE[0][start]
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), oldE[0][i])
+			spread_old[i] = MAX16Int(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), oldE[0][i])
 		}
 	} else {
-		spread_old[start] = MAX16(oldE[0][start], oldE[1][start])
+		spread_old[start] = MAX16Int(oldE[0][start], oldE[1][start])
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = MAX16(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), MAX16(oldE[0][i], oldE[1][i]))
+			spread_old[i] = MAX16Int(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), MAX16(oldE[0][i], oldE[1][i]))
 		}
 	}
 
 	for i := end - 2; i >= start; i-- {
-		spread_old[i] = MAX16(spread_old[i], spread_old[i+1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)))
+		spread_old[i] = MAX16Int(spread_old[i], spread_old[i+1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)))
 	}
 
 	for c := 0; c < C; c++ {
 		for i := IMAX(2, start); i < end-1; i++ {
-			x1 := MAX16(0, newE[c][i])
-			x2 := MAX16(0, spread_old[i])
-			diff := MAX16(0, x1-x2)
+			x1 := MAX16Int(0, newE[c][i])
+			x2 := MAX16Int(0, spread_old[i])
+			diff := MAX16Int(0, x1-x2)
 			mean_diff += int(diff)
 		}
 	}
@@ -380,7 +380,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 			}
 		}
 		logXC = celt_log2(1074791424 - MULT16_16(int16(sum), int16(sum)))
-		logXC2 = MAX16(logXC/2, celt_log2(1074791424-MULT16_16(int16(minXC), int16(minXC))))
+		logXC2 = MIN16Int(logXC/2, celt_log2(1074791424-MULT16_16(int16(minXC), int16(minXC))))
 		logXC = (logXC - int(6.0*float32(1<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
 		logXC2 = (logXC2 - int(6.0*float32(1<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
 		trim += MAX16(-1024, MULT16_16_Q15(int16(0.75*32767.5), int16(logXC)))
@@ -535,10 +535,10 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 				if bandLogE2[c][i] > bandLogE2[c][i-1]+int(0.5*float32(1<<CeltConstants.DB_SHIFT)) {
 					last = i
 				}
-				f[i] = MIN16(f[i-1]+int(1.5*float32(1<<CeltConstants.DB_SHIFT)), bandLogE2[c][i])
+				f[i] = MIN16Int(f[i-1]+int(1.5*float32(1<<CeltConstants.DB_SHIFT)), bandLogE2[c][i])
 			}
 			for i := last - 1; i >= 0; i-- {
-				f[i] = MIN16(f[i], MIN16(f[i+1]+int(2.0*float32(1<<CeltConstants.DB_SHIFT)), bandLogE2[c][i]))
+				f[i] = MIN16Int(f[i], MIN16Int(f[i+1]+int(2.0*float32(1<<CeltConstants.DB_SHIFT)), bandLogE2[c][i]))
 			}
 			offset := int(1.0 * float32(1<<CeltConstants.DB_SHIFT))
 			for i := 2; i < end-2; i++ {
@@ -578,11 +578,11 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 				if f0 < f1-int(4.0*float32(1<<CeltConstants.DB_SHIFT)) {
 					f0 = f1 - int(4.0*float32(1<<CeltConstants.DB_SHIFT))
 				}
-				follower[0][i] = (MAX16(0, bandLogE[0][i]-f0) + MAX16(0, bandLogE[1][i]-f1)) / 2
+				follower[0][i] = (MAX16Int(0, bandLogE[0][i]-f0) + MAX16Int(0, bandLogE[1][i]-f1)) / 2
 			}
 		} else {
 			for i := start; i < end; i++ {
-				follower[0][i] = MAX16(0, bandLogE[0][i]-follower[0][i])
+				follower[0][i] = MAX16Int(0, bandLogE[0][i]-follower[0][i])
 			}
 		}
 

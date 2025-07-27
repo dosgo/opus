@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 type band_ctx struct {
 	encode         int
 	m              *CeltMode
@@ -103,7 +105,7 @@ func normalise_bands(m *CeltMode, freq [][]int, X [][]int, bandE [][]int, end in
 			j := M * int(eBands[i])
 			endBand := M * int(eBands[i+1])
 			for j < endBand {
-				X[c][j] = MULT16_16_Q15(VSHR32(freq[c][j], shift-1), g)
+				X[c][j] = MULT16_16_Q15Int(VSHR32(freq[c][j], shift-1), g)
 				j++
 			}
 		}
@@ -171,8 +173,10 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 		N0 := int(m.eBands[i+1] - m.eBands[i])
 		OpusAssert(pulses[i] >= 0)
 		depth := celt_udiv(1+pulses[i], N0) >> LM
-		thresh32 := SHR32(celt_exp2(-SHL16(depth, 10-BITRES)), 1)
-		thresh := MULT16_32_Q15(QCONST16(0.5, 15), IMIN32(32767, thresh32))
+		thresh32 := SHR32(celt_exp2(-SHL16Int(depth, 10-BITRES)), 1)
+		//thresh := MULT16_32_Q15(QCONST16(0.5, 15), IMIN32(32767, thresh32))
+		thresh := (MULT16_32_Q15(int16(math.Round(0.5+(0.5)*float64(1<<15))), MIN32(32767, thresh32)))
+
 		t := N0 << LM
 		shift := celt_ilog2(t) >> 1
 		t = SHL32(t, (7-shift)<<1)
@@ -182,21 +186,21 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 			prev1 := prev1logE[c*m.nbEBands+i]
 			prev2 := prev2logE[c*m.nbEBands+i]
 			if C == 1 {
-				prev1 = MAX16(prev1, prev1logE[m.nbEBands+i])
-				prev2 = MAX16(prev2, prev2logE[m.nbEBands+i])
+				prev1 = MAX16Int(prev1, prev1logE[m.nbEBands+i])
+				prev2 = MAX16Int(prev2, prev2logE[m.nbEBands+i])
 			}
-			Ediff := EXTEND32(logE[c*m.nbEBands+i]) - EXTEND32(MIN16(prev1, prev2))
+			Ediff := EXTEND32Int(logE[c*m.nbEBands+i]) - EXTEND32Int(MIN16Int(prev1, prev2))
 			Ediff = MAX32(0, Ediff)
 			r := 0
 			if Ediff < 16384 {
 				r32 := SHR32(celt_exp2(-EXTRACT16(Ediff)), 1)
-				r = 2 * IMIN16(16383, r32)
+				r = 2 * MIN16Int(16383, r32)
 			}
 			if LM == 3 {
-				r = MULT16_16_Q14(23170, IMIN32(23169, r))
+				r = MULT16_16_Q14Int(23170, MIN32(23169, r))
 			}
-			r = SHR16(IMIN16(thresh, r), 1)
-			r = SHR32(MULT16_16_Q15(sqrt_1, r), shift)
+			r = SHR16Int(MIN16Int(thresh, r), 1)
+			r = SHR32(MULT16_16_Q15Int(sqrt_1, r), shift)
 
 			X := m.eBands[i] << LM
 			renormalize := 0
@@ -953,10 +957,10 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 		y2[y2_ptr+1] = sign * x2[x2_ptr]
 
 		if resynth != 0 {
-			X[X_ptr] = MULT16_16_Q15(mid, X[X_ptr])
-			X[X_ptr+1] = MULT16_16_Q15(mid, X[X_ptr+1])
-			Y[Y_ptr] = MULT16_16_Q15(side, Y[Y_ptr])
-			Y[Y_ptr+1] = MULT16_16_Q15(side, Y[Y_ptr+1])
+			X[X_ptr] = MULT16_16_Q15Int(mid, X[X_ptr])
+			X[X_ptr+1] = MULT16_16_Q15Int(mid, X[X_ptr+1])
+			Y[Y_ptr] = MULT16_16_Q15Int(side, Y[Y_ptr])
+			Y[Y_ptr+1] = MULT16_16_Q15Int(side, Y[Y_ptr+1])
 			tmp := X[X_ptr]
 			X[X_ptr] = tmp - Y[Y_ptr]
 			Y[Y_ptr] = tmp + Y[Y_ptr]

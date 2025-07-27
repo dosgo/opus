@@ -8,8 +8,8 @@ func exp_rotation1(X []int, X_ptr int, len int, stride int, c int, s int) {
 	for i := 0; i < len-stride; i++ {
 		x1 := X[Xptr]
 		x2 := X[Xptr+stride]
-		X[Xptr+stride] = EXTRACT16(PSHR32(MAC16_16(MULT16_16(c, x2), s, x1), 15))
-		X[Xptr] = EXTRACT16(PSHR32(MAC16_16(MULT16_16(c, x1), ms, x2), 15))
+		X[Xptr+stride] = EXTRACT16(PSHR32(MAC16_16Int(MULT16_16(c, x2), s, x1), 15))
+		X[Xptr] = EXTRACT16(PSHR32(MAC16_16Int(MULT16_16(c, x1), ms, x2), 15))
 		Xptr++
 	}
 	Xptr = X_ptr + (len - 2*stride - 1)
@@ -124,7 +124,7 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 
 		rcp := EXTRACT16(MULT16_32_Q16(K-1, Celt_rcp(sum)))
 		for j := 0; j < N; j++ {
-			iy[j] = MULT16_16_Q15(X[X_ptr+j], rcp)
+			iy[j] = MULT16_16_Q15Int(X[X_ptr+j], rcp)
 			y[j] = iy[j]
 			yy = MAC16_16(yy, y[j], y[j])
 			xy = MAC16_16(xy, X[X_ptr+j], y[j])
@@ -149,10 +149,10 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 		best_num := -CeltConstants.VERY_LARGE16
 		best_den := 0
 		rshift := 1 + celt_ilog2(K-pulsesLeft+i+1)
-		yy = ADD16(yy, 1)
+		yy = ADD16Int(yy, 1)
 		for j := 0; j < N; j++ {
-			Rxy := EXTRACT16(SHR32(ADD32(xy, EXTEND32(X[X_ptr+j])), rshift))
-			Ryy := ADD16(yy, y[j])
+			Rxy := EXTRACT16(SHR32(ADD32(xy, EXTEND32Int(X[X_ptr+j])), rshift))
+			Ryy := ADD16Int(yy, y[j])
 			Rxy = MULT16_16_Q15(Rxy, Rxy)
 			if MULT16_16(best_den, Rxy) > MULT16_16(Ryy, best_num) {
 				best_den = Ryy
@@ -160,8 +160,8 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 				best_id = j
 			}
 		}
-		xy = ADD32(xy, EXTEND32(X[X_ptr+best_id]))
-		yy = ADD16(yy, y[best_id])
+		xy = ADD32(xy, EXTEND32Int(X[X_ptr+best_id]))
+		yy = ADD16Int(yy, y[best_id])
 		y[best_id] += 2 * s
 		iy[best_id]++
 	}
@@ -217,6 +217,6 @@ func stereo_itheta(X []int, X_ptr int, Y []int, Y_ptr int, stereo int, N int) in
 	}
 	mid := celt_sqrt(Emid)
 	side := celt_sqrt(Eside)
-	itheta := MULT16_16_Q15(int(0.5+(0.63662)*(1<<15)), Celt_atan2p(side, mid))
+	itheta := MULT16_16_Q15Int(int(0.5+(0.63662)*(1<<15)), Celt_atan2p(side, mid))
 	return itheta
 }
