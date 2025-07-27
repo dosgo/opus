@@ -454,7 +454,10 @@ func (s *SilkChannelEncoder) silk_setup_LBRR(TargetRate_bps int) int {
 		} else {
 			LBRR_rate_thres_bps = SilkConstants.LBRR_WB_MIN_RATE_BPS
 		}
-		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), silk_SMULWB(0.01, 1<<16))
+		//	LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), silk_SMULWB(0.01, 1<<16))
+
+		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), (0.01*(1<<(16)) + 0.5))
+
 		if TargetRate_bps > LBRR_rate_thres_bps {
 			if LBRR_in_previous_packet == 0 {
 				s.LBRR_GainIncreases = 7

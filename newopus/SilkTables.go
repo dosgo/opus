@@ -653,7 +653,7 @@ func init() {
 }
 
 var SilkTables = struct {
-	Quantization_Offsets_Q10            [][]int16
+	Silk_Quantization_Offsets_Q10       [][]int16
 	Silk_type_offset_VAD_iCDF           []int16
 	Silk_type_offset_no_VAD_iCDF        []int16
 	Silk_delta_gain_iCDF                []int16
@@ -698,7 +698,7 @@ var SilkTables = struct {
 	Silk_SNR_table_Q1                   []int16
 	Silk_LTP_gain_middle_avg_RD_Q14     int16
 }{
-	Quantization_Offsets_Q10:            silk_Quantization_Offsets_Q10,
+	Silk_Quantization_Offsets_Q10:       silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
 	Silk_type_offset_no_VAD_iCDF:        silk_type_offset_no_VAD_iCDF,
 	Silk_delta_gain_iCDF:                silk_delta_gain_iCDF,
