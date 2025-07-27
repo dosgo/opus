@@ -55,11 +55,11 @@ func MULT32_32_Q31(a, b int) int {
 }
 
 func QCONST16(x float64, bits int) int16 {
-	return int16(0.5 + x*float64(1<<bits))
+	return int16(0.5 + x*float64(int(1<<bits)))
 }
 
 func QCONST32(x float64, bits int) int {
-	return int(0.5 + x*float64(1<<bits))
+	return int(0.5 + x*float64(int(1<<bits)))
 }
 
 func NEG16(x int16) int16 {

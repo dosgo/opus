@@ -76,7 +76,7 @@ func (this *CeltDecoder) ResetState() {
 		this.oldLogE2 = make([]int, 2*nbEBands)
 		this.backgroundLogE = make([]int, 2*nbEBands)
 
-		q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
+		q28 := int(QCONST16(28.0, CeltConstants.DB_SHIFT))
 		for i := 0; i < 2*nbEBands; i++ {
 			this.oldLogE[i] = -q28
 			this.oldLogE2[i] = -q28
@@ -151,7 +151,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 		for c := 0; c < C; c++ {
 			for i := this.start; i < end; i++ {
 				idx := c*nbEBands + i
-				this.oldEBands[idx] = MAX16(this.backgroundLogE[idx], this.oldEBands[idx]-decay)
+				this.oldEBands[idx] = MIN16Int(this.backgroundLogE[idx], this.oldEBands[idx]-int(decay))
 			}
 		}
 		seed := this.rng
@@ -174,7 +174,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 		celt_synthesis(mode, X, out_syn, out_syn_ptrs, this.oldEBands, this.start, effEnd, C, C, 0, LM, this.downsample, 0)
 	} else {
-		fade := Q15ONEQ15ONE
+		fade := CeltConstants.Q15ONE
 		pitch_index := 0
 		if this.loss_count == 0 {
 			this.last_pitch_index = celt_plc_pitch_search(this.decode_mem, C)
@@ -190,7 +190,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 		for c := 0; c < C; c++ {
 			buf := this.decode_mem[c]
 			for i := 0; i < CeltConstants.MAX_PERIOD; i++ {
-				exc[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD+i], CeltConstants.SIG_SHIFT)
+				exc[i] = ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD+i], CeltConstants.SIG_SHIFT)
 			}
 
 			if this.loss_count == 0 {
@@ -206,7 +206,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			exc_length := IMIN(2*pitch_index, CeltConstants.MAX_PERIOD)
 			lpc_mem := make([]int, CeltConstants.LPC_ORDER)
 			for i := 0; i < CeltConstants.LPC_ORDER; i++ {
-				lpc_mem[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-exc_length-1-i], CeltConstants.SIG_SHIFT)
+				lpc_mem[i] = ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-exc_length-1-i], CeltConstants.SIG_SHIFT)
 			}
 			celt_fir(exc, CeltConstants.MAX_PERIOD-exc_length, this.lpc[c], 0, exc, CeltConstants.MAX_PERIOD-exc_length, exc_length, CeltConstants.LPC_ORDER, lpc_mem)
 
@@ -227,30 +227,30 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 			extrapolation_offset := CeltConstants.MAX_PERIOD - pitch_index
 			extrapolation_len := N + overlap
-			attenuation := MULT16_16_Q15(fade, decay)
+			attenuation := MULT16_16_Q15Int(fade, decay)
 			S1 := 0
 			j := 0
 			for i := 0; i < extrapolation_len; i++ {
 				if j >= pitch_index {
 					j -= pitch_index
-					attenuation = MULT16_16_Q15(attenuation, decay)
+					attenuation = MULT16_16_Q15Int(attenuation, decay)
 				}
-				val := MULT16_16_Q15(attenuation, exc[extrapolation_offset+j])
-				buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = SHL32(val, SIG_SHIFT)
-				tmp := ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD-N+extrapolation_offset+j], SIG_SHIFT)
+				val := MULT16_16_Q15Int(attenuation, exc[extrapolation_offset+j])
+				buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = SHL32(val, CeltConstants.SIG_SHIFT)
+				tmp := ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.MAX_PERIOD-N+extrapolation_offset+j], CeltConstants.SIG_SHIFT)
 				S1 += SHR32(MULT16_16(tmp, tmp), 8)
 				j++
 			}
 
 			lpc_mem = make([]int, CeltConstants.LPC_ORDER)
 			for i := 0; i < CeltConstants.LPC_ORDER; i++ {
-				lpc_mem[i] = ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-N-1-i], CeltConstants.SIG_SHIFT)
+				lpc_mem[i] = ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-N-1-i], CeltConstants.SIG_SHIFT)
 			}
 			celt_iir(buf, CeltConstants.DECODE_BUFFER_SIZE-N, this.lpc[c], buf, CeltConstants.DECODE_BUFFER_SIZE-N, extrapolation_len, LPC_ORDER, lpc_mem)
 
 			S2 := 0
 			for i := 0; i < extrapolation_len; i++ {
-				tmp := ROUND16(buf[CeltConstants.DECODE_BUFFER_SIZE-N+i], CeltConstants.SIG_SHIFT)
+				tmp := ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-N+i], CeltConstants.SIG_SHIFT)
 				S2 += SHR32(MULT16_16(tmp, tmp), 8)
 			}
 			if !(S1 > SHR32(S2, 2)) {
@@ -336,7 +336,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 
 	if CC == 1 {
 		for i := 0; i < nbEBands; i++ {
-			oldBandE[i] = MAX16(oldBandE[i], oldBandE[nbEBands+i])
+			oldBandE[i] = MAX16Int(oldBandE[i], oldBandE[nbEBands+i])
 		}
 	}
 
@@ -476,7 +476,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	}
 
 	if silence != 0 {
-		q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
+		q28 := int(QCONST16(28.0, CeltConstants.DB_SHIFT))
 		for i := 0; i < CC*nbEBands; i++ {
 			oldBandE[i] = -q28
 		}
@@ -511,22 +511,22 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	if isTransient == 0 {
 		max_background_increase := 0
 		if this.loss_count < 10 {
-			max_background_increase = M * QCONST16(0.001, CeltConstants.DB_SHIFT)
+			max_background_increase = M * int(QCONST16(0.001, CeltConstants.DB_SHIFT))
 		} else {
-			max_background_increase = QCONST16(1.0, CeltConstants.DB_SHIFT)
+			max_background_increase = int(QCONST16(1.0, CeltConstants.DB_SHIFT))
 		}
 		copy(oldLogE2, oldLogE)
 		copy(oldLogE, oldBandE)
 		for i := 0; i < 2*nbEBands; i++ {
-			backgroundLogE[i] = MIN16(backgroundLogE[i]+max_background_increase, oldBandE[i])
+			backgroundLogE[i] = MIN16Int(backgroundLogE[i]+max_background_increase, oldBandE[i])
 		}
 	} else {
 		for i := 0; i < 2*nbEBands; i++ {
-			oldLogE[i] = MIN16(oldLogE[i], oldBandE[i])
+			oldLogE[i] = MIN16Int(oldLogE[i], oldBandE[i])
 		}
 	}
 
-	q28 := QCONST16(28.0, CeltConstants.DB_SHIFT)
+	q28 := int(QCONST16(28.0, CeltConstants.DB_SHIFT))
 	for c := 0; c < 2; c++ {
 		for i := 0; i < start; i++ {
 			idx := c*nbEBands + i

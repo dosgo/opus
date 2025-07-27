@@ -72,24 +72,24 @@ func silk_gains_quant(ind []byte, gain_Q16 []int, prev_ind *byte, conditional in
 	}
 }
 
-func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind *byte, conditional int, nb_subfr int) {
+func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind BoxedValueByte, conditional int, nb_subfr int) {
 	for k := 0; k < nb_subfr; k++ {
 		if k == 0 && conditional == 0 {
-			*prev_ind = byte(silk_max_int(int(ind[k]), int(*prev_ind)-16))
+			prev_ind.Val = int8(silk_max_int(int(ind[k]), int(prev_ind.Val)-16))
 		} else {
 			ind_tmp := int(ind[k]) + MIN_DELTA_GAIN_QUANT
 
-			double_step_size_threshold := 2*MAX_DELTA_GAIN_QUANT - N_LEVELS_QGAIN + int(*prev_ind)
+			double_step_size_threshold := 2*MAX_DELTA_GAIN_QUANT - N_LEVELS_QGAIN + int(prev_ind.Val)
 			if ind_tmp > double_step_size_threshold {
-				*prev_ind = byte(int(*prev_ind) + (silk_LSHIFT(int(ind_tmp), 1) - double_step_size_threshold))
+				prev_ind.Val = int8(int(prev_ind.Val) + (silk_LSHIFT(int(ind_tmp), 1) - double_step_size_threshold))
 			} else {
-				*prev_ind = byte(int(*prev_ind) + ind_tmp)
+				prev_ind.Val = int8(int(prev_ind.Val) + ind_tmp)
 			}
 		}
 
-		*prev_ind = byte(silk_LIMIT_int(int(*prev_ind), 0, N_LEVELS_QGAIN-1))
+		prev_ind.Val = int8(silk_LIMIT_int(int(prev_ind.Val), 0, N_LEVELS_QGAIN-1))
 
-		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int(*prev_ind))+OFFSET, 3967))
+		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int(prev_ind.Val))+OFFSET, 3967))
 	}
 }
 
