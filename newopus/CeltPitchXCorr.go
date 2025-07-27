@@ -6,21 +6,25 @@ func pitch_xcorr(_x []int, _y []int, xcorr []int, len int, max_pitch int) int {
 	if max_pitch <= 0 {
 		panic("max_pitch must be greater than 0")
 	}
-	var sum0, sum1, sum2, sum3 int
+
+	sum0 := BoxedValueInt{0}
+	sum1 := BoxedValueInt{0}
+	sum2 := BoxedValueInt{0}
+	sum3 := BoxedValueInt{0}
 	for i = 0; i < max_pitch-3; i += 4 {
-		sum0 = 0
-		sum1 = 0
-		sum2 = 0
-		sum3 = 0
+		sum0.Val = 0
+		sum1.Val = 0
+		sum2.Val = 0
+		sum3.Val = 0
 		xcorr_kernel_int(_x, _y, i, &sum0, &sum1, &sum2, &sum3, len)
-		xcorr[i] = sum0
-		xcorr[i+1] = sum1
-		xcorr[i+2] = sum2
-		xcorr[i+3] = sum3
-		sum0 = MAX32(sum0, sum1)
-		sum2 = MAX32(sum2, sum3)
-		sum0 = MAX32(sum0, sum2)
-		maxcorr = MAX32(maxcorr, sum0)
+		xcorr[i] = sum0.Val
+		xcorr[i+1] = sum1.Val
+		xcorr[i+2] = sum2.Val
+		xcorr[i+3] = sum3.Val
+		sum0.Val = MAX32(sum0.Val, sum1.Val)
+		sum2.Val = MAX32(sum2.Val, sum3.Val)
+		sum0.Val = MAX32(sum0.Val, sum2.Val)
+		maxcorr = MAX32(maxcorr, sum0.Val)
 	}
 	for ; i < max_pitch; i++ {
 		inner_sum := celt_inner_prod_int(_x, 0, _y, i, len)
@@ -30,7 +34,7 @@ func pitch_xcorr(_x []int, _y []int, xcorr []int, len int, max_pitch int) int {
 	return maxcorr
 }
 
-func pitch_xcorr(_x []int16, _x_ptr int, _y []int16, _y_ptr int, xcorr []int, len int, max_pitch int) int {
+func pitch_xcorr1(_x []int16, _x_ptr int, _y []int16, _y_ptr int, xcorr []int, len int, max_pitch int) int {
 	var i int
 	maxcorr := int(1)
 	if max_pitch <= 0 {
@@ -60,7 +64,7 @@ func pitch_xcorr(_x []int16, _x_ptr int, _y []int16, _y_ptr int, xcorr []int, le
 	return maxcorr
 }
 
-func pitch_xcorr(_x []int16, _y []int16, xcorr []int, len int, max_pitch int) int {
+func pitch_xcorr2(_x []int16, _y []int16, xcorr []int, len int, max_pitch int) int {
 	var i int
 	maxcorr := int(1)
 	if max_pitch <= 0 {
@@ -90,15 +94,6 @@ func pitch_xcorr(_x []int16, _y []int16, xcorr []int, len int, max_pitch int) in
 	return maxcorr
 }
 
-func xcorr_kernel_int(_x []int, _y []int, i int, sum0 *int, sum1 *int, sum2 *int, sum3 *int, len int) {
-	for j := 0; j < len; j++ {
-		*sum0 += _x[j] * _y[j+i]
-		*sum1 += _x[j] * _y[j+i+1]
-		*sum2 += _x[j] * _y[j+i+2]
-		*sum3 += _x[j] * _y[j+i+3]
-	}
-}
-
 func xcorr_kernel_short(_x []int16, _x_ptr int, _y []int16, _y_ptr int, sum0 *int, sum1 *int, sum2 *int, sum3 *int, len int) {
 	for j := 0; j < len; j++ {
 		x0 := int(_x[_x_ptr+j])
@@ -109,26 +104,10 @@ func xcorr_kernel_short(_x []int16, _x_ptr int, _y []int16, _y_ptr int, sum0 *in
 	}
 }
 
-func celt_inner_prod_int(_x []int, _x_idx int, _y []int, _y_idx int, len int) int {
-	sum := int(0)
-	for i := 0; i < len; i++ {
-		sum += _x[_x_idx+i] * _y[_y_idx+i]
-	}
-	return sum
-}
-
 func celt_inner_prod_short_offset(_x []int16, _x_ptr int, _y []int16, _y_ptr int, len int) int {
 	sum := int(0)
 	for i := 0; i < len; i++ {
 		sum += int(_x[_x_ptr+i]) * int(_y[_y_ptr+i])
-	}
-	return sum
-}
-
-func celt_inner_prod_short(_x []int16, _y []int16, _y_idx int, len int) int {
-	sum := int(0)
-	for i := 0; i < len; i++ {
-		sum += int(_x[i]) * int(_y[_y_idx+i])
 	}
 	return sum
 }
