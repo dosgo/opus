@@ -167,7 +167,7 @@ func silk_Decode(
 			}
 		} else {
 			for n = 0; n < 2; n++ {
-				MS_pred_Q13[n] = psDec.sStereo.pred_prev_Q13[n]
+				MS_pred_Q13[n] = int(psDec.sStereo.pred_prev_Q13[n])
 			}
 		}
 	}

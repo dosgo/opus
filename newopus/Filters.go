@@ -280,7 +280,7 @@ func silk_LPC_analysis_filter(
 	}
 }
 
-const A_LIMIT = int(math.Round(0.99975 * float64(1<<QA)))
+const A_LIMIT = int(math.Round(0.99975 * int(1<<QA)))
 
 func LPC_inverse_pred_gain_QA(
 	A_QA [2][]int,

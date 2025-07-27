@@ -58,8 +58,7 @@ func celt_iir(_x []int, _x_ptr int, den []int, _y []int, _y_ptr int, N int, ord 
 		_sum1.Val = _x[_x_ptr+i+1]
 		_sum2.Val = _x[_x_ptr+i+2]
 		_sum3.Val = _x[_x_ptr+i+3]
-		xcorr_kernel(rden, y, i, &_sum0, &_sum1, &_sum2, &_sum3, ord)
-
+		xcorr_kernel_int(rden, y, i, &_sum0, &_sum1, &_sum2, &_sum3, ord)
 		sum0 = _sum0.Val
 		sum1 = _sum1.Val
 		sum2 = _sum2.Val

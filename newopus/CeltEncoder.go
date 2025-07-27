@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 type CeltEncoder struct {
 	mode              *CeltMode
 	channels          int
@@ -114,13 +116,13 @@ func (this *CeltEncoder) ResetState() {
 	this.oldLogE2 = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
 
 	for i := 0; i < this.mode.nbEBands; i++ {
-		val := -int(0.5 + 28.0*int(1<<CeltConstants.DB_SHIFT))
+		val := -int(math.Round(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
 		this.oldLogE[0][i] = val
 		this.oldLogE2[0][i] = val
 	}
 	if this.channels == 2 {
 		for i := 0; i < this.mode.nbEBands; i++ {
-			val := -int(0.5 + 28.0*int(1<<CeltConstants.DB_SHIFT))
+			val := -int(math.Round(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
 			this.oldLogE[1][i] = val
 			this.oldLogE2[1][i] = val
 		}
@@ -168,7 +170,7 @@ func (this *CeltEncoder) celt_encoder_init(sampling_rate int, channels int) int 
 	return OpusError.OPUS_OK
 }
 
-func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC int, N int, prefilter_tapset int, pitch *int, gain *int, qgain *int, enabled int, nbAvailableBytes int) int {
+func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC int, N int, prefilter_tapset int, pitch BoxedValueInt, gain BoxedValueInt, qgain BoxedValueInt, enabled int, nbAvailableBytes int) int {
 	mode := this.mode
 	overlap := mode.overlap
 	pre := make([][]int, CC)
@@ -180,19 +182,19 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		copy(pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], prefilter_mem[c])
 		copy(pre[c][CeltConstants.COMBFILTER_MAXPERIOD:], input[c][overlap:overlap+N])
 	}
-
+	pitch_index := 0
 	var gain1 int
 	if enabled != 0 {
 		pitch_buf := make([]int, (CeltConstants.COMBFILTER_MAXPERIOD+N)>>1)
 		pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
-		pitch_index := 0
+
 		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
 		pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index
 		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
 		if pitch_index > CeltConstants.COMBFILTER_MAXPERIOD-2 {
 			pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}
-		gain1 = MULT16_16_Q15(int(0.5+0.7*float64(1<<15)), gain1)
+		gain1 = int(MULT16_16_Q15(int16(math.Round(0.5+0.7*float64(int(1<<15)))), int16(gain1)))
 		if this.loss_rate > 2 {
 			gain1 = HALF32(gain1)
 		}
@@ -205,33 +207,33 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 	} else {
 		gain1 = 0
 		pitch_index := CeltConstants.COMBFILTER_MINPERIOD
-		*pitch = pitch_index
+		pitch.Val = pitch_index
 	}
 
-	pf_threshold := int(0.5 + 0.2*float64(1<<15))
-	if abs(*pitch-this.prefilter_period)*10 > *pitch {
-		pf_threshold += int(0.5 + 0.2*float64(1<<15))
+	pf_threshold := int16(math.Round(0.5 + 0.2*(1<<15)))
+	if abs(pitch.Val-this.prefilter_period)*10 > pitch.Val {
+		pf_threshold += int16(math.Round(0.5 + 0.2*(1<<15)))
 	}
 	if nbAvailableBytes < 25 {
-		pf_threshold += int(0.5 + 0.1*float64(1<<15))
+		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
 	}
 	if nbAvailableBytes < 35 {
-		pf_threshold += int(0.5 + 0.1*float64(1<<15))
+		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
 	}
-	if this.prefilter_gain > int(0.5+0.4*float64(1<<15)) {
-		pf_threshold -= int(0.5 + 0.1*float64(1<<15))
+	if this.prefilter_gain > int(math.Round(0.5+0.4*(1<<15))) {
+		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
 	}
-	if this.prefilter_gain > int(0.5+0.55*float64(1<<15)) {
-		pf_threshold -= int(0.5 + 0.1*float64(1<<15))
+	if this.prefilter_gain > int(math.Round(0.5+0.55*(1<<15))) {
+		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
 	}
-	pf_threshold = MAX16(pf_threshold, int(0.5+0.2*float64(1<<15)))
+	pf_threshold = MAX16(pf_threshold, int16(math.Round(0.5+0.2*(1<<15))))
 
 	pf_on := 0
 	qg := 0
-	if gain1 < pf_threshold {
+	if gain1 < int(pf_threshold) {
 		gain1 = 0
 	} else {
-		if ABS32(gain1-this.prefilter_gain) < int(0.5+0.1*float64(1<<15)) {
+		if ABS32(gain1-this.prefilter_gain) < int(math.Round(0.5+0.1*float64(1<<15))) {
 			gain1 = this.prefilter_gain
 		}
 		qg = ((gain1 + 1536) >> 10) / 3
@@ -240,13 +242,13 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		} else if qg > 7 {
 			qg = 7
 		}
-		gain1 = int(0.5+0.09375*float64(1<<15)) * (qg + 1)
+		gain1 = int(math.Round(0.5 + 0.09375*(1<<15)*float64(qg+1)))
 		pf_on = 1
 	}
 
-	*gain = gain1
-	*pitch = pitch_index
-	*qgain = qg
+	gain.Val = gain1
+	pitch.Val = pitch_index
+	qgain.Val = qg
 
 	for c := 0; c < CC; c++ {
 		offset := mode.shortMdctSize - overlap
@@ -257,7 +259,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		if offset != 0 {
 			comb_filter(input[c][:overlap], overlap, pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], CeltConstants.COMBFILTER_MAXPERIOD, this.prefilter_period, this.prefilter_period, offset, -this.prefilter_gain, -this.prefilter_gain, this.prefilter_tapset, this.prefilter_tapset, nil, 0)
 		}
-		comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][CeltConstants.COMBFILTER_MAXPERIOD+offset:], COMBFILTER_MAXPERIOD+offset, this.prefilter_period, *pitch, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
+		comb_filter(input[c][overlap:overlap+offset], overlap+offset, pre[c][CeltConstants.COMBFILTER_MAXPERIOD+offset:], CeltConstants.COMBFILTER_MAXPERIOD+offset, this.prefilter_period, pitch.Val, N-offset, -this.prefilter_gain, -gain1, this.prefilter_tapset, prefilter_tapset, mode.window, overlap)
 		copy(this.in_mem[c], input[c][N:N+overlap])
 		if N > CeltConstants.COMBFILTER_MAXPERIOD {
 			copy(prefilter_mem[c], pre[c][N:N+CeltConstants.COMBFILTER_MAXPERIOD])

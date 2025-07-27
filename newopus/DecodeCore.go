@@ -29,7 +29,7 @@ func silk_decode_core(
 	res_Q14 = make([]int, psDec.subfr_length)
 	sLPC_Q14 = make([]int, psDec.subfr_length+MAX_LPC_ORDER)
 
-	offset_Q10 = int(SilkTables.Quantization_Offsets_Q10[psDec.indices.signalType>>1][psDec.indices.quantOffsetType])
+	offset_Q10 = int(SilkTables.Silk_Quantization_Offsets_Q10[psDec.indices.signalType>>1][psDec.indices.quantOffsetType])
 
 	if psDec.indices.NLSFInterpCoef_Q2 < 1<<2 {
 		NLSF_interpolation_flag = 1
@@ -129,7 +129,7 @@ func silk_decode_core(
 				LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr-4], int(B_Q14[B_Q14_ptr+4]))
 				pred_lag_ptr++
 
-				pres_Q14[pres_Q14_ptr+i] = silk_ADD_LSHIFT32(psDec.Exc_Q14[pexc_Q14+i], LTP_pred_Q13, 1)
+				pres_Q14[pres_Q14_ptr+i] = silk_ADD_LSHIFT32(psDec.exc_Q14[pexc_Q14+i], LTP_pred_Q13, 1)
 
 				sLTP_Q15[sLTP_buf_idx] = silk_LSHIFT(pres_Q14[pres_Q14_ptr+i], 1)
 				sLTP_buf_idx++

@@ -1005,7 +1005,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 	if shortBlocks != 0 {
 		B = M
 	}
-	norm_offset := M * eBands[start]
+	norm_offset := M * int(eBands[start])
 	norm := make([]int, M*eBands[m.nbEBands-1]-norm_offset)
 	norm2 := M*eBands[m.nbEBands-1] - norm_offset
 	lowband_scratch := X_

@@ -58,8 +58,8 @@ func BurgModified_silk_burg_modified(res_nrg BoxedValueInt, res_nrg_Q BoxedValue
 		for s = 0; s < int(nb_subfr); s++ {
 			var i, d int
 			x_offset = x_ptr + s*int(subfr_length)
-			pitch_xcorr(x, x_offset, x, x_offset+1, xcorr, subfr_length-D, int(D))
-			pitch_xcorr(x, x_offset, x, x_offset+1, xcorr, subfr_length-D, D)
+			pitch_xcorr1(x, x_offset, x, x_offset+1, xcorr, subfr_length-D, int(D))
+			pitch_xcorr1(x, x_offset, x, x_offset+1, xcorr, subfr_length-D, D)
 			for n = 1; n < int(D)+1; n++ {
 				d = 0
 				for i = n + int(subfr_length) - int(D); i < int(subfr_length); i++ {

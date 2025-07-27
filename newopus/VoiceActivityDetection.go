@@ -7,7 +7,7 @@ func silk_VAD_Init(psSilk_VAD *SilkVADState) int {
 	psSilk_VAD.Reset()
 
 	for b := 0; b < VAD_N_BANDS; b++ {
-		bias := max32(silk_DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int(b+1)), 1)
+		bias := silk_max_32(silk_DIV32_16(SilkConstants.VAD_NOISE_LEVELS_BIAS, int(b+1)), 1)
 		psSilk_VAD.NoiseLevelBias[b] = bias
 	}
 
