@@ -19,11 +19,11 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 
 	ac0 := int(1 + (n << 7))
 	if (n & 1) != 0 {
-		ac0 += SHR32(MULT16_16(int(xptr[0]), int(xptr[0]), 9))
+		ac0 += SHR32(MULT16_16(int(xptr[0]), int(xptr[0])), 9)
 	}
 	for i := (n & 1); i < n; i += 2 {
-		ac0 += SHR32(MULT16_16(int(xptr[i]), int(xptr[i]), 9))
-		ac0 += SHR32(MULT16_16(int(xptr[i+1]), int(xptr[i+1]), 9))
+		ac0 += SHR32(MULT16_16(int(xptr[i]), int(xptr[i])), 9)
+		ac0 += SHR32(MULT16_16(int(xptr[i+1]), int(xptr[i+1])), 9)
 	}
 	shift = celt_ilog2(ac0) - 30 + 10
 	shift = (shift) / 2
@@ -50,7 +50,7 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 		ac[0] += int(SHL32(1, -shift))
 	}
 	if ac[0] < 268435456 {
-		shift2 := 29 - EC_ILOG(ac[0])
+		shift2 := 29 - EC_ILOG(int64(ac[0]))
 		for i := 0; i <= lag; i++ {
 			ac[i] = SHL32(ac[i], shift2)
 		}
@@ -86,8 +86,8 @@ func _celt_autocorr_with_window(x []int, ac []int, window []int, overlap int, la
 			xx[i] = x[i]
 		}
 		for i := 0; i < overlap; i++ {
-			xx[i] = MULT16_16_Q15(x[i], window[i])
-			xx[n-i-1] = MULT16_16_Q15(x[n-i-1], window[i])
+			xx[i] = MULT16_16_Q15Int(x[i], window[i])
+			xx[n-i-1] = MULT16_16_Q15Int(x[n-i-1], window[i])
 		}
 		xptr = xx
 	}
@@ -116,7 +116,7 @@ func _celt_autocorr_with_window(x []int, ac []int, window []int, overlap int, la
 	for k := 0; k <= lag; k++ {
 		d = 0
 		for i := k + fastN; i < n; i++ {
-			d = MAC16_16(d, xptr[i], xptr[i-k])
+			d = MAC16_16IntAll(d, xptr[i], xptr[i-k])
 		}
 		ac[k] += d
 	}
@@ -126,7 +126,7 @@ func _celt_autocorr_with_window(x []int, ac []int, window []int, overlap int, la
 		ac[0] += SHL32(1, -shift)
 	}
 	if ac[0] < 268435456 {
-		shift2 := 29 - EC_ILOG(ac[0])
+		shift2 := 29 - EC_ILOG(int64(ac[0]))
 		for i := 0; i <= lag; i++ {
 			ac[i] = SHL32(ac[i], shift2)
 		}

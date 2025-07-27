@@ -104,7 +104,7 @@ func GetNumSamplesDecoder(dec *OpusDecoder, packet []byte, packet_offset, len in
 	return GetNumSamples(packet, packet_offset, len, dec.Fs)
 }
 
-func GetEncoderMode(packet []byte, packet_offset int) OpusMode {
+func GetEncoderMode(packet []byte, packet_offset int) int {
 	if (packet[packet_offset] & 0x80) != 0 {
 		return MODE_CELT_ONLY
 	} else if (packet[packet_offset] & 0x60) == 0x60 {
@@ -141,7 +141,7 @@ func parse_size(data []byte, data_ptr, len int, size *int16) int {
 	}
 }
 
-func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_toc BoxedValueByte, frames [][]byte, sizes []int16, payload_offset BoxedValueInt, packet_offset BoxedValueInt) int {
+func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_toc BoxedValueByte, frames [][]byte, frames_ptr int, sizes []int16, payload_offset BoxedValueInt, packet_offset BoxedValueInt) int {
 	var i, bytes int
 	var count, cbr int
 	var toc byte

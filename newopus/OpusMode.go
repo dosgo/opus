@@ -36,10 +36,8 @@ Copyright (c) 2007-2008 CSIRO
 */
 package opus
 
-type OpusMode int
-
 const (
-	MODE_UNKNOWN OpusMode = iota
+	MODE_UNKNOWN int = iota
 	MODE_AUTO
 	MODE_SILK_ONLY
 	MODE_HYBRID

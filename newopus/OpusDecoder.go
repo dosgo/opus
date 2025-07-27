@@ -452,7 +452,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	}
 
 	packet_mode = GetEncoderMode(data, data_ptr)
-	packet_bandwidth = GetBandwidth(data, data_ptr)
+	packet_bandwidth = GetEncoderMode(data, data_ptr)
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
 	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
 

@@ -3,8 +3,8 @@ package opus
 type OpusRepacketizer struct {
 	toc       byte
 	nb_frames int
-	frames    [48][]byte
-	len       [48]int
+	frames    [][]byte
+	len       []int16
 	framesize int
 }
 
@@ -41,7 +41,9 @@ func (this *OpusRepacketizer) opus_repacketizer_cat_impl(data []byte, data_ptr i
 		return OpusError.OPUS_INVALID_PACKET
 	}
 
-	ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, &dummy_toc, this.frames[:], this.nb_frames, this.len[:], this.nb_frames, dummy_offset, dummy_offset)
+	//ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, &dummy_toc, this.frames[:], this.nb_frames, this.len[:], this.nb_frames, dummy_offset, dummy_offset)
+	ret := opus_packet_parse_impl(data, data_ptr, len_val, self_delimited, dummy_toc, this.frames, this.nb_frames, this.len, this.nb_frames, dummy_offset, dummy_offset)
+
 	if ret < 1 {
 		return ret
 	}
