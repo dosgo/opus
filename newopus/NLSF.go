@@ -404,7 +404,7 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	for s := 0; s < nSurvivors; s++ {
 		ind1 = tempIndices1[s]
 		pCB_element := ind1 * psNLSF_CB.order
-		for i := 0; i < psNLSF_CB.order; i++ {
+		for i := 0; i < int(psNLSF_CB.order); i++ {
 			NLSF_tmp_Q15[i] = int16(psNLSF_CB.CB1_NLSF_Q8[pCB_element+i] << 7)
 			res_Q15[i] = pNLSF_Q15[i] - NLSF_tmp_Q15[i]
 		}

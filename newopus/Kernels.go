@@ -88,7 +88,7 @@ func celt_fir_int(x []int, x_ptr int, num []int, num_ptr int, y []int, y_ptr int
 	for ; i < N; i++ {
 		sum := int(0)
 		for j := 0; j < ord; j++ {
-			sum = MAC16_16(sum, rnum[j], local_x[i+j])
+			sum = MAC16_16IntAll(sum, rnum[j], local_x[i+j])
 		}
 		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, SIG_SHIFT)))
 	}
@@ -126,28 +126,28 @@ func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueI
 		x_ptr++
 		y_0 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_1)
-		sum1 = MAC16_16(sum1, tmp, y_2)
-		sum2 = MAC16_16(sum2, tmp, y_3)
-		sum3 = MAC16_16(sum3, tmp, y_0)
+		sum0 = MAC16_16Int(sum0, tmp, y_1)
+		sum1 = MAC16_16Int(sum1, tmp, y_2)
+		sum2 = MAC16_16Int(sum2, tmp, y_3)
+		sum3 = MAC16_16Int(sum3, tmp, y_0)
 
 		tmp = x[x_ptr]
 		x_ptr++
 		y_1 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_2)
-		sum1 = MAC16_16(sum1, tmp, y_3)
-		sum2 = MAC16_16(sum2, tmp, y_0)
-		sum3 = MAC16_16(sum3, tmp, y_1)
+		sum0 = MAC16_16Int(sum0, tmp, y_2)
+		sum1 = MAC16_16Int(sum1, tmp, y_3)
+		sum2 = MAC16_16Int(sum2, tmp, y_0)
+		sum3 = MAC16_16Int(sum3, tmp, y_1)
 
 		tmp = x[x_ptr]
 		x_ptr++
 		y_2 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_3)
-		sum1 = MAC16_16(sum1, tmp, y_0)
-		sum2 = MAC16_16(sum2, tmp, y_1)
-		sum3 = MAC16_16(sum3, tmp, y_2)
+		sum0 = MAC16_16Int(sum0, tmp, y_3)
+		sum1 = MAC16_16Int(sum1, tmp, y_0)
+		sum2 = MAC16_16Int(sum2, tmp, y_1)
+		sum3 = MAC16_16Int(sum3, tmp, y_2)
 	}
 
 	if j < len {
@@ -168,10 +168,10 @@ func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueI
 		x_ptr++
 		y_0 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_1)
-		sum1 = MAC16_16(sum1, tmp, y_2)
-		sum2 = MAC16_16(sum2, tmp, y_3)
-		sum3 = MAC16_16(sum3, tmp, y_0)
+		sum0 = MAC16_16Int(sum0, tmp, y_1)
+		sum1 = MAC16_16Int(sum1, tmp, y_2)
+		sum2 = MAC16_16Int(sum2, tmp, y_3)
+		sum3 = MAC16_16Int(sum3, tmp, y_0)
 	}
 
 	if j < len {
@@ -179,10 +179,10 @@ func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueI
 		x_ptr++
 		y_1 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_2)
-		sum1 = MAC16_16(sum1, tmp, y_3)
-		sum2 = MAC16_16(sum2, tmp, y_0)
-		sum3 = MAC16_16(sum3, tmp, y_1)
+		sum0 = MAC16_16Int(sum0, tmp, y_2)
+		sum1 = MAC16_16Int(sum1, tmp, y_3)
+		sum2 = MAC16_16Int(sum2, tmp, y_0)
+		sum3 = MAC16_16Int(sum3, tmp, y_1)
 	}
 
 	_sum0.Val = sum0
@@ -214,37 +214,37 @@ func xcorr_kernel_int(x []int, y []int, y_ptr int, _sum0 *BoxedValueInt, _sum1 *
 		x_ptr++
 		y_3 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_0)
-		sum1 = MAC16_16(sum1, tmp, y_1)
-		sum2 = MAC16_16(sum2, tmp, y_2)
-		sum3 = MAC16_16(sum3, tmp, y_3)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_0)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_1)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_2)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_3)
 
 		tmp = x[x_ptr]
 		x_ptr++
 		y_0 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_1)
-		sum1 = MAC16_16(sum1, tmp, y_2)
-		sum2 = MAC16_16(sum2, tmp, y_3)
-		sum3 = MAC16_16(sum3, tmp, y_0)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_1)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_2)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_3)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_0)
 
 		tmp = x[x_ptr]
 		x_ptr++
 		y_1 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_2)
-		sum1 = MAC16_16(sum1, tmp, y_3)
-		sum2 = MAC16_16(sum2, tmp, y_0)
-		sum3 = MAC16_16(sum3, tmp, y_1)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_2)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_3)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_0)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_1)
 
 		tmp = x[x_ptr]
 		x_ptr++
 		y_2 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_3)
-		sum1 = MAC16_16(sum1, tmp, y_0)
-		sum2 = MAC16_16(sum2, tmp, y_1)
-		sum3 = MAC16_16(sum3, tmp, y_2)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_3)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_0)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_1)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_2)
 	}
 
 	if j < len {
@@ -265,10 +265,10 @@ func xcorr_kernel_int(x []int, y []int, y_ptr int, _sum0 *BoxedValueInt, _sum1 *
 		x_ptr++
 		y_0 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_1)
-		sum1 = MAC16_16(sum1, tmp, y_2)
-		sum2 = MAC16_16(sum2, tmp, y_3)
-		sum3 = MAC16_16(sum3, tmp, y_0)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_1)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_2)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_3)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_0)
 	}
 
 	if j < len {
@@ -276,10 +276,10 @@ func xcorr_kernel_int(x []int, y []int, y_ptr int, _sum0 *BoxedValueInt, _sum1 *
 		x_ptr++
 		y_1 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_2)
-		sum1 = MAC16_16(sum1, tmp, y_3)
-		sum2 = MAC16_16(sum2, tmp, y_0)
-		sum3 = MAC16_16(sum3, tmp, y_1)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_2)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_3)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_0)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_1)
 	}
 
 	_sum0.Val = sum0

@@ -68,18 +68,19 @@ func OpusMSDecoder_create(Fs int, channels int, streams int, coupled_streams int
 }
 
 func opus_multistream_packet_validate(data []byte, data_ptr int, len int, nb_streams int, Fs int) int {
-	toc := &BoxedValueByte{Val: 0}
+	toc := BoxedValueByte{Val: 0}
 	size := make([]int16, 48)
 	samples := 0
-	packet_offset := &BoxedValueInt{Val: 0}
-	dummy := &BoxedValueInt{Val: 0}
+	packet_offset := BoxedValueInt{Val: 0}
+	dummy := BoxedValueInt{Val: 0}
 
 	for s := 0; s < nb_streams; s++ {
 		if len <= 0 {
 			return OpusError.OPUS_INVALID_PACKET
 		}
 
-		count := opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), toc, nil, 0, size, 0, dummy, packet_offset)
+		count := opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), toc, nil, size, dummy, packet_offset)
+
 		if count < 0 {
 			return count
 		}
@@ -128,7 +129,7 @@ func (this *OpusMSDecoder) opus_multistream_decode_native(data []byte, data_ptr 
 			return OpusError.OPUS_INTERNAL_ERROR
 		}
 
-		packet_offset := &BoxedValueInt{Val: 0}
+		packet_offset := BoxedValueInt{Val: 0}
 		ret := dec.opus_decode_native(data, data_ptr, len, buf, 0, frame_size, decode_fec, boolToInt(s != this.layout.nb_streams-1), packet_offset, soft_clip)
 		data_ptr += packet_offset.Val
 		len -= packet_offset.Val
@@ -193,7 +194,7 @@ func (this *OpusMSDecoder) decodeMultistream(data []byte, data_offset int, len i
 	return this.opus_multistream_decode_native(data, data_offset, len, out_pcm, out_pcm_offset, frame_size, decode_fec, 0)
 }
 
-func (this *OpusMSDecoder) getBandwidth() OpusBandwidth {
+func (this *OpusMSDecoder) getBandwidth() int {
 	if this.decoders == nil || len(this.decoders) == 0 {
 		panic("Decoder not initialized")
 	}

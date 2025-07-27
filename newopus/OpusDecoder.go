@@ -8,7 +8,7 @@ type OpusDecoder struct {
 	DecControl           DecControlState
 	decode_gain          int
 	stream_channels      int
-	bandwidth            OpusBandwidth
+	bandwidth            int
 	mode                 OpusMode
 	prev_mode            OpusMode
 	frame_size           int
@@ -97,7 +97,7 @@ var SILENCE = []byte{0xFF, 0xFF}
 
 func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, decode_fec int) int {
 	var i, silk_ret, celt_ret int
-	dec := NewEntropyCoder()
+	dec := EntropyCoder{}
 	var silk_frame_size int
 	var pcm_silk []int16
 	var pcm_transition_silk []int16
@@ -243,9 +243,10 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			if decoded_samples == 0 {
 				first_frame = 1
 			}
-			boxed_silk_frame_size := 0
-			silk_ret = silk_Decode(&this.SilkDecoder, &this.DecControl, lost_flag, first_frame, dec, pcm_ptr2, pcm_ptr2_ptr, &boxed_silk_frame_size)
-			silk_frame_size = boxed_silk_frame_size
+
+			boxed_silk_frame_size := BoxedValueInt{0}
+			silk_ret = silk_Decode(&this.SilkDecoder, &this.DecControl, lost_flag, first_frame, &dec, pcm_ptr2, pcm_ptr2_ptr, &boxed_silk_frame_size)
+			silk_frame_size = boxed_silk_frame_size.Val
 
 			if silk_ret != 0 {
 				if lost_flag != 0 {
@@ -263,7 +264,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	}
 
 	if decode_fec == 0 && mode != MODE_CELT_ONLY && data != nil &&
-		dec.tell()+17+20*Bool2Int(this.mode == MODE_HYBRID) <= 8*len {
+		dec.tell()+17+20*boolToInt(this.mode == MODE_HYBRID) <= 8*len {
 		if mode == MODE_HYBRID {
 			redundancy = dec.dec_bit_logp(12)
 		} else {
@@ -341,7 +342,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		if decode_fec != 0 {
 			decode_data = nil
 		}
-		celt_ret = this.Celt_Decoder.celt_decode_with_ec(decode_data, data_ptr, len, pcm, pcm_ptr, celt_frame_size, dec, celt_accum)
+		celt_ret = this.Celt_Decoder.celt_decode_with_ec(decode_data, data_ptr, len, pcm, pcm_ptr, celt_frame_size, &dec, celt_accum)
 	} else {
 		if celt_accum == 0 {
 			for i = pcm_ptr; i < pcm_ptr+(frame_size*this.channels); i++ {
@@ -420,12 +421,12 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	return audiosize
 }
 
-func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, pcm_out []int16, pcm_out_ptr int, frame_size int, decode_fec int, self_delimited int, packet_offset *int, soft_clip int) int {
+func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, pcm_out []int16, pcm_out_ptr int, frame_size int, decode_fec int, self_delimited int, packet_offset BoxedValueInt, soft_clip int) int {
 	var i, nb_samples int
 	var count, offset int
 	var packet_frame_size, packet_stream_channels int
-	*packet_offset = 0
-	var packet_bandwidth OpusBandwidth
+	packet_offset.Val = 0
+	var packet_bandwidth int
 	var packet_mode OpusMode
 	size := make([]int, 48)
 	if decode_fec < 0 || decode_fec > 1 {
@@ -553,7 +554,7 @@ func (this *OpusDecoder) DecodeBytes(in_data []byte, in_data_offset int, len int
 	return decSamples, nil
 }
 
-func (this *OpusDecoder) GetBandwidth() OpusBandwidth {
+func (this *OpusDecoder) GetBandwidth() int {
 	return this.bandwidth
 }
 
