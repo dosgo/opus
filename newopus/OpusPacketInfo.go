@@ -28,7 +28,7 @@ func ParseOpusPacket(packet []byte, packet_offset, _len int) (*OpusPacketInfo, e
 	frames := make([][]byte, numFrames)
 	sizes := make([]int16, numFrames)
 	var packet_offset_out = BoxedValueInt{0}
-	errCode := opus_packet_parse_impl(packet, packet_offset, _len, 0, out_toc, frames, sizes, payload_offset, packet_offset_out)
+	errCode := opus_packet_parse_impl(packet, packet_offset, _len, 0, &out_toc, frames, 0, sizes, 0, &payload_offset, &packet_offset_out)
 	if errCode < 0 {
 		return nil, errors.New("opus_packet_parse_impl failed")
 	}
@@ -125,174 +125,174 @@ func encode_size(size int, data []byte, data_ptr int) int {
 	}
 }
 
-func parse_size(data []byte, data_ptr, len int, size *int16) int {
+func parse_size(data []byte, data_ptr, len int, size BoxedValueShort) int {
 	if len < 1 {
-		*size = -1
+		size.Val = -1
 		return -1
 	} else if int(data[data_ptr]) < 252 {
-		*size = int16(data[data_ptr])
+		size.Val = int16(data[data_ptr])
 		return 1
 	} else if len < 2 {
-		*size = -1
+		size.Val = -1
 		return -1
 	} else {
-		*size = int16(4*int(data[data_ptr+1]) + int(data[data_ptr]))
+		size.Val = int16(4*int(data[data_ptr+1]) + int(data[data_ptr]))
 		return 2
 	}
 }
+func opus_packet_parse_impl(data []byte, data_ptr, len_val, self_delimited int, out_toc *BoxedValueByte,
+	frames [][]byte, frames_ptr int, sizes []int16, sizes_ptr int,
+	payload_offset, packet_offset *BoxedValueInt) int {
 
-func opus_packet_parse_impl(data []byte, data_ptr, len, self_delimited int, out_toc BoxedValueByte, frames [][]byte, frames_ptr int, sizes []int16, payload_offset BoxedValueInt, packet_offset BoxedValueInt) int {
-	var i, bytes int
-	var count, cbr int
-	var toc byte
-	var ch, framesize, last_size, pad int
-	data0 := data_ptr
-
-	out_toc.Val = 0
-	payload_offset.Val = 0
-	packet_offset.Val = 0
-
-	if sizes == nil || len < 0 {
+	if sizes == nil || len_val < 0 {
 		return OpusError.OPUS_BAD_ARG
 	}
-	if len == 0 {
+	if len_val == 0 {
 		return OpusError.OPUS_INVALID_PACKET
 	}
 
-	framesize = GetNumSamplesPerFrame(data, data_ptr, 48000)
+	Fs := 48000 // 标准采样率
+	framesize := GetNumSamplesPerFrame(data, data_ptr, Fs)
 
-	cbr = 0
-	toc = data[data_ptr]
+	cbr := 0
+	toc := data[data_ptr]
 	data_ptr++
-	len--
-	last_size = len
+	len_val--
+	last_size := len_val
+	count := 0
 
 	switch toc & 0x3 {
-	case 0:
+	case 0: // 单帧
 		count = 1
-	case 1:
+	case 1: // 双CBR帧
 		count = 2
 		cbr = 1
 		if self_delimited == 0 {
-			if len&0x1 != 0 {
+			if len_val&0x1 != 0 {
 				return OpusError.OPUS_INVALID_PACKET
 			}
-			last_size = len / 2
-			sizes[0] = int16(last_size)
+			last_size = len_val / 2
+			sizes[sizes_ptr] = int16(last_size)
 		}
-	case 2:
+	case 2: // 双VBR帧
 		count = 2
-		var size_val int16
-		bytes = parse_size(data, data_ptr, len, &size_val)
-		sizes[0] = size_val
-		len -= bytes
-		if sizes[0] < 0 || int(sizes[0]) > len {
+		boxed_size := BoxedValueShort{sizes[sizes_ptr]}
+		bytes := parse_size(data, data_ptr, len_val, boxed_size)
+		sizes[sizes_ptr] = boxed_size.Val
+		len_val -= bytes
+		if sizes[sizes_ptr] < 0 || int(sizes[sizes_ptr]) > len_val {
 			return OpusError.OPUS_INVALID_PACKET
 		}
 		data_ptr += bytes
-		last_size = len - int(sizes[0])
-	default:
-		if len < 1 {
+		last_size = len_val - int(sizes[sizes_ptr])
+	default: // 多帧 (0-120ms)
+		if len_val < 1 {
 			return OpusError.OPUS_INVALID_PACKET
 		}
-		ch = int(data[data_ptr])
+		ch := SignedByteToUnsignedInt(data[data_ptr])
 		data_ptr++
+		len_val--
 		count = ch & 0x3F
-		if count <= 0 || framesize*count > 5760 {
+		if count <= 0 || framesize*count > MAX_FRAME_SIZE {
 			return OpusError.OPUS_INVALID_PACKET
 		}
-		len--
+		pad := 0
 		if (ch & 0x40) != 0 {
-			var p int
 			for {
-				if len <= 0 {
+				if len_val <= 0 {
 					return OpusError.OPUS_INVALID_PACKET
 				}
-				p = int(data[data_ptr])
+				p := SignedByteToUnsignedInt(data[data_ptr])
 				data_ptr++
-				len--
+				len_val--
 				tmp := p
 				if p == 255 {
 					tmp = 254
 				}
-				len -= tmp
+				len_val -= tmp
 				pad += tmp
 				if p != 255 {
 					break
 				}
 			}
 		}
-		if len < 0 {
+		if len_val < 0 {
 			return OpusError.OPUS_INVALID_PACKET
 		}
-		if (ch & 0x80) == 0 {
+		cbr = 0
+		if (ch & 0x80) != 0 {
 			cbr = 1
 		}
-		if cbr == 0 {
-			last_size = len
-			for i = 0; i < count-1; i++ {
-				var size_val int16
-				bytes = parse_size(data, data_ptr, len, &size_val)
-				sizes[i] = size_val
-				len -= bytes
-				if sizes[i] < 0 || int(sizes[i]) > len {
+		if cbr == 0 { // VBR
+			last_size = len_val
+			for i := 0; i < count-1; i++ {
+				boxed_size := BoxedValueShort{sizes[sizes_ptr+i]}
+				bytes := parse_size(data, data_ptr, len_val, boxed_size)
+				sizes[sizes_ptr+i] = boxed_size.Val
+				len_val -= bytes
+				if sizes[sizes_ptr+i] < 0 || int(sizes[sizes_ptr+i]) > len_val {
 					return OpusError.OPUS_INVALID_PACKET
 				}
 				data_ptr += bytes
-				last_size -= bytes + int(sizes[i])
+				last_size -= bytes + int(sizes[sizes_ptr+i])
 			}
 			if last_size < 0 {
 				return OpusError.OPUS_INVALID_PACKET
 			}
-		} else if self_delimited == 0 {
-			last_size = len / count
-			if last_size*count != len {
+		} else if self_delimited == 0 { // CBR
+			last_size = len_val / count
+			if last_size*count != len_val {
 				return OpusError.OPUS_INVALID_PACKET
 			}
-			for i = 0; i < count-1; i++ {
-				sizes[i] = int16(last_size)
+			for i := 0; i < count-1; i++ {
+				sizes[sizes_ptr+i] = int16(last_size)
 			}
 		}
 	}
 
+	// 自定界帧处理
 	if self_delimited != 0 {
-		var size_val int16
-		bytes = parse_size(data, data_ptr, len, &size_val)
-		sizes[count-1] = size_val
-		len -= bytes
-		if sizes[count-1] < 0 || int(sizes[count-1]) > len {
+		boxed_size := BoxedValueShort{sizes[sizes_ptr+count-1]}
+		bytes := parse_size(data, data_ptr, len_val, boxed_size)
+		sizes[sizes_ptr+count-1] = boxed_size.Val
+		len_val -= bytes
+		if sizes[sizes_ptr+count-1] < 0 || int(sizes[sizes_ptr+count-1]) > len_val {
 			return OpusError.OPUS_INVALID_PACKET
 		}
 		data_ptr += bytes
 		if cbr != 0 {
-			if int(sizes[count-1])*count > len {
+			if int(sizes[sizes_ptr+count-1])*count > len_val {
 				return OpusError.OPUS_INVALID_PACKET
 			}
-			for i = 0; i < count-1; i++ {
-				sizes[i] = sizes[count-1]
+			for i := 0; i < count-1; i++ {
+				sizes[sizes_ptr+i] = sizes[sizes_ptr+count-1]
 			}
-		} else if bytes+int(sizes[count-1]) > last_size {
+		} else if bytes+int(sizes[sizes_ptr+count-1]) > last_size {
 			return OpusError.OPUS_INVALID_PACKET
 		}
 	} else {
 		if last_size > 1275 {
 			return OpusError.OPUS_INVALID_PACKET
 		}
-		sizes[count-1] = int16(last_size)
+		sizes[sizes_ptr+count-1] = int16(last_size)
 	}
 
-	payload_offset.Val = data_ptr - data0
+	payload_offset.Val = data_ptr - packet_offset.Val
 
-	for i = 0; i < count; i++ {
-		if frames != nil {
-			frames[i] = make([]byte, sizes[i])
-			copy(frames[i], data[data_ptr:data_ptr+int(sizes[i])])
+	// 复制帧数据
+	for i := 0; i < count; i++ {
+		if frames != nil && frames_ptr+i < len(frames) {
+			size := int(sizes[sizes_ptr+i])
+			if data_ptr+size > len(data) {
+				return OpusError.OPUS_INVALID_PACKET
+			}
+			frames[frames_ptr+i] = make([]byte, size)
+			copy(frames[frames_ptr+i], data[data_ptr:data_ptr+size])
+			data_ptr += size
 		}
-		data_ptr += int(sizes[i])
 	}
 
-	packet_offset.Val = pad + (data_ptr - data0)
+	packet_offset.Val = data_ptr
 	out_toc.Val = int8(toc)
-
 	return count
 }
