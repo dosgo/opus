@@ -1,10 +1,12 @@
 package opus
 
+import "math"
+
 func silk_quant_LTP_gains(
 	B_Q14 []int16,
 	cbk_index []byte,
-	periodicity_index *byte,
-	sum_log_gain_Q7 *int,
+	periodicity_index BoxedValueByte,
+	sum_log_gain_Q7 BoxedValueInt,
 	W_Q18 []int,
 	mu_Q9 int,
 	lowComplexity int,
@@ -34,7 +36,7 @@ func silk_quant_LTP_gains(
 		b_Q14_ptr = 0
 
 		rate_dist_Q14 = 0
-		sum_log_gain_tmp_Q7 = *sum_log_gain_Q7
+		sum_log_gain_tmp_Q7 = sum_log_gain_Q7.Val
 		for j = 0; j < nb_subfr; j++ {
 			max_gain_Q7 = silk_log2lin(((SILK_CONST(TuningParameters.MAX_SUM_LOG_GAIN_DB/6.0, 7) - sum_log_gain_tmp_Q7) + SILK_CONST(7, 7)) - gain_safety)
 
@@ -60,8 +62,7 @@ func silk_quant_LTP_gains(
 			)
 
 			rate_dist_Q14 = silk_ADD_POS_SAT32(rate_dist_Q14, rate_dist_Q14_subfr.Val)
-			//sum_log_gain_tmp_Q7 = silk_max_32(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7)-SILK_CONST(7, 7))
-			sum_log_gain_tmp_Q7 = silk_max(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7.Val)-(7*(1<<7)+0.5))
+			sum_log_gain_tmp_Q7 = silk_max(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7.Val)-int(math.Round(7*(1<<(7))+0.5)))
 
 			temp_idx[j] = byte(tempIdxVal.Val)
 			b_Q14_ptr += LTP_ORDER
@@ -70,7 +71,7 @@ func silk_quant_LTP_gains(
 
 		if rate_dist_Q14 < min_rate_dist_Q14 {
 			min_rate_dist_Q14 = rate_dist_Q14
-			*periodicity_index = byte(k)
+			periodicity_index.Val = int8(k)
 			copy(cbk_index, temp_idx[:nb_subfr])
 			best_sum_log_gain_Q7 = sum_log_gain_tmp_Q7
 		}
@@ -80,12 +81,12 @@ func silk_quant_LTP_gains(
 		}
 	}
 
-	cbk_ptr_Q7 = silk_LTP_vq_ptrs_Q7[*periodicity_index]
+	cbk_ptr_Q7 = silk_LTP_vq_ptrs_Q7[periodicity_index.Val]
 	for j = 0; j < nb_subfr; j++ {
 		for k = 0; k < LTP_ORDER; k++ {
 			B_Q14[j*LTP_ORDER+k] = int16(cbk_ptr_Q7[cbk_index[j]][k] << 7)
 		}
 	}
 
-	*sum_log_gain_Q7 = best_sum_log_gain_Q7
+	sum_log_gain_Q7.Val = best_sum_log_gain_Q7
 }
