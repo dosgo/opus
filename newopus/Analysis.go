@@ -13,7 +13,7 @@ const (
 )
 
 func fast_atan2f(y float32, x float32) float32 {
-	if ABS16(x)+ABS16(y) < 1e-9 {
+	if ABS16Float(x)+ABS16Float(y) < 1e-9 {
 		x *= 1e12
 		y *= 1e12
 	}
@@ -276,8 +276,8 @@ func tonality_analysis(tonal *TonalityAnalysisState, celt_mode *CeltMode, x []in
 	bandwidth_mask = 0
 	bandwidth = 0
 	maxE = 0
-	noise_floor = 5.7e-4 / float32(1<<uint(IMAX(0, lsb_depth-8)))
-	noise_floor *= 1 << (15 + CeltConstants.SIG_SHIFT)
+	noise_floor = 5.7e-4 / float32(int(1)<<int(IMAX(0, lsb_depth-8)))
+	noise_floor *= float32(int(1) << (15 + CeltConstants.SIG_SHIFT))
 	noise_floor *= noise_floor
 	for b := 0; b < NB_TOT_BANDS; b++ {
 		E := float32(0)

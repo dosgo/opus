@@ -36,7 +36,7 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 		shift = 0
 	}
 
-	pitch_xcorr(xptr, xptr, ac, fastN, lag+1)
+	pitch_xcorr2(xptr, xptr, ac, fastN, lag+1)
 	for k := 0; k <= lag; k++ {
 		d = 0
 		for i := k + fastN; i < n; i++ {

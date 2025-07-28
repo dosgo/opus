@@ -5,7 +5,7 @@ type TonalityAnalysisState struct {
 	angle                   [240]float32
 	d_angle                 [240]float32
 	d2_angle                [240]float32
-	inmem                   [ANALYSIS_BUF_SIZE]int
+	inmem                   []int
 	mem_fill                int
 	prev_band_tonality      [NB_TBANDS]float32
 	prev_tonality           float32
