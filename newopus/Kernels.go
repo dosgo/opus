@@ -32,18 +32,18 @@ func celt_fir(x []int16, x_ptr int, num []int16, y []int16, y_ptr int, N int, or
 		sum2.Val = 0
 		sum3.Val = 0
 		xcorr_kernel(rnum, 0, local_x, i, sum0, sum1, sum2, sum3, ord)
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum0.Val, SIG_SHIFT)))
-		y[y_ptr+i+1] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+1]), PSHR32(sum1.Val, SIG_SHIFT)))
-		y[y_ptr+i+2] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+2]), PSHR32(sum2.Val, SIG_SHIFT)))
-		y[y_ptr+i+3] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+3]), PSHR32(sum3.Val, SIG_SHIFT)))
+		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum0.Val, CeltConstants.SIG_SHIFT)))
+		y[y_ptr+i+1] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+1]), PSHR32(sum1.Val, CeltConstants.SIG_SHIFT)))
+		y[y_ptr+i+2] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+2]), PSHR32(sum2.Val, CeltConstants.SIG_SHIFT)))
+		y[y_ptr+i+3] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+3]), PSHR32(sum3.Val, CeltConstants.SIG_SHIFT)))
 	}
 
 	for ; i < N; i++ {
 		sum := int(0)
 		for j := 0; j < ord; j++ {
-			sum = MAC16_16(sum, rnum[j], local_x[i+j])
+			sum = MAC16_16Int(sum, rnum[j], local_x[i+j])
 		}
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, SIG_SHIFT)))
+		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, CeltConstants.SIG_SHIFT)))
 	}
 }
 
@@ -79,10 +79,10 @@ func celt_fir_int(x []int, x_ptr int, num []int, num_ptr int, y []int, y_ptr int
 		sum2.Val = 0
 		sum3.Val = 0
 		xcorr_kernel_int(rnum, local_x, i, sum0, sum1, sum2, sum3, ord)
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum0.Val, SIG_SHIFT)))
-		y[y_ptr+i+1] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+1]), PSHR32(sum1.Val, SIG_SHIFT)))
-		y[y_ptr+i+2] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+2]), PSHR32(sum2.Val, SIG_SHIFT)))
-		y[y_ptr+i+3] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+3]), PSHR32(sum3.Val, SIG_SHIFT)))
+		y[y_ptr+i] = int(SATURATE16(ADD32(EXTEND32(int16(x[x_ptr+i])), PSHR32(sum0.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+1] = int(SATURATE16(ADD32(EXTEND32(int16(x[x_ptr+i+1])), PSHR32(sum1.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+2] = int(SATURATE16(ADD32(EXTEND32(int16(x[x_ptr+i+2])), PSHR32(sum2.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+3] = int(SATURATE16(ADD32(EXTEND32(int16(x[x_ptr+i+3])), PSHR32(sum3.Val, CeltConstants.SIG_SHIFT))))
 	}
 
 	for ; i < N; i++ {
@@ -90,7 +90,7 @@ func celt_fir_int(x []int, x_ptr int, num []int, num_ptr int, y []int, y_ptr int
 		for j := 0; j < ord; j++ {
 			sum = MAC16_16IntAll(sum, rnum[j], local_x[i+j])
 		}
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, SIG_SHIFT)))
+		y[y_ptr+i] = int(SATURATE16(ADD32(EXTEND32(int16(x[x_ptr+i])), PSHR32(sum, CeltConstants.SIG_SHIFT))))
 	}
 }
 
@@ -156,10 +156,10 @@ func xcorr_kernel(x []int16, x_ptr int, y []int16, y_ptr int, _sum0 *BoxedValueI
 		x_ptr++
 		y_3 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_0)
-		sum1 = MAC16_16(sum1, tmp, y_1)
-		sum2 = MAC16_16(sum2, tmp, y_2)
-		sum3 = MAC16_16(sum3, tmp, y_3)
+		sum0 = MAC16_16Int(sum0, tmp, y_0)
+		sum1 = MAC16_16Int(sum1, tmp, y_1)
+		sum2 = MAC16_16Int(sum2, tmp, y_2)
+		sum3 = MAC16_16Int(sum3, tmp, y_3)
 	}
 
 	if j < len {
@@ -253,10 +253,10 @@ func xcorr_kernel_int(x []int, y []int, y_ptr int, _sum0 *BoxedValueInt, _sum1 *
 		x_ptr++
 		y_3 = y[y_ptr]
 		y_ptr++
-		sum0 = MAC16_16(sum0, tmp, y_0)
-		sum1 = MAC16_16(sum1, tmp, y_1)
-		sum2 = MAC16_16(sum2, tmp, y_2)
-		sum3 = MAC16_16(sum3, tmp, y_3)
+		sum0 = MAC16_16IntAll(sum0, tmp, y_0)
+		sum1 = MAC16_16IntAll(sum1, tmp, y_1)
+		sum2 = MAC16_16IntAll(sum2, tmp, y_2)
+		sum3 = MAC16_16IntAll(sum3, tmp, y_3)
 	}
 
 	if j < len {
@@ -291,7 +291,7 @@ func xcorr_kernel_int(x []int, y []int, y_ptr int, _sum0 *BoxedValueInt, _sum1 *
 func celt_inner_prod(x []int16, x_ptr int, y []int16, y_ptr int, N int) int {
 	xy := int(0)
 	for i := 0; i < N; i++ {
-		xy = MAC16_16(xy, x[x_ptr+i], y[y_ptr+i])
+		xy = MAC16_16Int(xy, x[x_ptr+i], y[y_ptr+i])
 	}
 	return xy
 }
@@ -299,7 +299,7 @@ func celt_inner_prod(x []int16, x_ptr int, y []int16, y_ptr int, N int) int {
 func celt_inner_prod_short(x []int16, y []int16, y_ptr int, N int) int {
 	xy := int(0)
 	for i := 0; i < N; i++ {
-		xy = MAC16_16(xy, x[i], y[y_ptr+i])
+		xy = MAC16_16Int(xy, x[i], y[y_ptr+i])
 	}
 	return xy
 }
@@ -307,7 +307,7 @@ func celt_inner_prod_short(x []int16, y []int16, y_ptr int, N int) int {
 func celt_inner_prod_int(x []int, x_ptr int, y []int, y_ptr int, N int) int {
 	xy := int(0)
 	for i := 0; i < N; i++ {
-		xy = MAC16_16(xy, x[x_ptr+i], y[y_ptr+i])
+		xy = MAC16_16IntAll(xy, x[x_ptr+i], y[y_ptr+i])
 	}
 	return xy
 }
@@ -316,8 +316,8 @@ func dual_inner_prod(x []int, x_ptr int, y01 []int, y01_ptr int, y02 []int, y02_
 	xy01 := int(0)
 	xy02 := int(0)
 	for i := 0; i < N; i++ {
-		xy01 = MAC16_16(xy01, x[x_ptr+i], y01[y01_ptr+i])
-		xy02 = MAC16_16(xy02, x[x_ptr+i], y02[y02_ptr+i])
+		xy01 = MAC16_16IntAll(xy01, x[x_ptr+i], y01[y01_ptr+i])
+		xy02 = MAC16_16IntAll(xy02, x[x_ptr+i], y02[y02_ptr+i])
 	}
 	xy1.Val = xy01
 	xy2.Val = xy02

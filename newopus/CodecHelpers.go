@@ -367,8 +367,8 @@ func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []in
 	inc := 48000 / Fs
 	for c := 0; c < channels; c++ {
 		for i := 0; i < overlap; i++ {
-			w := MULT16_16_Q15(window[i*inc], window[i*inc])
-			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16(MULT16_16(w, int(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int(in1[in1_ptr+(i*channels)+c])), 15))
+			w := MULT16_16_Q15Int(window[i*inc], window[i*inc])
+			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16Int(MULT16_16(w, int(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int(in1[in1_ptr+(i*channels)+c])), 15))
 		}
 	}
 }

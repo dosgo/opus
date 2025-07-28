@@ -79,8 +79,8 @@ func opus_multistream_packet_validate(data []byte, data_ptr int, len int, nb_str
 			return OpusError.OPUS_INVALID_PACKET
 		}
 
-		count := opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), toc, nil, size, dummy, packet_offset)
-
+		count := opus_packet_parse_impl(data, data_ptr, len, boolToInt(s != nb_streams-1), &toc, nil, 0,
+			size, 0, &dummy, &packet_offset)
 		if count < 0 {
 			return count
 		}

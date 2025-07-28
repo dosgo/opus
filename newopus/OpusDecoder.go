@@ -9,8 +9,8 @@ type OpusDecoder struct {
 	decode_gain          int
 	stream_channels      int
 	bandwidth            int
-	mode                 OpusMode
-	prev_mode            OpusMode
+	mode                 int
+	prev_mode            int
 	frame_size           int
 	prev_redundancy      int
 	last_packet_duration int
@@ -106,7 +106,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	var redundant_audio []int16
 
 	var audiosize int
-	var mode OpusMode
+	var mode int
 	transition := 0
 	start_band := 0
 	redundancy := 0
@@ -362,13 +362,13 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	}
 
 	window := this.Celt_Decoder.GetMode().window
-
+	var redundant_rng = 0
 	if redundancy != 0 && celt_to_silk == 0 {
 		this.Celt_Decoder.ResetState()
 		this.Celt_Decoder.SetStartBand(0)
 
 		this.Celt_Decoder.celt_decode_with_ec(data, data_ptr+len, redundancy_bytes, redundant_audio, 0, F5, nil, 0)
-		redundant_rng := this.Celt_Decoder.GetFinalRange()
+		redundant_rng = this.Celt_Decoder.GetFinalRange()
 		smooth_fade(pcm, pcm_ptr+this.channels*(frame_size-F2_5), redundant_audio, 0, this.channels*F2_5,
 			pcm, pcm_ptr+this.channels*(frame_size-F2_5), F2_5, this.channels, window, this.Fs)
 	}
@@ -395,7 +395,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	}
 
 	if this.decode_gain != 0 {
-		gain := celt_exp2(MULT16_16_P15(QCONST16(6.48814081e-4, 25), this.decode_gain))
+		gain := celt_exp2(int(MULT16_16_P15(QCONST16(6.48814081e-4, 25), int16(this.decode_gain))))
 		for i = pcm_ptr; i < pcm_ptr+(frame_size*this.channels); i++ {
 			x := MULT16_32_P16(pcm[i], gain)
 			pcm[i] = int16(SATURATE(x, 32767))
@@ -427,7 +427,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	var packet_frame_size, packet_stream_channels int
 	packet_offset.Val = 0
 	var packet_bandwidth int
-	var packet_mode OpusMode
+	var packet_mode int
 	size := make([]int, 48)
 	if decode_fec < 0 || decode_fec > 1 {
 		return OpusError.OPUS_BAD_ARG
@@ -456,20 +456,20 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
 	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
 
-	var toc byte
+	var toc BoxedValueByte = BoxedValueByte{0}
 	count = opus_packet_parse_impl(data, data_ptr, len, self_delimited, &toc, nil, 0, size, 0, &offset, packet_offset)
 	if count < 0 {
 		return count
 	}
 
-	data_ptr += *packet_offset
+	data_ptr += packet_offset.Val
 
 	if decode_fec != 0 {
-		dummy := 0
+		dummy := BoxedValueInt{0}
 		duration_copy := this.last_packet_duration
 		var ret int
 		if frame_size < packet_frame_size || packet_mode == MODE_CELT_ONLY || this.mode == MODE_CELT_ONLY {
-			return this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size, 0, 0, &dummy, soft_clip)
+			return this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size, 0, 0, dummy, soft_clip)
 		}
 		if frame_size-packet_frame_size != 0 {
 			ret = this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size-packet_frame_size, 0, 0, &dummy, soft_clip)
