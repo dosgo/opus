@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 func silk_find_pred_coefs(
 	psEnc *SilkChannelEncoder,
 	psEncCtrl *SilkEncoderControl,
@@ -51,11 +53,13 @@ func silk_find_pred_coefs(
 		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
 		psEncCtrl.LTPredCodGain_Q7 = codgain.Val
 
-		periodicity := psEnc.indices.PERIndex
-		sum_log_gain := psEnc.sum_log_gain_Q7
-		silk_quant_LTP_gains(psEncCtrl.LTPCoef_Q14, psEnc.indices.LTPIndex, &periodicity, &sum_log_gain, WLTP, psEnc.mu_LTP_Q9, psEnc.LTPQuantLowComplexity, psEnc.nb_subfr)
-		psEnc.indices.PERIndex = periodicity
-		psEnc.sum_log_gain_Q7 = sum_log_gain
+		boxed_periodicity := BoxedValueByte{psEnc.indices.PERIndex}
+		boxed_gain := BoxedValueInt{psEnc.sum_log_gain_Q7}
+
+		silk_quant_LTP_gains(psEncCtrl.LTPCoef_Q14, psEnc.indices.LTPIndex, boxed_periodicity,
+			boxed_gain, WLTP, psEnc.mu_LTP_Q9, psEnc.LTPQuantLowComplexity, psEnc.nb_subfr)
+		psEnc.indices.PERIndex = boxed_periodicity.Val
+		psEnc.sum_log_gain_Q7 = boxed_gain.Val
 
 		silk_LTP_scale_ctrl(psEnc, psEncCtrl, condCoding)
 
@@ -78,10 +82,13 @@ func silk_find_pred_coefs(
 	}
 
 	if psEnc.first_frame_after_reset != 0 {
-		minInvGain_Q30 = int((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*float64(1<<30) + 0.5)
+		minInvGain_Q30 = int(((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*(1<<(30)) + 0.5))
 	} else {
-		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int(psEncCtrl.LTPredCodGain_Q7), int((1.0/3.0)*(1<<16)+0.5)))
-		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30, silk_SMULWW(int(SilkConstants.MAX_PREDICTION_POWER_GAIN*(1)+0.5, silk_SMLAWB(int(0.25*(1<<18)+0.5, int(0.75*(1<<18)+0.5, psEncCtrl.coding_quality_Q14)), 14))))
+		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int(psEncCtrl.LTPredCodGain_Q7), int(math.Round(1.0/3.0)*(1<<16)+0.5)))
+		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30,
+			silk_SMULWW(((int)((SilkConstants.MAX_PREDICTION_POWER_GAIN)*(1<<(0))+0.5)),
+				silk_SMLAWB(int(math.Round((0.25)*(1<<(18))+0.5)), int(math.Round(0.75)*(1<<(18))+0.5), psEncCtrl.coding_quality_Q14)), 14)
+
 	}
 
 	silk_find_LPC(psEnc, NLSF_Q15, LPC_in_pre, minInvGain_Q30)

@@ -9,7 +9,7 @@ type SideInfoIndices struct {
 	signalType        byte
 	quantOffsetType   byte
 	NLSFInterpCoef_Q2 byte
-	PERIndex          byte
+	PERIndex          int8
 	LTP_scaleIndex    byte
 	Seed              byte
 }
