@@ -20,7 +20,7 @@ func get_pulses(i int) int {
 func bits2pulses(m *CeltMode, band int, LM int, bits int) int {
 	LM++
 	cache := m.cache.bits
-	cache_ptr := m.cache.index[LM*m.nbEBands+band]
+	cache_ptr := int(m.cache.index[LM*m.nbEBands+band])
 
 	lo := 0
 	hi := int(cache[cache_ptr])
@@ -50,7 +50,7 @@ func pulses2bits(m *CeltMode, band int, LM int, pulses int) int {
 	if pulses == 0 {
 		return 0
 	}
-	return int(m.cache.bits[m.cache.index[LM*m.nbEBands+band]+pulses]) + 1
+	return int(m.cache.bits[int(m.cache.index[LM*m.nbEBands+band])+pulses] + 1)
 }
 
 func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance BoxedValueInt, skip_rsv int, intensity BoxedValueInt, intensity_rsv int, dual_stereo BoxedValueInt, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
@@ -110,10 +110,10 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		}
 		j := codedBands - 1
 		left := total - psum
-		percoeff := celt_udiv(left, m.eBands[codedBands]-m.eBands[start])
-		left -= (m.eBands[codedBands] - m.eBands[start]) * percoeff
-		rem := IMAX(left-(m.eBands[j]-m.eBands[start]), 0)
-		band_width := m.eBands[codedBands] - m.eBands[j]
+		percoeff := celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
+		left -= int(m.eBands[codedBands]-m.eBands[start]) * percoeff
+		rem := IMAX(left-int(m.eBands[j]-m.eBands[start]), 0)
+		band_width := int(m.eBands[codedBands] - m.eBands[j])
 		band_bits := bits[j] + percoeff*band_width + rem
 		if band_bits >= IMAX(thresh[j], alloc_floor+(1<<BITRES)) {
 			if encode != 0 {
@@ -170,13 +170,13 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	}
 
 	left := total - psum
-	percoeff := celt_udiv(left, m.eBands[codedBands]-m.eBands[start])
-	left -= (m.eBands[codedBands] - m.eBands[start]) * percoeff
+	percoeff := celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
+	left -= int(m.eBands[codedBands]-m.eBands[start]) * percoeff
 	for j = start; j < codedBands; j++ {
-		bits[j] += percoeff * (m.eBands[j+1] - m.eBands[j])
+		bits[j] += percoeff * int(m.eBands[j+1]-m.eBands[j])
 	}
 	for j = start; j < codedBands; j++ {
-		tmp := IMIN(left, m.eBands[j+1]-m.eBands[j])
+		tmp := IMIN(left, int(m.eBands[j+1]-m.eBands[j]))
 		bits[j] += tmp
 		left -= tmp
 	}
@@ -284,8 +284,8 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 	trim_offset := make([]int, len)
 
 	for j := start; j < end; j++ {
-		thresh[j] = IMAX(C<<BITRES, (3*(m.eBands[j+1]-m.eBands[j])<<LM<<BITRES)>>4)
-		trim_offset[j] = C * (m.eBands[j+1] - m.eBands[j]) * (alloc_trim - 5 - LM) * (end - j - 1) * (1 << (LM + BITRES)) >> 6
+		thresh[j] = IMAX(C<<BITRES, int(3*(m.eBands[j+1]-m.eBands[j])<<LM<<BITRES)>>4)
+		trim_offset[j] = C * int(m.eBands[j+1]-m.eBands[j]) * (alloc_trim - 5 - LM) * (end - j - 1) * (1 << (LM + BITRES)) >> 6
 		if (m.eBands[j+1]-m.eBands[j])<<LM == 1 {
 			trim_offset[j] -= C << BITRES
 		}

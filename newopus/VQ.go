@@ -28,10 +28,10 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 	}
 
 	factor := SPREAD_FACTOR[spread-1]
-	gain := celt_div(int(MULT16_16(CeltConstants.Q15_ONE, len)), (len + factor*K))
-	theta := HALF16(MULT16_16_Q15(gain, gain))
-	c := celt_cos_norm(EXTEND32(theta))
-	s := celt_cos_norm(EXTEND32(SUB16(CeltConstants.Q15ONE, theta)))
+	gain := celt_div(int(MULT16_16(int(CeltConstants.Q15_ONE), len)), (len + factor*K))
+	theta := HALF16Int(MULT16_16_Q15Int(gain, gain))
+	c := celt_cos_norm(EXTEND32Int(theta))
+	s := celt_cos_norm(EXTEND32Int(SUB16Int(CeltConstants.Q15ONE, theta)))
 	stride2 := 0
 	if len >= 8*stride {
 		stride2 = 1
@@ -122,12 +122,12 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 			sum = int(0.5 + (1.0)*(1<<14))
 		}
 
-		rcp := EXTRACT16(MULT16_32_Q16(K-1, Celt_rcp(sum)))
+		rcp := EXTRACT16(MULT16_32_Q16Int(K-1, Celt_rcp(sum)))
 		for j := 0; j < N; j++ {
 			iy[j] = MULT16_16_Q15Int(X[X_ptr+j], rcp)
 			y[j] = iy[j]
-			yy = MAC16_16(yy, y[j], y[j])
-			xy = MAC16_16(xy, X[X_ptr+j], y[j])
+			yy = MAC16_16IntAll(yy, y[j], y[j])
+			xy = MAC16_16IntAll(xy, X[X_ptr+j], y[j])
 			y[j] *= 2
 			pulsesLeft -= iy[j]
 		}
@@ -137,8 +137,8 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 
 	if pulsesLeft > N+3 {
 		tmp := pulsesLeft
-		yy = MAC16_16(yy, tmp, tmp)
-		yy = MAC16_16(yy, tmp, y[0])
+		yy = MAC16_16IntAll(yy, tmp, tmp)
+		yy = MAC16_16IntAll(yy, tmp, y[0])
 		iy[0] += pulsesLeft
 		pulsesLeft = 0
 	}

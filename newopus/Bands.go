@@ -77,13 +77,13 @@ func compute_band_energies(m *CeltMode, X [][]int, bandE [][]int, end int, C int
 				if shift > 0 {
 					for j < eBands[i+1]<<LM {
 						x := EXTRACT16(SHR32(X[c][j], shift))
-						sum = MAC16_16(sum, x, x)
+						sum = MAC16_16Int(sum, x, x)
 						j++
 					}
 				} else {
 					for j < eBands[i+1]<<LM {
 						x := EXTRACT16(SHL32(X[c][j], -shift))
-						sum = MAC16_16(sum, x, x)
+						sum = MAC16_16Int(sum, x, x)
 						j++
 					}
 				}
@@ -115,7 +115,7 @@ func normalise_bands(m *CeltMode, freq [][]int, X [][]int, bandE [][]int, end in
 func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE []int, bandLogE_ptr int, start int, end int, M int, downsample int, silence int) {
 	eBands := m.eBands
 	N := M * m.shortMdctSize
-	bound := M * eBands[end]
+	bound := M * int(eBands[end])
 	if downsample != 1 {
 		bound = IMIN(bound, N/downsample)
 	}
@@ -237,16 +237,16 @@ func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE
 	for j := 0; j < N; j++ {
 		l := X[X_ptr+j]
 		r := Y[Y_ptr+j]
-		X[X_ptr+j] = EXTRACT16(SHR32(MAC16_16(MULT16_16(a1, l), a2, r), 14))
+		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16Int(MULT16_16(a1, l), a2, r), 14)))
 	}
 }
 
 func stereo_split(X []int, X_ptr int, Y []int, Y_ptr int, N int) {
 	for j := 0; j < N; j++ {
-		l := MULT16_16(QCONST16(.70710678, 15), X[X_ptr+j])
-		r := MULT16_16(QCONST16(.70710678, 15), Y[Y_ptr+j])
-		X[X_ptr+j] = EXTRACT16(SHR32(ADD32(l, r), 15))
-		Y[Y_ptr+j] = EXTRACT16(SHR32(SUB32(r, l), 15))
+		l := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[X_ptr+j])
+		r := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), Y[Y_ptr+j])
+		X[X_ptr+j] = int(EXTRACT16(SHR32(ADD32(l, r), 15)))
+		Y[Y_ptr+j] = int(EXTRACT16(SHR32(SUB32(r, l), 15)))
 	}
 }
 
@@ -1041,11 +1041,11 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			last = 1
 		}
 
-		X_ptr := M * eBands[i]
+		X_ptr := M * int(eBands[i])
 		X := X_
 		Y := Y_
-		Y_ptr := M * eBands[i]
-		N := M*eBands[i+1] - X_ptr
+		Y_ptr := M * int(eBands[i])
+		N := M*int(eBands[i+1]) - X_ptr
 		tell := int(ec.tell_frac())
 
 		if i != start {
