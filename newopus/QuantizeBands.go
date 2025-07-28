@@ -85,7 +85,9 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				if pi > 40 {
 					pi = 40
 				}
-				qi = Laplace.ec_laplace_encode(*enc, qi, int(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				boxed_qi := BoxedValueInt{qi}
+				Laplace.ec_laplace_encode(*enc, &boxed_qi, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				qi = boxed_qi.Val
 			} else if budget-tell >= 2 {
 				if qi < -1 {
 					qi = -1
@@ -111,7 +113,7 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int16,
 				qi = -1
 			}
 			error[c][i] = (f >> 7) - (qi << CeltConstants.DB_SHIFT)
-			badness += int(abs(float64(qi0 - qi)))
+			badness += int(abs(int(qi0 - qi)))
 			q := qi << CeltConstants.DB_SHIFT
 			tmp := ((coef * int(oldE)) >> 8) + prev[c] + (q << 7)
 			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {
@@ -150,7 +152,8 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 	if lfe != 0 {
 		max_decay = 3 << CeltConstants.DB_SHIFT
 	}
-	enc_start_state := enc.copy()
+	enc_start_state := EntropyCoder{}
+	enc_start_state.Assign(enc)
 
 	oldEBands_intra := make([][]int16, C)
 	error_intra := make([][]int, C)
@@ -166,25 +169,28 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 	}
 
 	if intra == 0 {
-		enc_intra_state := enc.Copy()
+
+		enc_intra_state := EntropyCoder{}
+		enc_intra_state.Assign(enc)
+
 		tell_intra := enc.tell_frac()
-		nstart_bytes := enc_start_state.RangeBytes()
-		nintra_bytes := enc_intra_state.RangeBytes()
+		nstart_bytes := enc_start_state.range_bytes()
+		nintra_bytes := enc_intra_state.range_bytes()
 		intra_buf := nstart_bytes
 		save_bytes := nintra_bytes - nstart_bytes
 		var intra_bits []byte
 		if save_bytes > 0 {
 			intra_bits = make([]byte, save_bytes)
-			copy(intra_bits, enc_intra_state.GetBuffer()[intra_buf:intra_buf+save_bytes])
+			copy(intra_bits, enc_intra_state.get_buffer()[intra_buf:intra_buf+save_bytes])
 		}
 
-		enc.Assign(enc_start_state)
+		enc.Assign(&enc_start_state)
 		badness2 := quant_coarse_energy_impl(m, start, end, eBands, oldEBands, budget, tell, CeltTables.E_prob_model[LM][0], error, enc, C, LM, 0, max_decay, lfe)
 
 		if two_pass != 0 && (badness1 < badness2 || (badness1 == badness2 && enc.tell_frac()+intra_bias > tell_intra)) {
-			enc.Assign(enc_intra_state)
+			enc.Assign(&enc_intra_state)
 			if save_bytes > 0 {
-				enc.write_buffer(intra_bits, intra_buf, save_bytes)
+				enc.write_buffer(intra_bits, 0, intra_buf, int(save_bytes))
 			}
 			for c := 0; c < C; c++ {
 				copy(oldEBands[c], oldEBands_intra[c])
@@ -221,7 +227,7 @@ func quant_fine_energy(m *CeltMode, start int, end int, oldEBands [][]int16, err
 			if q2 < 0 {
 				q2 = 0
 			}
-			enc.enc_bits(uint(q2), fine_quant[i])
+			enc.enc_bits(int64(q2), fine_quant[i])
 			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (CeltConstants.DB_SHIFT - 1))) >> fine_quant[i]
 			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
 			oldEBands[c][i] += int16(offset)
@@ -241,7 +247,7 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int16,
 				if error[c][i] >= 0 {
 					q2 = 1
 				}
-				enc.enc_bits(uint(q2), 1)
+				enc.enc_bits(int64(q2), 1)
 				offset := (q2<<CeltConstants.DB_SHIFT - (1 << (CeltConstants.DB_SHIFT - 1))) >> (fine_quant[i] + 1)
 				oldEBands[c][i] += int16(offset)
 				bits_left--
@@ -346,7 +352,7 @@ func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]in
 func amp2Log2Ptr(m *CeltMode, effEnd int, end int, bandE []int16, bandLogE []int16, bandLogEPtr int, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(celt_log2((bandE[i+c*m.nbEBands])<<2) - int16(CeltTables.EMeans[i])<<6)
+			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(celt_log2(SHL32(int(bandE[i+c*m.nbEBands]), 2))) - SHL16(int16(CeltTables.EMeans[i]), 6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[bandLogEPtr+c*m.nbEBands+i] = -(14 << CeltConstants.DB_SHIFT)
