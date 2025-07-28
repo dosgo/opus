@@ -23,11 +23,12 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 
 	for k = 0; k < nb_subfr; k++ {
 		lag_ptr := r_ptr - int(lag[k]) - LTP_ORDER/2
-		var rr_val int
-		var rr_shift int
-		silk_sum_sqr_shift5(&rr_val, &rr_shift, r_lpc[r_ptr:], subfr_length)
-		rr[k] = rr_val
-		rr_shifts = int(rr_shift)
+		boxed_rr := BoxedValueInt{0}
+		boxed_rr_shift := BoxedValueInt{0}
+		//silk_sum_sqr_shift5(&rr_val, &rr_shift, r_lpc[r_ptr:], subfr_length)
+		silk_sum_sqr_shift5(boxed_rr, boxed_rr_shift, r_lpc, r_ptr, subfr_length)
+		rr[k] = boxed_rr.Val
+		rr_shifts = int(boxed_rr_shift.Val)
 
 		LZs = silk_CLZ32(rr[k])
 		if LZs < LTP_CORRS_HEAD_ROOM {
@@ -35,28 +36,29 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 			rr_shifts += LTP_CORRS_HEAD_ROOM - LZs
 		}
 		corr_rshifts[k] = int(rr_shifts)
-		shifts := corr_rshifts[k]
-		CorrelateMatrix.silk_corrMatrix(r_lpc[lag_ptr:], subfr_length, LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP[WLTP_ptr:], &shifts)
-		corr_rshifts[k] = shifts
 
-		CorrelateMatrix.silk_corrVector(r_lpc[lag_ptr:], r_lpc[r_ptr:], subfr_length, LTP_ORDER, Rr, int(corr_rshifts[k]))
+		boxed_shifts := BoxedValueInt{corr_rshifts[k]}
+		CorrelateMatrix.silk_corrMatrix(r_lpc, lag_ptr, subfr_length, SilkConstants.LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP, WLTP_ptr, &boxed_shifts)
 
+		corr_rshifts[k] = boxed_shifts.Val
+
+		//	CorrelateMatrix.silk_corrVector(r_lpc[lag_ptr:], r_lpc[r_ptr:], subfr_length, LTP_ORDER, Rr, int(corr_rshifts[k]))
+		CorrelateMatrix.silk_corrVector(r_lpc, lag_ptr, r_lpc, r_ptr, subfr_length, SilkConstants.LTP_ORDER, Rr, corr_rshifts[k])
 		if int(corr_rshifts[k]) > rr_shifts {
 			rr[k] = silk_RSHIFT(rr[k], int(corr_rshifts[k])-rr_shifts)
 		}
 
 		regu := int(1)
 		regu = silk_SMLAWB(regu, rr[k], SILK_CONST(TuningParameters.LTP_DAMPING/3, 16))
-		regu = silk_SMLAWB(regu, MatrixGet(WLTP, WLTP_ptr, 0, 0, LTP_ORDER), SILK_CONST(TuningParameters.LTP_DAMPING/3, 16))
-		regu = silk_SMLAWB(regu, MatrixGet(WLTP, WLTP_ptr, LTP_ORDER-1, LTP_ORDER-1, LTP_ORDER), SILK_CONST(TuningParameters.LTP_DAMPING/3, 16))
-		silk_regularize_correlations(WLTP[WLTP_ptr:], rr, k, regu, LTP_ORDER)
+		regu = silk_SMLAWB(regu, MatrixGetPtr(WLTP, WLTP_ptr, 0, 0, LTP_ORDER), SILK_CONST(TuningParameters.LTP_DAMPING/3, 16))
+		regu = silk_SMLAWB(regu, MatrixGetPtr(WLTP, WLTP_ptr, LTP_ORDER-1, LTP_ORDER-1, LTP_ORDER), SILK_CONST(TuningParameters.LTP_DAMPING/3, 16))
 
-		silk_solve_LDL(WLTP[WLTP_ptr:], LTP_ORDER, Rr, b_Q16)
+		silk_regularize_correlations(WLTP, WLTP_ptr, rr, k, regu, SilkConstants.LTP_ORDER)
+		silk_solve_LDL(WLTP, WLTP_ptr, SilkConstants.LTP_ORDER, Rr, b_Q16)
 
-		silk_fit_LTP(b_Q16, b_Q14[b_Q14_ptr:])
+		silk_fit_LTP(b_Q16, b_Q14, b_Q14_ptr)
 
-		nrg[k] = silk_residual_energy16_covar(b_Q14[b_Q14_ptr:], WLTP[WLTP_ptr:], Rr, rr[k], LTP_ORDER, 14)
-
+		nrg[k] = silk_residual_energy16_covar(b_Q14, b_Q14_ptr, WLTP, WLTP_ptr, Rr, rr[k], SilkConstants.LTP_ORDER, 14)
 		extra_shifts = silk_min_int(corr_rshifts[k], LTP_CORRS_HEAD_ROOM)
 		denom32 = silk_LSHIFT_SAT32(silk_SMULWB(nrg[k], Wght_Q15[k]), 1+extra_shifts) + silk_RSHIFT(silk_SMULWB(int(subfr_length), 655), int(corr_rshifts[k])-extra_shifts)
 		if denom32 < 1 {
@@ -79,10 +81,10 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 			}
 		}
 
-		silk_scale_vector32_Q26_lshift_18(WLTP[WLTP_ptr:], temp32, LTP_ORDER*LTP_ORDER)
+		silk_scale_vector32_Q26_lshift_18(WLTP, WLTP_ptr, temp32, SilkConstants.LTP_ORDER*SilkConstants.LTP_ORDER)
 
-		w[k] = MatrixGet(WLTP, WLTP_ptr, LTP_ORDER/2, LTP_ORDER/2, LTP_ORDER)
-
+		//w[k] = MatrixGet(WLTP, WLTP_ptr, LTP_ORDER/2, LTP_ORDER/2, LTP_ORDER)
+		w[k] = MatrixGetPtr(WLTP, WLTP_ptr, SilkConstants.LTP_ORDER/2, SilkConstants.LTP_ORDER/2, SilkConstants.LTP_ORDER)
 		r_ptr += subfr_length
 		b_Q14_ptr += LTP_ORDER
 		WLTP_ptr += LTP_ORDER * LTP_ORDER
@@ -96,7 +98,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 		}
 	}
 
-	if LTPredCodGain_Q7 != nil {
+	if &LTPredCodGain_Q7 != nil {
 		LPC_res_nrg = 0
 		LPC_LTP_res_nrg = 0
 		for k = 0; k < nb_subfr; k++ {
@@ -107,7 +109,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 			LPC_LTP_res_nrg = 1
 		}
 		div_Q16 = silk_DIV32_varQ(LPC_res_nrg, LPC_LTP_res_nrg, 16)
-		*LTPredCodGain_Q7 = int(silk_SMULBB(3, silk_lin2log(div_Q16)-(16<<7)))
+		LTPredCodGain_Q7.Val = int(silk_SMULBB(3, silk_lin2log(div_Q16)-(16<<7)))
 	}
 
 	b_Q14_ptr = 0
@@ -170,7 +172,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 
 		temp32 = 0
 		for i = 0; i < LTP_ORDER; i++ {
-			delta_b_Q14[i] = int(max_int16(b_Q14[b_Q14_ptr+i], 1638))
+			delta_b_Q14[i] = int(silk_max_16(b_Q14[b_Q14_ptr+i], 1638))
 			temp32 += delta_b_Q14[i]
 		}
 		temp32 = silk_DIV32(g_Q26, temp32)
