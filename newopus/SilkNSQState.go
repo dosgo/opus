@@ -104,7 +104,7 @@ func (s *SilkNSQState) silk_NSQ(
 	psEncC *SilkChannelEncoder,
 	psIndices *SideInfoIndices,
 	x_Q3 []int,
-	pulses []byte,
+	pulses []int8,
 	PredCoef_Q12 [][]int16,
 	LTPCoef_Q14 []int16,
 	AR2_Q13 []int16,
@@ -212,7 +212,7 @@ func (s *SilkNSQState) silk_NSQ(
 func (s *SilkNSQState) silk_noise_shape_quantizer(
 	signalType int,
 	x_sc_Q10 []int,
-	pulses []byte,
+	pulses []int8,
 	pulses_ptr int,
 	xq []int16,
 	xq_ptr int,
@@ -363,7 +363,7 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 			q1_Q10 = q2_Q10
 		}
 
-		pulses[pulses_ptr+i] = byte(silk_RSHIFT_ROUND(q1_Q10, 10))
+		pulses[pulses_ptr+i] = int8(silk_RSHIFT_ROUND(q1_Q10, 10))
 
 		exc_Q14 = silk_LSHIFT(q1_Q10, 4)
 		if s.rand_seed < 0 {
@@ -458,7 +458,7 @@ func (s *SilkNSQState) silk_NSQ_del_dec(
 	psEncC *SilkChannelEncoder,
 	psIndices *SideInfoIndices,
 	x_Q3 []int,
-	pulses []byte,
+	pulses []int8,
 	PredCoef_Q12 [][]int16,
 	LTPCoef_Q14 []int16,
 	AR2_Q13 []int16,
@@ -566,7 +566,7 @@ func (s *SilkNSQState) silk_NSQ_del_dec(
 					last_smple_idx = smpl_buf_idx + decisionDelay
 					for i = 0; i < decisionDelay; i++ {
 						last_smple_idx = (last_smple_idx - 1) & DECISION_DELAY_MASK
-						pulses[pulses_ptr+i-decisionDelay] = byte(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
+						pulses[pulses_ptr+i-decisionDelay] = int8(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
 						s.xq[pxq+i-decisionDelay] = int16(silk_SAT16(silk_RSHIFT_ROUND(silk_SMULWW(psDD.Xq_Q14[last_smple_idx], Gains_Q16[1]), 14)))
 						s.sLTP_shp_Q14[s.sLTP_shp_buf_idx-decisionDelay+i] = psDD.Shape_Q14[last_smple_idx]
 					}
@@ -611,7 +611,7 @@ func (s *SilkNSQState) silk_NSQ_del_dec(
 	Gain_Q10 = silk_RSHIFT32(Gains_Q16[psEncC.nb_subfr-1], 6)
 	for i = 0; i < decisionDelay; i++ {
 		last_smple_idx = (last_smple_idx - 1) & DECISION_DELAY_MASK
-		pulses[pulses_ptr+i-decisionDelay] = byte(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
+		pulses[pulses_ptr+i-decisionDelay] = int8(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
 		s.xq[pxq+i-decisionDelay] = int16(silk_SAT16(silk_RSHIFT_ROUND(silk_SMULWW(psDD.Xq_Q14[last_smple_idx], Gain_Q10), 8)))
 		s.sLTP_shp_Q14[s.sLTP_shp_buf_idx-decisionDelay+i] = psDD.Shape_Q14[last_smple_idx]
 	}
@@ -629,7 +629,7 @@ func (s *SilkNSQState) silk_noise_shape_quantizer_del_dec(
 	psDelDec []*NSQ_del_dec_struct,
 	signalType int,
 	x_Q10 []int,
-	pulses []byte,
+	pulses []int8,
 	pulses_ptr int,
 	xq []int16,
 	xq_ptr int,
@@ -874,7 +874,7 @@ func (s *SilkNSQState) silk_noise_shape_quantizer_del_dec(
 
 		psDD = psDelDec[Winner_ind]
 		if subfr > 0 || i >= decisionDelay {
-			pulses[pulses_ptr+i-decisionDelay] = byte(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
+			pulses[pulses_ptr+i-decisionDelay] = int8(silk_RSHIFT_ROUND(psDD.Q_Q10[last_smple_idx], 10))
 			xq[xq_ptr+i-decisionDelay] = int16(silk_SAT16(silk_RSHIFT_ROUND(silk_SMULWW(psDD.Xq_Q14[last_smple_idx], delayedGain_Q10[last_smple_idx]), 8)))
 			s.sLTP_shp_Q14[s.sLTP_shp_buf_idx-decisionDelay] = psDD.Shape_Q14[last_smple_idx]
 			sLTP_Q15[s.sLTP_buf_idx-decisionDelay] = psDD.Pred_Q15[last_smple_idx]

@@ -61,7 +61,7 @@ type SilkChannelEncoder struct {
 	LBRR_flag                     byte
 	LBRR_flags                    [MAX_FRAMES_PER_PACKET]int
 	indices                       SideInfoIndices
-	pulses                        []byte
+	pulses                        []int8
 	inputBuf                      []int16
 	inputBufIx                    int
 	nFramesPerPacket              int
@@ -456,13 +456,14 @@ func (s *SilkChannelEncoder) silk_setup_LBRR(TargetRate_bps int) int {
 		}
 		//	LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), silk_SMULWB(0.01, 1<<16))
 
-		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), (0.01*(1<<(16)) + 0.5))
+		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), int(math.Round(0.01*(1<<(16))+0.5)))
 
 		if TargetRate_bps > LBRR_rate_thres_bps {
 			if LBRR_in_previous_packet == 0 {
 				s.LBRR_GainIncreases = 7
 			} else {
-				s.LBRR_GainIncreases = silk_max_int(7-silk_SMULWB(s.PacketLoss_perc, silk_SMULWB(0.4, 1<<16)), 2)
+				s.LBRR_GainIncreases = silk_max_int(7-silk_SMULWB(s.PacketLoss_perc, int(math.Round((0.4)*(1<<(16))+0.5))), 2)
+
 			}
 			s.LBRR_enabled = 1
 		}
@@ -690,14 +691,11 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 				break
 			}
 			if (found_lower & found_upper) == 0 {
-				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + silk_SMULWB(16, 1<<7))
-				if gain_factor_Q16 > silk_SMULWB(2, 1<<16) {
-					gain_factor_Q16 = silk_SMULWB(2, 1<<16)
-				}
+
+				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + int(math.Round(16)*(1<<(7))+0.5))
+				gain_factor_Q16 = silk_min_32(gain_factor_Q16, int(math.Round((2)*(1<<(16))+0.5)))
 				if nBits > maxBits {
-					if gain_factor_Q16 < silk_SMULWB(1.3, 1<<16) {
-						gain_factor_Q16 = silk_SMULWB(1.3, 1<<16)
-					}
+					gain_factor_Q16 = silk_max_32(gain_factor_Q16, int(math.Round(1.3)*(1<<(16))+0.5))
 				}
 				gainMult_Q8 = int16(silk_SMULWB(gain_factor_Q16, int(gainMult_Q8)))
 			} else {
@@ -740,13 +738,15 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
 			psIndices_LBRR.GainsIndices[0] = byte(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
 		}
-		gainIndex := s.LBRRprevLastGainIndex
-		silk_gains_dequant(thisCtrl.Gains_Q16[:], psIndices_LBRR.GainsIndices[:], &gainIndex, silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
-		s.LBRRprevLastGainIndex = gainIndex
+
+		boxed_gainIndex := BoxedValueByte{int8(s.LBRRprevLastGainIndex)}
+		silk_gains_dequant(thisCtrl.Gains_Q16, psIndices_LBRR.GainsIndices,
+			boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+		s.LBRRprevLastGainIndex = byte(boxed_gainIndex.Val)
 		if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
-			sNSQ_LBRR.silk_NSQ_del_dec(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded][:], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)
+			sNSQ_LBRR.silk_NSQ_del_dec(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)
 		} else {
-			sNSQ_LBRR.silk_NSQ(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded][:], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)
+			sNSQ_LBRR.silk_NSQ(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)
 		}
 		copy(thisCtrl.Gains_Q16[:], TempGains_Q16)
 	}

@@ -26,7 +26,7 @@ func NewOpusMSEncoder(nb_streams, nb_coupled_streams int) (*OpusMSEncoder, error
 		encoders: make([]*OpusEncoder, nb_streams),
 	}
 	for c := 0; c < nb_streams; c++ {
-		st.encoders[c] = NewOpusEncoder()
+		st.encoders[c] = &OpusEncoder{}
 	}
 
 	nb_channels := nb_coupled_streams*2 + (nb_streams - nb_coupled_streams)
@@ -53,7 +53,7 @@ func (st *OpusMSEncoder) ResetState() {
 	}
 }
 
-func validate_encoder_layout(layout *ChannelLayout) int {
+func validate_encoder_layout(layout ChannelLayout) int {
 	for s := 0; s < layout.nb_streams; s++ {
 		if s < layout.nb_coupled_streams {
 			if get_left_channel(layout, s, -1) == -1 {
@@ -82,15 +82,15 @@ func channel_pos(channels int, pos *[8]int) {
 }
 
 var diff_table = [17]int16{
-	int16(0.5 + 0.5000000*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.2924813*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.1609640*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0849625*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0437314*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0221971*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0111839*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0056136*float32(1<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0028123*float32(1<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.5000000*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.2924813*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.1609640*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0849625*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0437314*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0221971*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0111839*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0056136*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int16(0.5 + 0.0028123*float32(int(1)<<CeltConstants.DB_SHIFT)),
 	0, 0, 0, 0, 0, 0, 0, 0,
 }
 
@@ -98,10 +98,10 @@ func logSum(a, b int) int {
 	var max, diff int
 	if a > b {
 		max = a
-		diff = SUB32(EXTEND32(a), EXTEND32(b))
+		diff = SUB32(EXTEND32Int(a), EXTEND32Int(b))
 	} else {
 		max = b
-		diff = SUB32(EXTEND32(b), EXTEND32(a))
+		diff = SUB32(EXTEND32Int(b), EXTEND32Int(a))
 	}
 	if diff >= int(QCONST16(8.0, CeltConstants.DB_SHIFT)) {
 		return max
@@ -141,9 +141,10 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 	for c := 0; c < channels; c++ {
 		copy(input[:overlap], mem[c*overlap:(c*overlap)+overlap])
 		opus_copy_channel_in_short(x, 0, 1, pcm, pcm_ptr, channels, c, len)
-		preemph_val := preemph_mem[c]
-		celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &preemph_val, 0)
-		preemph_mem[c] = preemph_val
+
+		boxed_preemph := BoxedValueInt{preemph_mem[c]}
+		celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
+		preemph_mem[c] = boxed_preemph.Val
 
 		clt_mdct_forward(celt_mode.mdct, input, 0, freq[0], 0, celt_mode.window, overlap, celt_mode.maxLM-LM, 1)
 		if upsample != 1 {
@@ -222,7 +223,7 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 	st.application = application
 	st.variable_duration = OPUS_FRAMESIZE_ARG
 	copy(st.layout.mapping[:], mapping)
-	if validate_layout(st.layout) == 0 || validate_encoder_layout(&st.layout) == 0 {
+	if validate_layout(st.layout) == 0 || validate_encoder_layout(st.layout) == 0 {
 		return OpusError.OPUS_BAD_ARG
 	}
 
@@ -496,8 +497,8 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 
 		rp.Reset()
 		if s < st.layout.nb_coupled_streams {
-			left := Get_left_channel(&st.layout, s, -1)
-			right := Get_right_channel(&st.layout, s, -1)
+			left := get_left_channel(st.layout, s, -1)
+			right := get_right_channel(st.layout, s, -1)
 			opus_copy_channel_in_short(buf, 0, 2, pcm, pcm_ptr, st.layout.nb_channels, left, frame_size)
 			opus_copy_channel_in_short(buf, 1, 2, pcm, pcm_ptr, st.layout.nb_channels, right, frame_size)
 			encoder_ptr++
@@ -639,11 +640,11 @@ func (st *OpusMSEncoder) SetComplexity(value int) {
 	}
 }
 
-func (st *OpusMSEncoder) GetForceMode() OpusMode {
+func (st *OpusMSEncoder) GetForceMode() int {
 	return st.encoders[0].GetForceMode()
 }
 
-func (st *OpusMSEncoder) SetForceMode(value OpusMode) {
+func (st *OpusMSEncoder) SetForceMode(value int) {
 	for i := 0; i < st.layout.nb_streams; i++ {
 		st.encoders[i].SetForceMode(value)
 	}
