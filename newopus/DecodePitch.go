@@ -2,7 +2,7 @@ package opus
 
 func silk_decode_pitch(
 	lagIndex int16,
-	contourIndex byte,
+	contourIndex int8,
 	pitch_lags []int,
 	Fs_kHz int,
 	nb_subfr int,

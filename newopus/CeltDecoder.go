@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 type CeltDecoder struct {
 	mode                  *CeltMode
 	overlap               int
@@ -157,8 +159,8 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 		seed := this.rng
 		for c := 0; c < C; c++ {
 			for i := this.start; i < effEnd; i++ {
-				boffs := eBands[i] << LM
-				blen := (eBands[i+1] - eBands[i]) << LM
+				boffs := int(eBands[i]) << LM
+				blen := int(eBands[i+1]-eBands[i]) << LM
 				for j := 0; j < blen; j++ {
 					seed = celt_lcg_rand(seed)
 					X[c][boffs+j] = int(seed) >> 20
@@ -181,7 +183,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			pitch_index = this.last_pitch_index
 		} else {
 			pitch_index = this.last_pitch_index
-			fade = QCONST16(0.8, 15)
+			fade = int(math.Round(0.5 + (8)*((1)<<(15))))
 		}
 
 		etmp := make([]int, overlap)
@@ -195,10 +197,10 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 
 			if this.loss_count == 0 {
 				ac := make([]int, CeltConstants.LPC_ORDER+1)
-				_celt_autocorr(exc, ac, window, overlap, CeltConstants.LPC_ORDER, CeltConstants.MAX_PERIOD)
+				_celt_autocorr_with_window(exc, ac, window, overlap, CeltConstants.LPC_ORDER, CeltConstants.MAX_PERIOD)
 				ac[0] += SHR32(ac[0], 13)
 				for i := 1; i <= CeltConstants.LPC_ORDER; i++ {
-					ac[i] -= MULT16_32_Q15(2*i*i, ac[i])
+					ac[i] -= MULT16_32_Q15Int(2*i*i, ac[i])
 				}
 				celt_lpc(this.lpc[c], ac, CeltConstants.LPC_ORDER)
 			}
@@ -208,7 +210,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			for i := 0; i < CeltConstants.LPC_ORDER; i++ {
 				lpc_mem[i] = ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-exc_length-1-i], CeltConstants.SIG_SHIFT)
 			}
-			celt_fir(exc, CeltConstants.MAX_PERIOD-exc_length, this.lpc[c], 0, exc, CeltConstants.MAX_PERIOD-exc_length, exc_length, CeltConstants.LPC_ORDER, lpc_mem)
+			celt_fir_int(exc, CeltConstants.MAX_PERIOD-exc_length, this.lpc[c], 0, exc, CeltConstants.MAX_PERIOD-exc_length, exc_length, CeltConstants.LPC_ORDER, lpc_mem)
 
 			shift := IMAX(0, 2*celt_zlog2(celt_maxabs16(exc, CeltConstants.MAX_PERIOD-exc_length, exc_length))-20)
 			decay_length := exc_length >> 1
@@ -246,7 +248,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			for i := 0; i < CeltConstants.LPC_ORDER; i++ {
 				lpc_mem[i] = ROUND16Int(buf[CeltConstants.DECODE_BUFFER_SIZE-N-1-i], CeltConstants.SIG_SHIFT)
 			}
-			celt_iir(buf, CeltConstants.DECODE_BUFFER_SIZE-N, this.lpc[c], buf, CeltConstants.DECODE_BUFFER_SIZE-N, extrapolation_len, LPC_ORDER, lpc_mem)
+			celt_iir(buf, CeltConstants.DECODE_BUFFER_SIZE-N, this.lpc[c], buf, CeltConstants.DECODE_BUFFER_SIZE-N, extrapolation_len, CeltConstants.LPC_ORDER, lpc_mem)
 
 			S2 := 0
 			for i := 0; i < extrapolation_len; i++ {
@@ -260,18 +262,18 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			} else if S1 < S2 {
 				ratio := celt_sqrt(frac_div32(SHR32(S1, 1)+1, S2+1))
 				for i := 0; i < overlap; i++ {
-					tmp_g := CeltConstants.Q15ONE - MULT16_16_Q15(window[i], CeltConstants.Q15ONE-ratio)
-					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(tmp_g, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
+					tmp_g := CeltConstants.Q15ONE - MULT16_16_Q15Int(window[i], CeltConstants.Q15ONE-ratio)
+					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15Int(tmp_g, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
 				}
 				for i := overlap; i < extrapolation_len; i++ {
-					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15(ratio, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
+					buf[CeltConstants.DECODE_BUFFER_SIZE-N+i] = MULT16_32_Q15Int(ratio, buf[CeltConstants.DECODE_BUFFER_SIZE-N+i])
 				}
 			}
 
 			comb_filter(etmp, 0, buf, CeltConstants.DECODE_BUFFER_SIZE, this.postfilter_period_old, this.postfilter_period, overlap, -this.postfilter_gain_old, -this.postfilter_gain, this.postfilter_tapset_old, this.postfilter_tapset, nil, 0)
 
 			for i := 0; i < overlap/2; i++ {
-				buf[CeltConstants.DECODE_BUFFER_SIZE+i] = MULT16_32_Q15(window[i], etmp[overlap-1-i]) + MULT16_32_Q15(window[overlap-i-1], etmp[i])
+				buf[CeltConstants.DECODE_BUFFER_SIZE+i] = MULT16_32_Q15Int(window[i], etmp[overlap-1-i]) + MULT16_32_Q15Int(window[overlap-i-1], etmp[i])
 			}
 		}
 	}
@@ -279,7 +281,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 }
 
 func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
-	C := this.channels
+	//C := this.channels
 	CC := this.stream_channels
 	mode := this.mode
 	nbEBands := mode.nbEBands
@@ -288,7 +290,9 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	start := this.start
 	end := this.end
 	frame_size *= this.downsample
-
+	var intensity = 0
+	var dual_stereo = 0
+	var balance = 0
 	oldBandE := this.oldEBands
 	oldLogE := this.oldLogE
 	oldLogE2 := this.oldLogE2
@@ -364,7 +368,8 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 			if localDec.tell()+2 <= total_bits {
 				postfilter_tapset = int(localDec.dec_icdf(tapset_icdf[:], 2))
 			}
-			postfilter_gain = QCONST16(0.09375, 15) * (qg + 1)
+
+			postfilter_gain = int(math.Round(0.5+(.09375)*((1)<<(15)))) * (qg + 1)
 		}
 		tell = localDec.tell()
 	}
@@ -403,12 +408,12 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	total_bits <<= BITRES
 	tell = localDec.tell_frac()
 	for i := start; i < end; i++ {
-		width := CC * (eBands[i+1] - eBands[i]) << LM
+		width := CC * int(eBands[i+1]-eBands[i]) << LM
 		quanta := IMIN(width<<BITRES, IMAX(6<<BITRES, width))
 		dynalloc_loop_logp := dynalloc_logp
 		boost := 0
 		for tell+(dynalloc_loop_logp<<BITRES) < total_bits && boost < cap[i] {
-			flag := localDec.dec_bit_logp(dynalloc_loop_logp)
+			flag := localDec.dec_bit_logp(int64(dynalloc_loop_logp))
 			tell = localDec.tell_frac()
 			if flag == 0 {
 				break
@@ -438,11 +443,15 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 
 	pulses := make([]int, nbEBands)
 	fine_priority := make([]int, nbEBands)
-	intensity := 0
-	dual_stereo := 0
-	balance := 0
-	codedBands := compute_allocation(mode, start, end, offsets, cap, alloc_trim, &intensity, &dual_stereo, bits, &balance, pulses, fine_quant, fine_priority, CC, LM, localDec, 0, 0, 0)
 
+	boxed_intensity := BoxedValueInt{intensity}
+	boxed_dual_stereo := BoxedValueInt{dual_stereo}
+	boxed_balance := BoxedValueInt{0}
+
+	codedBands := compute_allocation(mode, start, end, offsets, cap, alloc_trim, boxed_intensity, boxed_dual_stereo, bits, boxed_balance, pulses, fine_quant, fine_priority, CC, LM, localDec, 0, 0, 0)
+	intensity = boxed_intensity.Val
+	dual_stereo = boxed_dual_stereo.Val
+	balance = boxed_balance.Val
 	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, localDec, CC)
 
 	for c := 0; c < CC; c++ {
@@ -455,14 +464,14 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 		X[c] = make([]int, N)
 	}
 
-	boxed_rng := this.rng
+	boxed_rng := BoxedValueInt{this.rng}
 	quant_all_bands(0, mode, start, end, X[0], func() []int {
 		if CC == 2 {
 			return X[1]
 		}
 		return nil
 	}(), collapse_masks, nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res, len*(8<<BITRES)-anti_collapse_rsv, balance, localDec, LM, codedBands, &boxed_rng)
-	this.rng = boxed_rng
+	this.rng = boxed_rng.Val
 
 	anti_collapse_on := 0
 	if anti_collapse_rsv > 0 {

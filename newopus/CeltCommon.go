@@ -39,27 +39,23 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 		if intensity > coded_bands {
 			coded_stereo_bands = coded_bands
 		}
-		coded_stereo_dof := (mode.eBands[coded_stereo_bands] << LM) - coded_stereo_bands
-		max_frac := DIV32_16(MULT16_16(int(0.8*32767.5), int16(coded_stereo_dof)), int16(coded_bins))
-		stereo_saving_val := stereo_saving
-		if stereo_saving_val > 256 {
-			stereo_saving_val = 256
-		}
-		saving := int(MIN32(
-			MULT16_32_Q15(int16(max_frac), int(target)),
-			SHR32(MULT16_16(int(stereo_saving_val-25), int16(coded_stereo_dof<<EntropyCoder_BITRES)), 8),
-		))
-		target -= saving
+		coded_stereo_dof := int(mode.eBands[coded_stereo_bands])<<LM - coded_stereo_bands
+		max_frac := DIV32_16(MULT16_16(int(math.Round(0.5+(0.8)*((1)<<(15)))), coded_stereo_dof), coded_bins)
+		stereo_saving = MIN16Int(stereo_saving, int(math.Round(0.5+(1.0)*((1)<<(8)))))
+		/*printf("%d %d %d ", coded_stereo_dof, coded_bins, tot_boost);*/
+		target -= MIN32(MULT16_32_Q15(max_frac, target),
+			SHR32(MULT16_16(stereo_saving-int(math.Round(0.5+(0.1)*((1)<<(8)))), (coded_stereo_dof<<BITRES)), 8))
+
 	}
 
 	target += tot_boost - (16 << LM)
-	tf_calibration := int16(0)
+	tf_calibration := int(0)
 	if variable_duration == OPUS_FRAMESIZE_VARIABLE {
-		tf_calibration = int16(0.02 * 16384.5)
+		tf_calibration = int(math.Round(0.02 * 16384.5))
 	} else {
-		tf_calibration = int16(0.04 * 16384.5)
+		tf_calibration = int(math.Round(0.04 * 16384.5))
 	}
-	target += int(SHL32(MULT16_32_Q15(int16(tf_estimate)-tf_calibration, int(target)), 1))
+	target += int(SHL32(MULT16_32_Q15Int(int(tf_estimate)-tf_calibration, int(target)), 1))
 
 	if analysis.enabled && analysis.valid != 0 && lfe == 0 {
 		tonal := analysis.tonality - 0.15
@@ -75,7 +71,7 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	}
 
 	if has_surround_mask != 0 && lfe == 0 {
-		surround_target := target + int(SHR32(MULT16_16(int(surround_masking), int16(coded_bins<<EntropyCoder_BITRES)), CeltConstants.DB_SHIFT))
+		surround_target := target + int(SHR32(MULT16_16(int(surround_masking), int(coded_bins<<BITRES)), CeltConstants.DB_SHIFT))
 		if surround_target > target/4 {
 			target = surround_target
 		} else {
@@ -83,8 +79,8 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 		}
 	}
 
-	bins := mode.eBands[mode.nbEBands-2] << LM
-	floor_depth := int(SHR32(MULT16_16(int16(C*bins<<EntropyCoder_BITRES), int16(maxDepth)), CeltConstants.DB_SHIFT))
+	bins := int(mode.eBands[mode.nbEBands-2]) << LM
+	floor_depth := int(SHR32(MULT16_16(int(C*bins<<BITRES), int(maxDepth)), CeltConstants.DB_SHIFT))
 	if floor_depth < target>>2 {
 		floor_depth = target >> 2
 	}
@@ -93,22 +89,18 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	}
 
 	if (has_surround_mask == 0 || lfe != 0) && (constrained_vbr != 0 || bitrate < 64000) {
-		rate_factor := bitrate - 32000
-		if rate_factor < 0 {
-			rate_factor = 0
-		}
+		var rate_factor = 0
+		rate_factor = MAX16Int(0, (bitrate - 32000))
 		if constrained_vbr != 0 {
-			if rate_factor > int(0.67*32767.5) {
-				rate_factor = int(0.67 * 32767.5)
-			}
+			rate_factor = MAX16Int(rate_factor, int(math.Round(0.5+(0.67)*((1)<<(15)))))
 		}
 		target = base_target + int(MULT16_32_Q15(int16(rate_factor), int(target-base_target)))
 	}
 
-	if has_surround_mask == 0 && tf_estimate < int(0.2*16384.5) {
-		amount := MULT16_16_Q15(int16(0.0000031*1073741823.5), int16(IMAX(0, IMIN(32000, 96000-bitrate))))
-		tvbr_factor := SHR32(amount, CeltConstants.DB_SHIFT)
-		target += int(MULT16_32_Q15(int16(tvbr_factor), int(target)))
+	if has_surround_mask == 0 && tf_estimate < int(math.Round(0.5+(.2)*((1)<<(14)))) {
+		amount := MULT16_16_Q15Int(int(math.Round(0.5+(.0000031)*((1)<<(30)))), IMAX(0, IMIN(32000, 96000-bitrate)))
+		tvbr_factor := SHR32(MULT16_16(temporal_vbr, amount), CeltConstants.DB_SHIFT)
+		target += MULT16_16_Q15Int(tvbr_factor, target)
 	}
 
 	if target > 2*base_target {
@@ -133,7 +125,7 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 			y := ADD32(mem0, x)
 			mem0 = mem1 + y - SHL32(x, 1)
 			mem1 = x - SHR32(y, 1)
-			tmp[i] = EXTRACT16(SHR32(y, 2))
+			tmp[i] = int(EXTRACT16(SHR32(y, 2)))
 		}
 		for i := 0; i < 12; i++ {
 			tmp[i] = 0
@@ -142,7 +134,7 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 		shift := 14 - celt_ilog2(1+celt_maxabs32(tmp, 0, len))
 		if shift != 0 {
 			for i := 0; i < len; i++ {
-				tmp[i] = SHL16(tmp[i], shift)
+				tmp[i] = SHL16Int(tmp[i], shift)
 			}
 		}
 
@@ -183,9 +175,9 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 		is_transient = 1
 	}
 
-	tf_max := MAX16(0, int16(celt_sqrt(27*float32(mask_metric))-42))
-	tf_estimate_val := int16(0.0069 * 16384.5)
-	tf_estimate.Val = int(celt_sqrt(MAX32(0, SHL32(MULT16_16(tf_estimate_val, int16(MIN16(163, tf_max))), 14)-int(0.139*268435455.5))))
+	tf_max := MAX16Int(0, (celt_sqrt(27*mask_metric) - 42))
+
+	tf_estimate.Val = (celt_sqrt(MAX32(0, SHL32(MULT16_16(int(math.Round(0.5+(0.0069)*((1)<<(14)))), MAX16Int(163, tf_max)), 14)-int(math.Round(0.5+(0.139)*((1)<<(28)))))))
 	return is_transient
 }
 
@@ -379,10 +371,10 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 				minXC = absPartial
 			}
 		}
-		logXC = celt_log2(1074791424 - MULT16_16(int16(sum), int16(sum)))
-		logXC2 = MIN16Int(logXC/2, celt_log2(1074791424-MULT16_16(int16(minXC), int16(minXC))))
-		logXC = (logXC - int(6.0*float32(1<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
-		logXC2 = (logXC2 - int(6.0*float32(1<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
+		logXC = celt_log2(int(math.Round(0.5+(1.001)*((1)<<(20)))) - MULT16_16(sum, sum))
+		logXC2 = MAX16Int(HALF16Int(logXC), celt_log2(int(math.Round(0.5+(1.001)*((1)<<(20))))-MULT16_16(minXC, minXC)))
+		logXC = (logXC - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
+		logXC2 = (logXC2 - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
 		trim += MAX16(-1024, MULT16_16_Q15(int16(0.75*32767.5), int16(logXC)))
 		if stereo_saving.Val+64 < -logXC2/2 {
 			stereo_saving.Val = -logXC2/2 - 64

@@ -18,8 +18,8 @@ func find_best_pitch(xcorr []int, y []int, len int, max_pitch int, best_pitch []
 		if xcorr[i] > 0 {
 			xcorr16 := EXTRACT16(VSHR32(xcorr[i], xshift))
 			num := MULT16_16_Q15(xcorr16, xcorr16)
-			if MULT16_32_Q15(num, best_den_1) > MULT16_32_Q15(best_num_1, Syy) {
-				if MULT16_32_Q15(num, best_den_0) > MULT16_32_Q15(best_num_0, Syy) {
+			if MULT16_32_Q15(num, best_den_1) > MULT16_32_Q15Int(best_num_1, Syy) {
+				if MULT16_32_Q15(num, best_den_0) > MULT16_32_Q15Int(best_num_0, Syy) {
 					best_num_1 = best_num_0
 					best_den_1 = best_den_0
 					best_pitch[1] = best_pitch[0]
@@ -230,7 +230,7 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 	x2y2 := 1 + HALF32(MULT32_32_Q31(xx, yy))
 	sh := celt_ilog2(x2y2) >> 1
 	t := VSHR32(x2y2, 2*(sh-7))
-	g := VSHR32(MULT16_32_Q15(celt_rsqrt_norm(t), xy), sh+1)
+	g := VSHR32(MULT16_32_Q15Int(celt_rsqrt_norm(t), xy), sh+1)
 	g0 := g
 
 	for k := 2; k <= 15; k++ {

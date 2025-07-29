@@ -14,7 +14,7 @@ type OpusEncoder struct {
 	signal_type             OpusSignal
 	user_bandwidth          int
 	max_bandwidth           int
-	user_forced_mode        OpusMode
+	user_forced_mode        int
 	voice_ratio             int
 	Fs                      int
 	use_vbr                 int
@@ -31,8 +31,8 @@ type OpusEncoder struct {
 	variable_HP_smth2_Q15   int
 	prev_HB_gain            int
 	hp_mem                  [4]int
-	mode                    OpusMode
-	prev_mode               OpusMode
+	mode                    int
+	prev_mode               int
 	prev_channels           int
 	prev_framesize          int
 	bandwidth               int
@@ -238,7 +238,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 				st.detected_bandwidth = OPUS_BANDWIDTH_FULLBAND
 			}
 			if st.signal_type == OPUS_SIGNAL_AUTO {
-				st.voice_ratio = int(math.Floor(0.5 + 100*(1-analysis_info.music_prob)))
+				st.voice_ratio = int(math.Floor(0.5 + 100*float64(1-analysis_info.music_prob)))
 			}
 		}
 	}
@@ -325,8 +325,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	if st.application == OPUS_APPLICATION_RESTRICTED_LOWDELAY {
 		st.mode = MODE_CELT_ONLY
 	} else if st.user_forced_mode == MODE_AUTO {
-		mode_voice := MULT16_32_Q15(CeltConstants.Q15ONE-stereo_width, OpusTables.MODE_THRESHOLDS[0][0]) + MULT16_32_Q15(stereo_width, OpusTables.MODE_THRESHOLDS[1][0])
-		mode_music := MULT16_32_Q15(CeltConstants.Q15ONE-stereo_width, OpusTables.MODE_THRESHOLDS[1][1]) + MULT16_32_Q15(stereo_width, OpusTables.MODE_THRESHOLDS[1][1])
+		mode_voice := MULT16_32_Q15Int(CeltConstants.Q15ONE-stereo_width, OpusTables.MODE_THRESHOLDS[0][0]) + MULT16_32_Q15Int(stereo_width, OpusTables.MODE_THRESHOLDS[1][0])
+		mode_music := MULT16_32_Q15Int(CeltConstants.Q15ONE-stereo_width, OpusTables.MODE_THRESHOLDS[1][1]) + MULT16_32_Q15Int(stereo_width, OpusTables.MODE_THRESHOLDS[1][1])
 		threshold := mode_music + ((voice_est * voice_est * (mode_voice - mode_music)) >> 14)
 		if st.application == OPUS_APPLICATION_VOIP {
 			threshold += 8000
@@ -435,7 +435,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			if equiv_rate2 >= threshold {
 				break
 			}
-			bandwidth = Subtract(bandwidth, 1)
+			bandwidth = SUBTRACT(bandwidth, 1)
 		}
 		st.bandwidth = bandwidth
 		if st.first == 0 && st.mode != MODE_CELT_ONLY && st.silk_mode.inWBmodeWithoutVariableLP == 0 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
@@ -449,7 +449,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.bandwidth = st.user_bandwidth
 	}
 	if st.mode != MODE_CELT_ONLY && max_rate < 15000 {
-		st.bandwidth = MIN(st.bandwidth, OPUS_BANDWIDTH_WIDEBAND)
+		st.bandwidth = MINInt(st.bandwidth, OPUS_BANDWIDTH_WIDEBAND)
 	}
 	if st.Fs <= 24000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND
@@ -527,7 +527,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		if st.use_vbr == 0 {
 			repacketize_len = imin(3*st.bitrate_bps/(3*8*50/nb_frames), out_data_bytes)
 		}
-		ret := rp.outRange(0, nb_frames, data, data_ptr, repacketize_len, false, st.use_vbr == 0)
+		ret := rp.opus_repacketizer_out_range_impl(0, nb_frames, data, data_ptr, repacketize_len, 0, boolToInt(st.use_vbr == 0))
 		if ret < 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
 		}
@@ -539,7 +539,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	bytes_target := imin(max_data_bytes-redundancy_bytes, st.bitrate_bps*frame_size/(st.Fs*8)) - 1
 	data_ptr++
-	enc.Init(data, data_ptr, max_data_bytes-1)
+	enc.enc_init(data, data_ptr, max_data_bytes-1)
 	pcm_buf := make([]int16, (total_buffer+frame_size)*st.channels)
 	copy(pcm_buf[:total_buffer*st.channels], st.delay_buffer[(st.encoder_buffer-total_buffer)*st.channels:(st.encoder_buffer-total_buffer)*st.channels+total_buffer*st.channels])
 	hp_freq_smth1 := 0
@@ -548,7 +548,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		hp_freq_smth1 = int(silk_enc.state_Fxx[0].variable_HP_smth1_Q15)
 	}
-	st.variable_HP_smth2_Q15 = silk_SMLAWB(st.variable_HP_smth2_Q15, hp_freq_smth1-st.variable_HP_smth2_Q15, int(VARIABLE_HP_SMTH_COEF2*(1<<16)+0.5))
+	st.variable_HP_smth2_Q15 = silk_SMLAWB(st.variable_HP_smth2_Q15, hp_freq_smth1-st.variable_HP_smth2_Q15, int(TuningParameters.VARIABLE_HP_SMTH_COEF2*(1<<16)+0.5))
 	cutoff_Hz := silk_log2lin(st.variable_HP_smth2_Q15 >> 8)
 	if st.application == OPUS_APPLICATION_VOIP {
 		hp_cutoff(pcm, pcm_ptr, cutoff_Hz, pcm_buf, total_buffer*st.channels, st.hp_mem[:], frame_size, st.channels, st.Fs)
@@ -639,7 +639,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		copy(pcm_silk, pcm_buf[total_buffer*st.channels:(total_buffer+frame_size)*st.channels])
 		silkBytes := nBytes
-		ret := silk_Encode(silk_enc, &st.silk_mode, pcm_silk, frame_size, enc, &silkBytes, 0)
+		ret := silk_Encode(silk_enc, &st.silk_mode, pcm_silk, frame_size, &enc, &silkBytes, 0)
 		nBytes = silkBytes
 		if ret != 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
@@ -733,17 +733,17 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.silk_mode.stereoWidth_Q14 = imin(1<<14, 2*imax(0, equiv_rate-30000))
 	}
 	if st.energy_masking == nil && st.channels == 2 {
-		g1 := st.hybrid_stereo_width_Q14
-		g2 := st.silk_mode.stereoWidth_Q14
+		g1 := int(st.hybrid_stereo_width_Q14)
+		g2 := int(st.silk_mode.stereoWidth_Q14)
 		if g1 == 16384 {
 			g1 = CeltConstants.Q15ONE
 		} else {
-			g1 = SHL16(g1, 1)
+			g1 = SHL16Int(g1, 1)
 		}
 		if g2 == 16384 {
 			g2 = CeltConstants.Q15ONE
 		} else {
-			g2 = SHL16(g2, 1)
+			g2 = SHL16Int(g2, 1)
 		}
 		stereo_fade(pcm_buf, g1, g2, celt_mode.overlap, frame_size, st.channels, celt_mode.window, st.Fs)
 		st.hybrid_stereo_width_Q14 = int16(st.silk_mode.stereoWidth_Q14)
@@ -757,7 +757,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			if st.mode == MODE_HYBRID {
 				redundancy_bytes = imin(max_redundancy, st.bitrate_bps/1600)
 				redundancy_bytes = imin(257, imax(2, redundancy_bytes))
-				enc.enc_uint(redundancy_bytes-2, 256)
+				enc.enc_uint(int64(redundancy_bytes-2), 256)
 			} else {
 				redundancy_bytes = imin(max_redundancy, 257)
 				redundancy_bytes = imax(2, redundancy_bytes)
@@ -796,7 +796,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			celt_enc.SetPrediction(0)
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
-			ret := celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
+			ret := celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, &enc)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
@@ -818,7 +818,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	data_ptr--
 	data[data_ptr] = gen_toc(st.mode, st.Fs/frame_size, curr_bandwidth, st.stream_channels)
-	st.rangeFinal = int(enc.Rng) ^ redundant_rng
+	st.rangeFinal = int(enc.rng) ^ redundant_rng
 	if to_celt != 0 {
 		st.prev_mode = MODE_CELT_ONLY
 	} else {
@@ -1059,11 +1059,11 @@ func (st *OpusEncoder) SetExpertFrameDuration(value OpusFramesize) {
 	st.Celt_Encoder.SetExpertFrameDuration(value)
 }
 
-func (st *OpusEncoder) GetForceMode() OpusMode {
+func (st *OpusEncoder) GetForceMode() int {
 	return st.user_forced_mode
 }
 
-func (st *OpusEncoder) SetForceMode(value OpusMode) {
+func (st *OpusEncoder) SetForceMode(value int) {
 	st.user_forced_mode = value
 }
 

@@ -117,7 +117,11 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		band_bits := bits[j] + percoeff*band_width + rem
 		if band_bits >= IMAX(thresh[j], alloc_floor+(1<<BITRES)) {
 			if encode != 0 {
-				if codedBands <= start+2 || (band_bits > ((IMIN(j, prev)*band_width<<LM<<BITRES)>>4 && j <= signalBandwidth)) {
+				leftBit := 9
+				if j < prev {
+					leftBit = 7
+				}
+				if codedBands <= start+2 || (band_bits > ((leftBit)*band_width<<LM<<BITRES)>>4 && j <= signalBandwidth) {
 					ec.enc_bit_logp(1, 1)
 					break
 				}
@@ -191,11 +195,9 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		if N > 1 {
 			excess = int(MAX32(bit-cap[j], 0))
 			bits[j] = bit - excess
-			den := C * N
-			if C == 2 && N > 2 && dual_stereo.Val == 0 && j < intensity.Val {
-				den++
-			}
-			NClogN := den * (m.logN[j] + logM)
+			den := (C*int(N) + (boolToInt(C == 2 && N > 2 && (dual_stereo.Val == 0) && j < intensity.Val)))
+
+			NClogN := den * (int(m.logN[j]) + logM)
 			offset := (NClogN >> 1) - den*CeltConstants.FINE_OFFSET
 			if N == 2 {
 				offset += den << BITRES >> 2
@@ -254,7 +256,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	return codedBands
 }
 
-func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []int, alloc_trim int, intensity *int, dual_stereo *int, total int, balance *int, pulses []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
+func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []int, alloc_trim int, intensity BoxedValueInt, dual_stereo BoxedValueInt, total int, balance BoxedValueInt, pulses []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
 	total = IMAX(total, 0)
 	len := m.nbEBands
 	skip_start := start
@@ -297,7 +299,10 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 		psum := 0
 		mid := (lo + hi) >> 1
 		for j := end - 1; j >= start; j-- {
-			bitsj := C * (m.eBands[j+1] - m.eBands[j]) * m.allocVectors[mid*len+j] << LM >> 2
+			N := int(m.eBands[j+1] - m.eBands[j])
+
+			bitsj := int(C*N) * int(m.allocVectors[mid*len+j]) << LM >> 2
+
 			if bitsj > 0 {
 				bitsj = IMAX(0, bitsj+trim_offset[j])
 			}
@@ -318,11 +323,11 @@ func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []in
 	hi = lo
 	lo = hi - 1
 	for j := start; j < end; j++ {
-		N := m.eBands[j+1] - m.eBands[j]
-		bits1j := C * N * m.allocVectors[lo*len+j] << LM >> 2
+		N := int(m.eBands[j+1] - m.eBands[j])
+		bits1j := C * N * int(m.allocVectors[lo*len+j]) << LM >> 2
 		bits2j := cap[j]
 		if hi < m.nbAllocVectors {
-			bits2j = C * N * m.allocVectors[hi*len+j] << LM >> 2
+			bits2j = C * N * int(m.allocVectors[hi*len+j]) << LM >> 2
 		}
 		if bits1j > 0 {
 			bits1j = IMAX(0, bits1j+trim_offset[j])

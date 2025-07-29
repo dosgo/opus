@@ -65,9 +65,9 @@ func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec EntropyCoder, Fra
 		}
 		psDec.ec_prevLagIndex = int16(psDec.indices.lagIndex)
 
-		psDec.indices.contourIndex = byte(psRangeDec.dec_icdf(psDec.pitch_contour_iCDF, 8))
+		psDec.indices.contourIndex = int8(psRangeDec.dec_icdf(psDec.pitch_contour_iCDF, 8))
 
-		psDec.indices.PERIndex = byte(psRangeDec.dec_icdf(SilkTables.Silk_LTP_per_index_iCDF, 8))
+		psDec.indices.PERIndex = int8(psRangeDec.dec_icdf(SilkTables.Silk_LTP_per_index_iCDF, 8))
 
 		for k = 0; k < psDec.nb_subfr; k++ {
 			ptr := SilkTables.Silk_LTP_gain_iCDF_ptrs[psDec.indices.PERIndex]

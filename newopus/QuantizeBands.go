@@ -256,7 +256,7 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int16,
 	}
 }
 
-func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, intra int, dec *EntropyCoder, C int, LM int) {
+func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
 	prob_model := CeltTables.E_prob_model[LM][intra]
 	prev := [2]int{0, 0}
 	var coef, beta int
@@ -300,13 +300,13 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int16, i
 			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {
 				tmp = -(28 << (CeltConstants.DB_SHIFT + 7))
 			}
-			oldEBands[index] = int16(tmp >> 7)
+			oldEBands[index] = (tmp >> 7)
 			prev[c] = prev[c] + (q << 7) - (beta * (q >> 8))
 		}
 	}
 }
 
-func unquant_fine_energy(m *CeltMode, start int, end int, oldEBands []int16, fine_quant []int, dec *EntropyCoder, C int) {
+func unquant_fine_energy(m *CeltMode, start int, end int, oldEBands []int, fine_quant []int, dec *EntropyCoder, C int) {
 	for i := start; i < end; i++ {
 		if fine_quant[i] <= 0 {
 			continue
@@ -316,12 +316,12 @@ func unquant_fine_energy(m *CeltMode, start int, end int, oldEBands []int16, fin
 			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (fine_quant[i] - 1))) >> fine_quant[i]
 			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
 			index := i + c*m.nbEBands
-			oldEBands[index] += int16(offset)
+			oldEBands[index] += (offset)
 		}
 	}
 }
 
-func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16, fine_quant []int, fine_priority []int, bits_left int, dec *EntropyCoder, C int) {
+func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int, fine_quant []int, fine_priority []int, bits_left int, dec *EntropyCoder, C int) {
 	for prio := 0; prio < 2; prio++ {
 		for i := start; i < end && bits_left >= C; i++ {
 			if fine_quant[i] >= CeltConstants.MAX_FINE_BITS || fine_priority[i] != prio {
@@ -331,7 +331,7 @@ func unquant_energy_finalise(m *CeltMode, start int, end int, oldEBands []int16,
 				q2 := dec.dec_bits(1)
 				offset := (q2<<CeltConstants.DB_SHIFT - (1 << (CeltConstants.DB_SHIFT - 1))) >> (fine_quant[i] + 1)
 				index := i + c*m.nbEBands
-				oldEBands[index] += int16(offset)
+				oldEBands[index] += (offset)
 				bits_left--
 			}
 		}

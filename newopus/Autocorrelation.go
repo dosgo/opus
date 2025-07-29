@@ -3,9 +3,9 @@ package opus
 const QC = 10
 const QS = 14
 
-func silk_autocorr(results []int, scale *int, inputData []int16, inputDataSize int, correlationCount int) {
+func silk_autocorr(results []int, scale BoxedValueInt, inputData []int16, inputDataSize int, correlationCount int) {
 	corrCount := silk_min_int(inputDataSize, correlationCount)
-	*scale = _celt_autocorr(inputData, results, corrCount-1, inputDataSize)
+	scale.Val = _celt_autocorr(inputData, results, corrCount-1, inputDataSize)
 }
 
 func _celt_autocorr(x []int16, ac []int, lag int, n int) int {

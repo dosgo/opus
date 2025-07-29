@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 const MAXFACTORS = 8
 
 func S_MUL(a, b int) int {
@@ -15,7 +17,7 @@ func kf_bfly2(Fout []int, fout_ptr int, m int, N int) {
 	var i int
 	{
 		var tw int16
-		tw = int16(0.5 + 0.7071067812*float32(1<<15))
+		tw = int16(math.Round(0.5 + 0.7071067812*float64(1<<15)))
 		OpusAssertMsg(m == 4, "")
 		for i = 0; i < N; i++ {
 			var t_r, t_i int

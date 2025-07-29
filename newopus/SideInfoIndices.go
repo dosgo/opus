@@ -5,7 +5,7 @@ type SideInfoIndices struct {
 	LTPIndex          []byte
 	NLSFIndices       []byte
 	lagIndex          int16
-	contourIndex      byte
+	contourIndex      int8
 	signalType        byte
 	quantOffsetType   byte
 	NLSFInterpCoef_Q2 byte

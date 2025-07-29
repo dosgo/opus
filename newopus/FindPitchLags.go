@@ -1,7 +1,9 @@
 package opus
 
+import "math"
+
 func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderControl, res []int16, x []int16, x_ptr int) {
-	var buf_len, i, scale int
+	var buf_len, i int
 	var thrhld_Q13, res_nrg int
 	var x_buf, x_buf_ptr int
 	var Wsig []int16
@@ -31,12 +33,11 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	x_buf_ptr += psEnc.pitch_LPC_win_length - silk_LSHIFT(psEnc.la_pitch, 1)
 	silk_apply_sine_window(Wsig, Wsig_ptr, x, x_buf_ptr, 2, psEnc.la_pitch)
 
-	boxed_scale := new(int)
-	*boxed_scale = 0
-	silk_autocorr(auto_corr[:], boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
-	scale = *boxed_scale
+	boxed_scale := BoxedValueInt{0}
 
-	auto_corr[0] = Silk_SMLAWB(auto_corr[0], auto_corr[0], int((TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*(1<<16)+0.5)) + 1
+	silk_autocorr(auto_corr[:], boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
+	//	scale = boxed_scale.Val
+	auto_corr[0] = silk_SMLAWB(auto_corr[0], auto_corr[0], int((TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*(1<<16)+0.5)) + 1
 
 	res_nrg = silk_schur(rc_Q15[:], auto_corr[:], psEnc.pitchEstimationLPCOrder)
 
@@ -45,7 +46,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	}
 	psEncCtrl.predGain_Q16 = silk_DIV32_varQ(auto_corr[0], int(res_nrg), 16)
 
-	K2A.Silk_k2a(A_Q24[:], rc_Q15[:], psEnc.pitchEstimationLPCOrder)
+	silk_k2a(A_Q24[:], rc_Q15[:], psEnc.pitchEstimationLPCOrder)
 
 	for i = 0; i < psEnc.pitchEstimationLPCOrder; i++ {
 		A_Q12[i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(A_Q24[i], 12))))
@@ -55,26 +56,27 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	silk_LPC_analysis_filter(res, 0, x, x_buf, A_Q12[:], 0, buf_len, psEnc.pitchEstimationLPCOrder)
 
-	if psEnc.indices.signalType != SilkConstants.TYPE_NO_VOICE_ACTIVITY && psEnc.first_frame_after_reset == 0 {
-		thrhld_Q13 = int((0.6 * (1 << 13)) + 0.5)
-		thrhld_Q13 = silk_SMLABB(int(thrhld_Q13), int((-0.004*(1<<13))+0.5, int(psEnc.pitchEstimationLPCOrder)))
-		thrhld_Q13 = int(silk_SMLAWB(int(thrhld_Q13), int((-0.1*(1<<21))+0.5, int(psEnc.speech_activity_Q8))))
-		thrhld_Q13 = silk_SMLABB(int(thrhld_Q13), int((-0.15*(1<<13))+0.5, int(Silk_RSHIFT(int(psEnc.prevSignalType), 1))))
-		thrhld_Q13 = int(silk_SMLAWB(int(thrhld_Q13), int((-0.1*(1<<14))+0.5, int(psEnc.input_tilt_Q15))))
-		thrhld_Q13 = int(silk_SAT16(int(thrhld_Q13)))
+	if int(psEnc.indices.signalType) != SilkConstants.TYPE_NO_VOICE_ACTIVITY && psEnc.first_frame_after_reset == 0 {
+		thrhld_Q13 = int(math.Round(((0.6)*(1<<(13)) + 0.5))) /*Inlines.SILK_CONST(0.6f, 13)*/
+		thrhld_Q13 = silk_SMLABB(thrhld_Q13, int(math.Round((-0.004)*(1<<(13))+0.5)), psEnc.pitchEstimationLPCOrder)
+		thrhld_Q13 = silk_SMLAWB(thrhld_Q13, int(math.Round((-0.1)*(1<<(21))+0.5)), psEnc.speech_activity_Q8)
+		thrhld_Q13 = silk_SMLABB(thrhld_Q13, int(math.Round((-0.15)*(1<<(13))+0.5)), silk_RSHIFT(int(psEnc.prevSignalType), 1))
+		thrhld_Q13 = silk_SMLAWB(thrhld_Q13, int(math.Round((-0.1)*(1<<(14))+0.5)), psEnc.input_tilt_Q15)
+		thrhld_Q13 = silk_SAT16(thrhld_Q13)
 
-		lagIndex := psEnc.indices.lagIndex
-		contourIndex := psEnc.indices.contourIndex
-		LTPcorr_Q15 := psEnc.LTPCorr_Q15
+		lagIndex := BoxedValueShort{psEnc.indices.lagIndex}
+		contourIndex := BoxedValueByte{psEnc.indices.contourIndex}
+		LTPcorr_Q15 := BoxedValueInt{psEnc.LTPCorr_Q15}
+
 		if silk_pitch_analysis_core(res, psEncCtrl.pitchL[:], &lagIndex, &contourIndex, &LTPcorr_Q15, psEnc.prevLag, psEnc.pitchEstimationThreshold_Q16, thrhld_Q13, psEnc.fs_kHz, psEnc.pitchEstimationComplexity, psEnc.nb_subfr) == 0 {
-			psEnc.indices.signalType = SilkConstants.TYPE_VOICED
+			psEnc.indices.signalType = byte(SilkConstants.TYPE_VOICED)
 		} else {
-			psEnc.indices.signalType = SilkConstants.TYPE_UNVOICED
+			psEnc.indices.signalType = byte(SilkConstants.TYPE_UNVOICED)
 		}
 
-		psEnc.indices.lagIndex = lagIndex
-		psEnc.indices.contourIndex = contourIndex
-		psEnc.LTPCorr_Q15 = LTPcorr_Q15
+		psEnc.indices.lagIndex = lagIndex.Val
+		psEnc.indices.contourIndex = contourIndex.Val
+		psEnc.LTPCorr_Q15 = LTPcorr_Q15.Val
 	} else {
 		for i := range psEncCtrl.pitchL {
 			psEncCtrl.pitchL[i] = 0

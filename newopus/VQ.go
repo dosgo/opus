@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 var SPREAD_FACTOR = [3]int{15, 10, 5}
 
 func exp_rotation1(X []int, X_ptr int, len int, stride int, c int, s int) {
@@ -8,16 +10,17 @@ func exp_rotation1(X []int, X_ptr int, len int, stride int, c int, s int) {
 	for i := 0; i < len-stride; i++ {
 		x1 := X[Xptr]
 		x2 := X[Xptr+stride]
-		X[Xptr+stride] = EXTRACT16(PSHR32(MAC16_16Int(MULT16_16(c, x2), s, x1), 15))
-		X[Xptr] = EXTRACT16(PSHR32(MAC16_16Int(MULT16_16(c, x1), ms, x2), 15))
+		X[Xptr+stride] = int(EXTRACT16(PSHR32(MAC16_16IntAll(MULT16_16(c, x2), s, x1), 15)))
+		X[Xptr+stride] = int(EXTRACT16(PSHR32(MAC16_16IntAll(MULT16_16(c, x2), s, x1), 15)))
+		X[Xptr] = int(EXTRACT16(PSHR32(MAC16_16IntAll(MULT16_16(c, x1), ms, x2), 15)))
 		Xptr++
 	}
 	Xptr = X_ptr + (len - 2*stride - 1)
 	for i := len - 2*stride - 1; i >= 0; i-- {
 		x1 := X[Xptr]
 		x2 := X[Xptr+stride]
-		X[Xptr+stride] = EXTRACT16(PSHR32(MAC16_16(MULT16_16(c, x2), s, x1), 15))
-		X[Xptr] = EXTRACT16(PSHR32(MAC16_16(MULT16_16(c, x1), ms, x2), 15))
+		X[Xptr+stride] = int(EXTRACT16(PSHR32(MAC16_16IntAll(MULT16_16(c, x2), s, x1), 15)))
+		X[Xptr] = int(EXTRACT16(PSHR32(MAC16_16IntAll(MULT16_16(c, x1), ms, x2), 15)))
 		Xptr--
 	}
 }
@@ -48,9 +51,9 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 			}
 			exp_rotation1(X, X_ptr+i*len, len, 1, c, s)
 		} else {
-			exp_rotation1(X, X_ptr+i*len, len, 1, c, NEG16(s).(int))
+			exp_rotation1(X, X_ptr+i*len, len, 1, c, NEG16Int(s))
 			if stride2 != 0 {
-				exp_rotation1(X, X_ptr+i*len, len, stride2, s, NEG16(c).(int))
+				exp_rotation1(X, X_ptr+i*len, len, stride2, s, NEG16Int(c))
 			}
 		}
 	}
@@ -59,9 +62,9 @@ func exp_rotation(X []int, X_ptr int, len int, dir int, stride int, K int, sprea
 func normalise_residual(iy []int, X []int, X_ptr int, N int, Ryy int, gain int) {
 	k := celt_ilog2(Ryy) >> 1
 	t := VSHR32(Ryy, 2*(k-7))
-	g := MULT16_16_P15(celt_rsqrt_norm(t), gain)
+	g := MULT16_16_P15Int(celt_rsqrt_norm(t), gain)
 	for i := 0; i < N; i++ {
-		X[X_ptr+i] = EXTRACT16(PSHR32(MULT16_16(g, iy[i]), k+1))
+		X[X_ptr+i] = int(EXTRACT16(PSHR32(MULT16_16(g, iy[i]), k+1)))
 	}
 }
 
@@ -115,16 +118,16 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 		}
 
 		if sum <= K {
-			X[X_ptr] = int(0.5 + (1.0)*(1<<14))
+			X[X_ptr] = int(math.Round(0.5 + (1.0)*(1<<14)))
 			for j := X_ptr + 1; j < X_ptr+N; j++ {
 				X[j] = 0
 			}
-			sum = int(0.5 + (1.0)*(1<<14))
+			sum = int(math.Round(0.5 + (1.0)*(1<<14)))
 		}
 
-		rcp := EXTRACT16(MULT16_32_Q16Int(K-1, Celt_rcp(sum)))
+		rcp := EXTRACT16(MULT16_32_Q16Int(K-1, celt_rcp(sum)))
 		for j := 0; j < N; j++ {
-			iy[j] = MULT16_16_Q15Int(X[X_ptr+j], rcp)
+			iy[j] = MULT16_16_Q15Int(X[X_ptr+j], int(rcp))
 			y[j] = iy[j]
 			yy = MAC16_16IntAll(yy, y[j], y[j])
 			xy = MAC16_16IntAll(xy, X[X_ptr+j], y[j])
@@ -154,7 +157,7 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 			Rxy := EXTRACT16(SHR32(ADD32(xy, EXTEND32Int(X[X_ptr+j])), rshift))
 			Ryy := ADD16Int(yy, y[j])
 			Rxy = MULT16_16_Q15(Rxy, Rxy)
-			if MULT16_16(best_den, Rxy) > MULT16_16(Ryy, best_num) {
+			if MULT16_16(best_den, int(Rxy)) > MULT16_16(Ryy, int(best_num)) {
 				best_den = Ryy
 				best_num = Rxy
 				best_id = j
@@ -191,12 +194,12 @@ func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec Entrop
 
 func renormalise_vector(X []int, X_ptr int, N int, gain int) {
 	xptr := X_ptr
-	E := CeltConstants.EPSILON + celt_inner_prod(X, X_ptr, X, X_ptr, N)
+	E := CeltConstants.EPSILON + celt_inner_prod_int(X, X_ptr, X, X_ptr, N)
 	k := celt_ilog2(E) >> 1
 	t := VSHR32(E, 2*(k-7))
-	g := MULT16_16_P15(celt_rsqrt_norm(t), gain)
+	g := MULT16_16_P15Int(celt_rsqrt_norm(t), gain)
 	for i := 0; i < N; i++ {
-		X[xptr] = EXTRACT16(PSHR32(MULT16_16(g, X[xptr]), k+1))
+		X[xptr] = int(EXTRACT16(PSHR32(MULT16_16(g, X[xptr]), k+1)))
 		xptr++
 	}
 }
@@ -206,17 +209,17 @@ func stereo_itheta(X []int, X_ptr int, Y []int, Y_ptr int, stereo int, N int) in
 	Eside := CeltConstants.EPSILON
 	if stereo != 0 {
 		for i := 0; i < N; i++ {
-			m := ADD16(SHR16(X[X_ptr+i], 1), SHR16(Y[Y_ptr+i], 1))
-			s := SUB16(SHR16(X[X_ptr+i], 1), SHR16(Y[Y_ptr+i], 1))
-			Emid = MAC16_16(Emid, m, m)
-			Eside = MAC16_16(Eside, s, s)
+			m := ADD16Int(SHR16Int(X[X_ptr+i], 1), SHR16Int(Y[Y_ptr+i], 1))
+			s := SUB16Int(SHR16Int(X[X_ptr+i], 1), SHR16Int(Y[Y_ptr+i], 1))
+			Emid = MAC16_16IntAll(Emid, m, m)
+			Eside = MAC16_16IntAll(Eside, s, s)
 		}
 	} else {
-		Emid += celt_inner_prod(X, X_ptr, X, X_ptr, N)
-		Eside += celt_inner_prod(Y, Y_ptr, Y, Y_ptr, N)
+		Emid += celt_inner_prod_int(X, X_ptr, X, X_ptr, N)
+		Eside += celt_inner_prod_int(Y, Y_ptr, Y, Y_ptr, N)
 	}
 	mid := celt_sqrt(Emid)
 	side := celt_sqrt(Eside)
-	itheta := MULT16_16_Q15Int(int(0.5+(0.63662)*(1<<15)), Celt_atan2p(side, mid))
+	itheta := MULT16_16_Q15Int(int(math.Round(0.5+(0.63662)*(1<<15))), celt_atan2p(side, mid))
 	return itheta
 }

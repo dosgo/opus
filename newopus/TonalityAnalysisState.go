@@ -23,7 +23,7 @@ type TonalityAnalysisState struct {
 	last_music              int
 	last_transition         int
 	count                   int
-	subframe_mem            [3]float32
+	subframe_mem            []float32
 	analysis_offset         int
 	pspeech                 [DETECT_SIZE]float32
 	pmusic                  [DETECT_SIZE]float32

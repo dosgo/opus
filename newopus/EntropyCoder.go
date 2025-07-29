@@ -165,7 +165,7 @@ func (ec *EntropyCoder) dec_update(_fl int64, _fh int64, _ft int64) {
 	ec.dec_normalize()
 }
 
-func (ec *EntropyCoder) dec_bit_logp(_logp uint) int {
+func (ec *EntropyCoder) dec_bit_logp(_logp int64) int {
 	r := ec.rng
 	d := ec.val
 	s := r >> _logp

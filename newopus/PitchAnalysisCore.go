@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 const (
 	SCRATCH_SIZE   = 22
 	SF_LENGTH_4KHZ = PE_SUBFR_LENGTH_MS * 4
@@ -95,7 +97,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		basis = target
 		basis_ptr = target_ptr - MIN_LAG_4KHZ
 
-		pitch_xcorr(target, target_ptr, target, target_ptr-MAX_LAG_4KHZ, xcorr32, SF_LENGTH_8KHZ, MAX_LAG_4KHZ-MIN_LAG_4KHZ+1)
+		pitch_xcorr1(target, target_ptr, target, target_ptr-MAX_LAG_4KHZ, xcorr32, SF_LENGTH_8KHZ, MAX_LAG_4KHZ-MIN_LAG_4KHZ+1)
 
 		cross_corr = xcorr32[MAX_LAG_4KHZ-MIN_LAG_4KHZ]
 		normalizer = silk_inner_prod_self(target, target_ptr, SF_LENGTH_8KHZ)
@@ -136,7 +138,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	silk_insertion_sort_decreasing_int16(C, d_srch, CSTRIDE_4KHZ, length_d_srch)
 
 	Cmax = int(C[0])
-	if Cmax < int(0.2*float64(1<<14)+0.5) {
+	if Cmax < int(math.Round(0.2*float64(1<<14)+0.5)) {
 		for i := range pitch_out {
 			pitch_out[i] = 0
 		}
@@ -281,13 +283,14 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		}
 
 		lag_log2_Q7 := silk_lin2log(d)
-		CCmax_new_b = CCmax_new - silk_RSHIFT(silk_SMULBB(nb_subfr*int(0.2*float64(1<<13)+0.5, lag_log2_Q7), 7))
+		//CCmax_new_b = CCmax_new - silk_RSHIFT(silk_SMULBB(nb_subfr*int(0.2*float64(1<<13)+0.5, lag_log2_Q7), 7))
+		CCmax_new_b = CCmax_new - silk_RSHIFT(silk_SMULBB(nb_subfr*int(((SilkConstants.PE_SHORTLAG_BIAS)*(1<<(13))+0.5)), lag_log2_Q7), 7)
 
 		if prevLag > 0 {
 			delta_lag_log2_sqr_Q7 := lag_log2_Q7 - prevLag_log2_Q7
 			delta_lag_log2_sqr_Q7 = silk_RSHIFT(silk_SMULBB(delta_lag_log2_sqr_Q7, delta_lag_log2_sqr_Q7), 7)
-			prev_lag_bias_Q13 = silk_RSHIFT(silk_SMULBB(nb_subfr*int(0.2*float64(1<<13)+0.5, LTPCorr_Q15.Val), 15))
-			prev_lag_bias_Q13 = silk_DIV32(silk_MUL(prev_lag_bias_Q13, delta_lag_log2_sqr_Q7), delta_lag_log2_sqr_Q7+int(0.5*float64(1<<7)+0.5))
+			prev_lag_bias_Q13 = silk_RSHIFT(silk_SMULBB(nb_subfr*int(math.Round(0.2*float64(1<<13)+0.5)), int(LTPCorr_Q15.Val)), 15)
+			prev_lag_bias_Q13 = silk_DIV32(silk_MUL(prev_lag_bias_Q13, delta_lag_log2_sqr_Q7), delta_lag_log2_sqr_Q7+int(math.Round(0.5*float64(1<<7)+0.5)))
 			CCmax_new_b -= prev_lag_bias_Q13
 		}
 
@@ -438,7 +441,7 @@ func silk_P_Ana_calc_corr_st3(cross_corr_st3 []*silk_pe_stage3_vals, frame []int
 		lag_counter = 0
 		lag_low = int(Lag_range_ptr[k][0])
 		lag_high = int(Lag_range_ptr[k][1])
-		pitch_xcorr(frame, target_ptr, frame, target_ptr-start_lag-lag_high, xcorr32, sf_length, lag_high-lag_low+1)
+		pitch_xcorr1(frame, target_ptr, frame, target_ptr-start_lag-lag_high, xcorr32, sf_length, lag_high-lag_low+1)
 		for j = lag_low; j <= lag_high; j++ {
 			scratch_mem[lag_counter] = xcorr32[lag_high-j]
 			lag_counter++
