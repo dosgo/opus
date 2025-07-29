@@ -145,7 +145,7 @@ func _celt_autocorr_with_window(x []int, ac []int, window []int, overlap int, la
 	return shift
 }
 
-func silk_warped_autocorr(corr []int, scale *int, input []int16, warping_Q16 int, length int, order int) {
+func silk_warped_autocorr(corr []int, scale BoxedValueInt, input []int16, warping_Q16 int, length int, order int) {
 	var n, i, lsh int
 	var tmp1_QS, tmp2_QS int
 	state_QS := make([]int, SilkConstants.MAX_SHAPE_LPC_ORDER+1)
@@ -170,8 +170,8 @@ func silk_warped_autocorr(corr []int, scale *int, input []int16, warping_Q16 int
 
 	lsh = silk_CLZ64(corr_QC[0]) - 35
 	lsh = silk_LIMIT(lsh, -12-QC, 30-QC)
-	*scale = -(QC + lsh)
-	OpusAssert(*scale >= -30 && *scale <= 12)
+	scale.Val = -(QC + lsh)
+	OpusAssert(scale.Val >= -30 && scale.Val <= 12)
 	if lsh >= 0 {
 		for i = 0; i < order+1; i++ {
 			corr[i] = int(silk_LSHIFT64(corr_QC[i], lsh))

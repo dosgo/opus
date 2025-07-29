@@ -69,9 +69,9 @@ func compute_band_energies(m *CeltMode, X [][]int, bandE [][]int, end int, C int
 	N := m.shortMdctSize << LM
 	for c := 0; c < C; c++ {
 		for i := 0; i < end; i++ {
-			maxval := celt_maxabs32(X[c], eBands[i]<<LM, (eBands[i+1]-eBands[i])<<LM)
+			maxval := celt_maxabs32(X[c], int(eBands[i]<<LM), int(eBands[i+1]-eBands[i])<<LM)
 			if maxval > 0 {
-				shift := celt_ilog2(maxval) - 14 + ((m.logN[i]>>BITRES + LM + 1) >> 1)
+				shift := celt_ilog2(maxval) - 14 + ((int(m.logN[i])>>BITRES + LM + 1) >> 1)
 				j := eBands[i] << LM
 				sum := 0
 				if shift > 0 {
@@ -289,7 +289,7 @@ func spreading_decision(m *CeltMode, X [][]int, average *BoxedValueInt, last_dec
 	eBands := m.eBands
 	OpusAssert(end > 0)
 
-	if M*(eBands[end]-eBands[end-1]) <= 8 {
+	if M*int(eBands[end]-eBands[end-1]) <= 8 {
 		return SPREAD_NONE
 	}
 
@@ -299,13 +299,13 @@ func spreading_decision(m *CeltMode, X [][]int, average *BoxedValueInt, last_dec
 
 	for c := 0; c < C; c++ {
 		for i := 0; i < end; i++ {
-			N := M * (eBands[i+1] - eBands[i])
+			N := M * int(eBands[i+1]-eBands[i])
 			if N <= 8 {
 				continue
 			}
 
 			tcount := [3]int{0, 0, 0}
-			x_ptr := M * eBands[i]
+			x_ptr := M * int(eBands[i])
 			for j := x_ptr; j < x_ptr+N; j++ {
 				x2N := MULT16_16(MULT16_16_Q15Int(X[c][j], X[c][j]), N)
 				if x2N < QCONST32(0.25, 13) {
@@ -648,7 +648,7 @@ func quant_band_n1(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, b int,
 		c++
 	}
 	if lowband_out != nil {
-		lowband_out[lowband_out_ptr] = SHR16(X[X_ptr], 4)
+		lowband_out[lowband_out_ptr] = SHR16Int(X[X_ptr], 4)
 	}
 	return 1
 }
@@ -739,9 +739,9 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 		if q != 0 {
 			K := get_pulses(q)
 			if encode != 0 {
-				cm = alg_quant(X, X_ptr, N, K, spread, B, ec)
+				cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
 			} else {
-				cm = alg_unquant(X, X_ptr, N, K, spread, B, ec, gain)
+				cm = alg_unquant(X, X_ptr, N, K, spread, B, *ec, gain)
 			}
 		} else if resynth != 0 {
 			cm_mask := (1 << B) - 1
@@ -945,7 +945,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 				if x2[x2_ptr]*y2[y2_ptr+1]-x2[x2_ptr+1]*y2[y2_ptr] < 0 {
 					sign = 1
 				}
-				ec.enc_bits(sign, 1)
+				ec.enc_bits(int64(sign), 1)
 			} else {
 				sign = ec.dec_bits(1)
 			}
@@ -1010,10 +1010,10 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		B = M
 	}
 	norm_offset := M * int(eBands[start])
-	norm := make([]int, M*eBands[m.nbEBands-1]-norm_offset)
-	norm2 := M*eBands[m.nbEBands-1] - norm_offset
+	norm := make([]int, M*int(eBands[m.nbEBands-1])-norm_offset)
+	norm2 := M*int(eBands[m.nbEBands-1]) - norm_offset
 	lowband_scratch := X_
-	lowband_scratch_ptr := M * eBands[m.nbEBands-1]
+	lowband_scratch_ptr := M * int(eBands[m.nbEBands-1])
 	lowband_offset := 0
 	C := 1
 	if Y_ != nil {
@@ -1065,7 +1065,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		x_cm := int64(0)
 		y_cm := int64(0)
 
-		if resynth != 0 && M*eBands[i]-N >= M*eBands[start] && (update_lowband != 0 || lowband_offset == 0) {
+		if resynth != 0 && M*int(eBands[i])-N >= M*int(eBands[start]) && (update_lowband != 0 || lowband_offset == 0) {
 			lowband_offset = i
 		}
 
@@ -1087,11 +1087,11 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 
 		if lowband_offset != 0 && (spread != SPREAD_AGGRESSIVE || B > 1 || tf_change < 0) {
 			fold_start := lowband_offset
-			for fold_start > 0 && M*eBands[fold_start] > effective_lowband+norm_offset {
+			for fold_start > 0 && M*int(eBands[fold_start]) > effective_lowband+norm_offset {
 				fold_start--
 			}
 			fold_end := lowband_offset
-			for fold_end < m.nbEBands-1 && M*eBands[fold_end] < effective_lowband+norm_offset+N {
+			for fold_end < m.nbEBands-1 && M*int(eBands[fold_end]) < effective_lowband+norm_offset+N {
 				fold_end++
 			}
 			x_cm = 0

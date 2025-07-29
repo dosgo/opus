@@ -188,17 +188,17 @@ func patch_transient_decision(newE [][]int, oldE [][]int, nbEBands int, start in
 	if C == 1 {
 		spread_old[start] = oldE[0][start]
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = MAX16Int(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), oldE[0][i])
+			spread_old[i] = MAX16Int(spread_old[i-1]-int(1.0*float32(1<<CeltConstants.DB_SHIFT)), oldE[0][i])
 		}
 	} else {
 		spread_old[start] = MAX16Int(oldE[0][start], oldE[1][start])
 		for i := start + 1; i < end; i++ {
-			spread_old[i] = MAX16Int(spread_old[i-1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)), MAX16(oldE[0][i], oldE[1][i]))
+			spread_old[i] = MAX16Int(spread_old[i-1]-int(1.0*float32(1<<CeltConstants.DB_SHIFT)), MAX16Int(oldE[0][i], oldE[1][i]))
 		}
 	}
 
 	for i := end - 2; i >= start; i-- {
-		spread_old[i] = MAX16Int(spread_old[i], spread_old[i+1]-int16(1.0*float32(1<<CeltConstants.DB_SHIFT)))
+		spread_old[i] = MAX16Int(spread_old[i], spread_old[i+1]-int(1.0*float32(1<<CeltConstants.DB_SHIFT)))
 	}
 
 	for c := 0; c < C; c++ {
@@ -433,7 +433,7 @@ func stereo_analysis(m *CeltMode, X [][]int, LM int) int {
 		thetas -= 8
 	}
 
-	left := MULT16_32_Q15(int16((m.eBands[13]<<(LM+1))+thetas), sumMS)
+	left := MULT16_32_Q15(int16(int(m.eBands[13])<<(LM+1)+thetas), sumMS)
 	right := MULT16_32_Q15(int16(m.eBands[13]<<(LM+1)), sumLR)
 	if left > right {
 		return 1
@@ -615,7 +615,7 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 				boost_bits = boost * 6 << BITRES
 			}
 
-			if (vbr == 0 || (constrained_vbr != 0 && isTransient == 0)) && (tot_boost+boost_bits)>>(EntropyCoder_BITRES+3) > effectiveBytes/4 {
+			if (vbr == 0 || (constrained_vbr != 0 && isTransient == 0)) && (tot_boost+boost_bits)>>(BITRES+3) > effectiveBytes/4 {
 				cap := (effectiveBytes / 4) << (BITRES + 3)
 				offsets[i] = (cap - tot_boost) >> BITRES
 				tot_boost = cap

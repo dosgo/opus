@@ -236,15 +236,15 @@ func MAC16_16IntAll(c, a, b int) int {
 }
 
 func MAC16_32_Q15(c int, a int16, b int16) int {
-	return ADD32(c, ADD32(MULT16_16(a, SHR(int(b), 15)), SHR(MULT16_16(a, b&0x00007fff), 15)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 15)), SHR(MULT16_16(int(a), b&0x00007fff), 15)))
 }
 
 func MAC16_32_Q15Int(c, a, b int) int {
-	return ADD32(c, ADD32(MULT16_16(int16(a), SHR(b, 15)), SHR(MULT16_16(int16(a), b&0x00007fff), 15)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(b, 15)), SHR(MULT16_16(int(a), b&0x00007fff), 15)))
 }
 
 func MAC16_32_Q16(c int, a int16, b int16) int {
-	return ADD32(c, ADD32(MULT16_16(a, SHR(int(b), 16)), SHR(MULT16_16SU(int(a), b&0x0000ffff), 16)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 16)), SHR(MULT16_16SU(int(a), b&0x0000ffff), 16)))
 }
 
 func MAC16_32_Q16Int(c, a, b int) int {
@@ -526,7 +526,7 @@ func celt_maxabs16(x []int, x_ptr, len int) int {
 		maxval = MAX32(maxval, x[i])
 		minval = MIN32(minval, x[i])
 	}
-	return MAX32(EXTEND32(maxval), -EXTEND32(minval))
+	return MAX32(EXTEND32Int(maxval), -EXTEND32Int(minval))
 }
 
 func celt_maxabs32(x []int, x_ptr, len int) int {
@@ -614,10 +614,10 @@ func frac_div32(a, b int) int {
 	shift := celt_ilog2(b) - 29
 	a = VSHR32(a, shift)
 	b = VSHR32(b, shift)
-	rcp := ROUND16(celt_rcp(ROUND16(b, 16)), 3)
-	result := MULT16_32_Q15(rcp, a)
+	rcp := ROUND16Int(celt_rcp(ROUND16Int(b, 16)), 3)
+	result := MULT16_32_Q15Int(rcp, a)
 	rem := PSHR32(a, 2) - MULT32_32_Q31(result, b)
-	result = ADD32(result, SHL32(MULT16_32_Q15(rcp, rem), 2))
+	result = ADD32(result, SHL32(MULT16_32_Q15Int(rcp, rem), 2))
 	if result >= 536870912 {
 		return 2147483647
 	} else if result <= -536870912 {
@@ -660,13 +660,13 @@ func celt_atan01(x int) int {
 
 func celt_atan2p(y, x int) int {
 	if y < x {
-		arg := celt_div(SHL32(EXTEND32(y), 15), x)
+		arg := celt_div(SHL32(EXTEND32Int(y), 15), x)
 		if arg >= 32767 {
 			arg = 32767
 		}
 		return SHR32(celt_atan01(EXTRACT16(arg)), 1)
 	}
-	arg := celt_div(SHL32(EXTEND32(x), 15), y)
+	arg := celt_div(SHL32(EXTEND32Int(x), 15), y)
 	if arg >= 32767 {
 		arg = 32767
 	}
@@ -1046,7 +1046,7 @@ func silk_maxFloat(a, b float32) float32 {
 }
 
 func SILK_CONST(number float32, scale int) int {
-	return int(math.Round(float32(number)*float32(1)<<(scale) + 0.5))
+	return int(math.Round(float64(int(number*float32(1))<<(scale)) + 0.5))
 }
 
 func silk_min_int(a, b int) int {
@@ -1383,9 +1383,10 @@ func silk_interpolate(xi, x0, x1 []int16, ifact_Q2, d int) {
 }
 
 func silk_inner_prod_aligned_scale(inVec1, inVec2 []int16, scale, len int) int {
-	sum := 0
-	for i := 0; i < len; i++ {
-		sum = silk_ADD_RSHIFT32(sum, silk_SMULBB(inVec1[i], inVec2[i]), scale)
+	var i int = 0
+	var sum int = 0
+	for i = 0; i < len; i++ {
+		sum = silk_ADD_RSHIFT32(sum, silk_SMULBB(int(inVec1[i]), int(inVec2[i])), scale)
 	}
 	return sum
 }
