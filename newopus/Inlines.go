@@ -43,7 +43,7 @@ func MULT16_32_P16Int(a, b int) int {
 }
 
 func MULT16_32_Q15(a int16, b int) int {
-	return ((a * (b >> 16)) << 1) + ((a * (b & 0xFFFF)) >> 15)
+	return (int(a) * (b >> 16) << 1) + (int(a)*(b&0xFFFF))>>15
 }
 
 func MULT16_32_Q15Int(a, b int) int {
@@ -115,7 +115,7 @@ func PSHR32(a, shift int) int {
 }
 
 func PSHR16(a int16, shift int) int16 {
-	return SHR16(int16(a+(1<<shift>>1), shift))
+	return SHR16(int16(a+(1<<shift>>1)), shift)
 }
 
 func PSHR16Int(a, shift int) int {
@@ -248,11 +248,11 @@ func MAC16_32_Q16(c int, a int16, b int16) int {
 }
 
 func MAC16_32_Q16Int(c, a, b int) int {
-	return ADD32(c, ADD32(MULT16_16(int16(a), SHR(b, 16)), SHR(MULT16_16SU(a, b&0x0000ffff), 16)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(b, 16)), SHR(MULT16_16SU(a, b&0x0000ffff), 16)))
 }
 
 func MULT16_16_Q11_32(a, b int16) int {
-	return SHR(MULT16_16(a, b), 11)
+	return SHR(MULT16_16Short(a, b), 11)
 }
 
 func MULT16_16_Q11_32Int(a, b int) int {
@@ -260,15 +260,15 @@ func MULT16_16_Q11_32Int(a, b int) int {
 }
 
 func MULT16_16_Q11(a, b int16) int16 {
-	return int16(SHR(MULT16_16(a, b), 11))
+	return int16(SHR(MULT16_16Short(a, b), 11))
 }
 
 func MULT16_16_Q11Int(a, b int) int {
-	return SHR(MULT16_16(int16(a), int16(b)), 11)
+	return SHR(MULT16_16(int(a), int(b)), 11)
 }
 
 func MULT16_16_Q13(a, b int16) int16 {
-	return int16(SHR(MULT16_16(a, b), 13))
+	return int16(SHR(MULT16_16Short(a, b), 13))
 }
 
 func MULT16_16_Q13Int(a, b int) int {
@@ -292,15 +292,15 @@ func MULT16_16_Q15Int(a, b int) int {
 }
 
 func MULT16_16_P13(a, b int16) int16 {
-	return int16(SHR(ADD32(4096, MULT16_16(a, b)), 13))
+	return int16(SHR(ADD32(4096, MULT16_16Short(a, b)), 13))
 }
 
 func MULT16_16_P13Int(a, b int) int {
-	return SHR(ADD32(4096, MULT16_16(int16(a), int16(b))), 13)
+	return SHR(ADD32(4096, MULT16_16Short(int16(a), int16(b))), 13)
 }
 
 func MULT16_16_P14(a, b int16) int16 {
-	return int16(SHR(ADD32(8192, MULT16_16(a, b)), 14))
+	return int16(SHR(ADD32(8192, MULT16_16Short(a, b)), 14))
 }
 
 func MULT16_16_P14Int(a, b int) int {
@@ -308,7 +308,7 @@ func MULT16_16_P14Int(a, b int) int {
 }
 
 func MULT16_16_P15(a, b int16) int16 {
-	return int16(SHR(ADD32(16384, MULT16_16(a, b)), 15))
+	return int16(SHR(ADD32(16384, MULT16_16Short(a, b)), 15))
 }
 
 func MULT16_16_P15Int(a, b int) int {
@@ -1046,7 +1046,7 @@ func silk_maxFloat(a, b float32) float32 {
 }
 
 func SILK_CONST(number float32, scale int) int {
-	return int(number * float32(int(1)<<scale+0.5))
+	return int(math.Round(float32(number)*float32(1)<<(scale) + 0.5))
 }
 
 func silk_min_int(a, b int) int {
@@ -1232,7 +1232,7 @@ func silk_INVERSE32_varQ(b32, Qres int) int {
 	OpusAssert(Qres > 0)
 	b_headrm := silk_CLZ32(silk_abs(b32)) - 1
 	b32_nrm := silk_LSHIFT(b32, b_headrm)
-	b32_inv := silk_DIV32_16(2147483647>>2, int16(silk_RSHIFT(b32_nrm, 16)))
+	b32_inv := silk_DIV32_16(2147483647>>2, int(silk_RSHIFT(b32_nrm, 16)))
 	result := silk_LSHIFT(b32_inv, 16)
 	err_Q32 := silk_LSHIFT(((1 << 29) - silk_SMULWB(b32_nrm, b32_inv)), 3)
 	result = silk_SMLAWW(result, err_Q32, b32_inv)
@@ -1398,7 +1398,7 @@ func silk_scale_copy_vector16(data_out []int16, data_out_ptr int, data_in []int1
 
 func silk_scale_vector32_Q26_lshift_18(data1 []int, data1_ptr int, gain_Q26, dataSize int) {
 	for i := data1_ptr; i < data1_ptr+dataSize; i++ {
-		data1[i] = int(silk_RSHIFT64(silk_SMULL(int64(data1[i]), int64(gain_Q26)), 8))
+		data1[i] = int(silk_RSHIFT64(silk_SMULL(int(data1[i]), int(gain_Q26)), 8))
 	}
 }
 

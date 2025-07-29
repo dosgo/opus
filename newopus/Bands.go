@@ -125,18 +125,18 @@ func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE 
 		end = 0
 	}
 	f := freq_ptr
-	x := M * eBands[start]
+	x := M * int(eBands[start])
 
-	for i := 0; i < M*eBands[start]; i++ {
+	for i := 0; i < M*int(eBands[start]); i++ {
 		freq[f] = 0
 		f++
 	}
 
 	for i := start; i < end; i++ {
-		j := M * eBands[i]
-		band_end := M * eBands[i+1]
+		j := M * int(eBands[i])
+		band_end := M * int(eBands[i+1])
 		lg := ADD16(bandLogE[bandLogE_ptr+i], SHL16(eMeans[i], 6))
-		shift := 16 - (lg >> CeltConstants.DB_SHIFT)
+		shift := int(16 - (lg >> CeltConstants.DB_SHIFT))
 		g := 0
 		if shift <= 31 {
 			g = celt_exp2_frac(lg & ((1 << CeltConstants.DB_SHIFT) - 1))
@@ -307,14 +307,14 @@ func spreading_decision(m *CeltMode, X [][]int, average *BoxedValueInt, last_dec
 			tcount := [3]int{0, 0, 0}
 			x_ptr := M * eBands[i]
 			for j := x_ptr; j < x_ptr+N; j++ {
-				x2N := MULT16_16(MULT16_16_Q15(X[c][j], X[c][j]), N)
-				if x2N < QCONST16(0.25, 13) {
+				x2N := MULT16_16(MULT16_16_Q15Int(X[c][j], X[c][j]), N)
+				if x2N < QCONST32(0.25, 13) {
 					tcount[0]++
 				}
-				if x2N < QCONST16(0.0625, 13) {
+				if x2N < QCONST32(0.0625, 13) {
 					tcount[1]++
 				}
-				if x2N < QCONST16(0.015625, 13) {
+				if x2N < QCONST32(0.015625, 13) {
 					tcount[2]++
 				}
 			}
@@ -722,7 +722,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 			if rebalance > 3<<BITRES && itheta != 16384 {
 				mbits += rebalance - (3 << BITRES)
 			}
-			cm |= quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15(gain, mid), fill)
+			cm |= quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
 		}
 	} else {
 		q := bits2pulses(m, i, LM, b)
@@ -872,9 +872,9 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 		B <<= recombine
 
 		if lowband_out != nil {
-			n := celt_sqrt(SHL32(int64(N0), 22))
+			n := celt_sqrt(SHL32(int(N0), 22))
 			for j := 0; j < N0; j++ {
-				lowband_out[lowband_out_ptr+j] = MULT16_16_Q15(int(n), X[X_ptr+j])
+				lowband_out[lowband_out_ptr+j] = MULT16_16_Q15Int(int(n), X[X_ptr+j])
 			}
 		}
 		cm &= (1 << B) - 1
