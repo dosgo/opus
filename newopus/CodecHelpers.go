@@ -31,27 +31,27 @@ func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int
 }
 
 func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int, len int, channels int, Fs int) {
-	var B_Q28 [3]int
-	var A_Q28 [2]int
+	var B_Q28 = make([]int, 3)
+	var A_Q28 = make([]int, 2)
 	var Fc_Q19, r_Q28, r_Q22 int
 
-	OpusAssert(cutoff_Hz <= 2147483647/((int)((1.5*3.14159/1000)*(1<<19)+0.5)))
-	Fc_Q19 = silk_DIV32_16(silk_SMULBB((int)((1.5*3.14159/1000)*(1<<19)+0.5, int(cutoff_Hz)), int(Fs/1000)))
+	OpusAssert(cutoff_Hz <= int(math.MaxInt32)/int(math.Round((1.5*3.14159/1000)*(1<<(19))+0.5)))
+	Fc_Q19 = silk_DIV32_16(silk_SMULBB(int(math.Round((1.5*3.14159/1000)*(1<<(19))+0.5)), cutoff_Hz), Fs/1000)
 	OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
 
-	r_Q28 = (int)((1.0)*(1<<28)+0.5) - silk_MUL((int)((0.92)*(1<<9)+0.5), Fc_Q19)
+	r_Q28 = int(math.Round((1.0)*(1<<(28))+0.5)) - silk_MUL(int(math.Round((0.92)*(1<<(9))+0.5)), Fc_Q19)
 
 	B_Q28[0] = r_Q28
 	B_Q28[1] = silk_LSHIFT(-r_Q28, 1)
 	B_Q28[2] = r_Q28
 
 	r_Q22 = silk_RSHIFT(r_Q28, 6)
-	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-(int)((2.0)*(1<<22)+0.5))
+	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-int(math.Round((2.0)*(1<<22)+0.5)))
 	A_Q28[1] = silk_SMULWW(r_Q22, r_Q22)
 
-	silk_biquad_alt(input, input_ptr, B_Q28[:], A_Q28[:], hp_mem, 0, output, output_ptr, len, channels)
+	silk_biquad_alt_ptr(input, input_ptr, B_Q28, A_Q28, hp_mem, 0, output, output_ptr, len, channels)
 	if channels == 2 {
-		silk_biquad_alt(input, input_ptr+1, B_Q28[:], A_Q28[:], hp_mem, 2, output, output_ptr+1, len, channels)
+		silk_biquad_alt_ptr(input, input_ptr+1, B_Q28, A_Q28, hp_mem, 2, output, output_ptr+1, len, channels)
 	}
 }
 
@@ -62,7 +62,7 @@ func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	for c := 0; c < channels; c++ {
 		for i := 0; i < len; i++ {
 			var x, tmp, y int
-			x = SHL32(EXTEND32(int(input[channels*i+c+input_ptr])), 15)
+			x = SHL32(EXTEND32Int(int(input[channels*i+c+input_ptr])), 15)
 			tmp = x - hp_mem[2*c]
 			hp_mem[2*c] = hp_mem[2*c] + PSHR32(x-hp_mem[2*c], shift)
 			y = tmp - hp_mem[2*c+1]
@@ -81,17 +81,17 @@ func stereo_fade(pcm_buf []int16, g1 int, g2 int, overlap48 int, frame_size int,
 	for i := 0; i < overlap; i++ {
 		var diff int
 		var g, w int
-		w = MULT16_16_Q15(window[i*inc], window[i*inc])
-		g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
-		diff = EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1])))
-		diff = MULT16_16_Q15(int(g), diff)
+		w = MULT16_16_Q15Int(window[i*inc], window[i*inc])
+		g = SHR32(MAC16_16IntAll(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+		diff = int(EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1]))))
+		diff = MULT16_16_Q15Int(int(g), diff)
 		pcm_buf[i*channels] = int16(int(pcm_buf[i*channels]) - diff)
 		pcm_buf[i*channels+1] = int16(int(pcm_buf[i*channels+1]) + diff)
 	}
 	for i := overlap; i < frame_size; i++ {
 		var diff int
-		diff = EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1])))
-		diff = MULT16_16_Q15(int(g2), diff)
+		diff = int(EXTRACT16(HALF32(int(pcm_buf[i*channels]) - int(pcm_buf[i*channels+1]))))
+		diff = MULT16_16_Q15Int(int(g2), diff)
 		pcm_buf[i*channels] = int16(int(pcm_buf[i*channels]) - diff)
 		pcm_buf[i*channels+1] = int16(int(pcm_buf[i*channels+1]) + diff)
 	}
@@ -105,21 +105,21 @@ func gain_fade(buffer []int16, buf_ptr int, g1 int, g2 int, overlap48 int, frame
 		for i := 0; i < overlap; i++ {
 			var g, w int
 			w = MULT16_16_Q15Int(window[i*inc], window[i*inc])
-			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+			g = SHR32(MAC16_16IntAll(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
 			buffer[buf_ptr+i] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i])))
 		}
 	} else {
 		for i := 0; i < overlap; i++ {
 			var g, w int
 			w = MULT16_16_Q15Int(window[i*inc], window[i*inc])
-			g = SHR32(MAC16_16(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
+			g = SHR32(MAC16_16IntAll(MULT16_16(w, int(g2)), CeltConstants.Q15ONE-w, int(g1)), 15)
 			buffer[buf_ptr+i*2] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i*2])))
 			buffer[buf_ptr+i*2+1] = int16(MULT16_16_Q15Int(int(g), int(buffer[buf_ptr+i*2+1])))
 		}
 	}
 	for c := 0; c < channels; c++ {
 		for i := overlap; i < frame_size; i++ {
-			buffer[buf_ptr+i*channels+c] = int16(MULT16_16_Q15(int(g2), int(buffer[buf_ptr+i*channels+c])))
+			buffer[buf_ptr+i*channels+c] = int16(MULT16_16_Q15Int(int(g2), int(buffer[buf_ptr+i*channels+c])))
 		}
 	}
 }
@@ -136,7 +136,7 @@ func transient_boost(E []float32, E_ptr int, E_1 []float32, LM int, maxM int) fl
 		sumE_1 += E_1[i]
 	}
 	metric := sumE * sumE_1 / float32(M*M)
-	return MIN16(1, float32(math.Sqrt(float64(MAX16(0, 0.05*(metric-2))))))
+	return MIN16Float(1, float32(math.Sqrt(float64(MAX16Float(0, .05*(metric-2))))))
 }
 
 func transient_viterbi(E []float32, E_1 []float32, N int, frame_cost int, rate int) int {
@@ -360,7 +360,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		mem.smoothed_width = 0
 		mem.max_follower = 0
 	}
-	return EXTRACT16(MIN32(CeltConstants.Q15ONE, 20*mem.max_follower))
+	return EXTEND32(MIN32(CeltConstants.Q15ONE, 20*mem.max_follower))
 }
 
 func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []int16, output_ptr int, overlap int, channels int, window []int, Fs int) {

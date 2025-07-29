@@ -1,5 +1,7 @@
 package opus
 
+import "math"
+
 func find_best_pitch(xcorr []int, y []int, len int, max_pitch int, best_pitch []int, yshift int, maxcorr int) {
 	Syy := 1
 	best_num_0 := -1
@@ -17,9 +19,9 @@ func find_best_pitch(xcorr []int, y []int, len int, max_pitch int, best_pitch []
 	for i := 0; i < max_pitch; i++ {
 		if xcorr[i] > 0 {
 			xcorr16 := EXTRACT16(VSHR32(xcorr[i], xshift))
-			num := MULT16_16_Q15(xcorr16, xcorr16)
-			if MULT16_32_Q15(num, best_den_1) > MULT16_32_Q15Int(best_num_1, Syy) {
-				if MULT16_32_Q15(num, best_den_0) > MULT16_32_Q15Int(best_num_0, Syy) {
+			num := MULT16_16_Q15Int(int(xcorr16), int(xcorr16))
+			if MULT16_32_Q15Int(num, best_den_1) > MULT16_32_Q15Int(best_num_1, Syy) {
+				if MULT16_32_Q15Int(num, best_den_0) > MULT16_32_Q15Int(best_num_0, Syy) {
 					best_num_1 = best_num_0
 					best_den_1 = best_den_0
 					best_pitch[1] = best_pitch[0]
@@ -78,7 +80,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	lpc := make([]int, 4)
 	mem := []int{0, 0, 0, 0, 0}
 	lpc2 := make([]int, 5)
-	c1 := int(0.5 + 0.8*float32(1<<15))
+	c1 := (0.5 + (0.8)*((1)<<(15)))
 
 	maxabs := celt_maxabs32(x[0], 0, len)
 	if C == 2 {
@@ -113,12 +115,12 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 
 	ac[0] += SHR32(ac[0], 13)
 	for i := 1; i <= 4; i++ {
-		ac[i] -= MULT16_32_Q15(2*i*i, ac[i])
+		ac[i] -= MULT16_32_Q15Int(2*i*i, ac[i])
 	}
 
 	celt_lpc(lpc, ac, 4)
 	for i := 0; i < 4; i++ {
-		tmp = MULT16_16_Q15Int(int(0.5+0.9*float32(1<<15)), tmp)
+		tmp = MULT16_16_Q15Int(int(math.Round(0.5+0.9*float64(1<<15))), tmp)
 		lpc[i] = MULT16_16_Q15Int(lpc[i], tmp)
 	}
 

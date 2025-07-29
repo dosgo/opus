@@ -81,16 +81,16 @@ func channel_pos(channels int, pos *[8]int) {
 	}
 }
 
-var diff_table = [17]int16{
-	int16(0.5 + 0.5000000*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.2924813*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.1609640*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0849625*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0437314*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0221971*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0111839*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0056136*float32(int(1)<<CeltConstants.DB_SHIFT)),
-	int16(0.5 + 0.0028123*float32(int(1)<<CeltConstants.DB_SHIFT)),
+var diff_table = [17]int{
+	int(0.5 + 0.5000000*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.2924813*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.1609640*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0849625*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0437314*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0221971*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0111839*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0056136*float32(int(1)<<CeltConstants.DB_SHIFT)),
+	int(0.5 + 0.0028123*float32(int(1)<<CeltConstants.DB_SHIFT)),
 	0, 0, 0, 0, 0, 0, 0, 0,
 }
 
@@ -107,8 +107,8 @@ func logSum(a, b int) int {
 		return max
 	}
 	low := SHR32(diff, CeltConstants.DB_SHIFT-1)
-	frac := SHL16(diff-SHL16(low, CeltConstants.DB_SHIFT-1), 16-CeltConstants.DB_SHIFT)
-	return max + int(diff_table[low]) + MULT16_16_Q15(frac, SUB16(diff_table[low+1], diff_table[low]))
+	frac := SHL16Int(diff-SHL16Int(low, CeltConstants.DB_SHIFT-1), 16-CeltConstants.DB_SHIFT)
+	return max + diff_table[low] + MULT16_16_Q15Int(frac, SUB16Int(diff_table[low+1], diff_table[low]))
 }
 
 func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE []int, mem, preemph_mem []int, len, overlap, channels, rate int) {
@@ -143,7 +143,8 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		opus_copy_channel_in_short(x, 0, 1, pcm, pcm_ptr, channels, c, len)
 
 		boxed_preemph := BoxedValueInt{preemph_mem[c]}
-		celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
+		//celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
+		celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
 		preemph_mem[c] = boxed_preemph.Val
 
 		clt_mdct_forward(celt_mode.mdct, input, 0, freq[0], 0, celt_mode.window, overlap, celt_mode.maxLM-LM, 1)
@@ -162,10 +163,10 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		compute_band_energies(celt_mode, freq, bandE, 21, 1, LM)
 		amp2Log2(celt_mode, 21, 21, bandE[0], bandLogE, 21*c, 1)
 		for i := 1; i < 21; i++ {
-			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i-1]-int(QCONST16(1.0, CeltConstants.DB_SHIFT)))
+			bandLogE[21*c+i] = MAX16Int(bandLogE[21*c+i], bandLogE[21*c+i-1]-int(QCONST16(1.0, CeltConstants.DB_SHIFT)))
 		}
 		for i := 19; i >= 0; i-- {
-			bandLogE[21*c+i] = MAX16(bandLogE[21*c+i], bandLogE[21*c+i+1]-int(QCONST16(2.0, CeltConstants.DB_SHIFT)))
+			bandLogE[21*c+i] = MAX16Int(bandLogE[21*c+i], bandLogE[21*c+i+1]-int(QCONST16(2.0, CeltConstants.DB_SHIFT)))
 		}
 		if pos[c] == 1 {
 			for i := 0; i < 21; i++ {
@@ -186,7 +187,7 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 	for i := 0; i < 21; i++ {
 		maskLogE[1][i] = MIN32(maskLogE[0][i], maskLogE[2][i])
 	}
-	channel_offset := HALF16(celt_log2(int(QCONST32(2.0, 14)) / (channels - 1)))
+	channel_offset := HALF16Int(celt_log2(int(QCONST32(2.0, 14)) / (channels - 1)))
 	for c := 0; c < 3; c++ {
 		for i := 0; i < 21; i++ {
 			maskLogE[c][i] += channel_offset
@@ -542,8 +543,8 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 		if len < 0 {
 			return len
 		}
-		rp.AddPacket(tmp_data[:len])
-		len = rp.opus_repacketizer_out_range_impl(0, rp.GetNumFrames(), data[data_ptr:], max_data_bytes-tot_size, Ternary(s != st.layout.nb_streams-1, 1, 0), Ternary(vbr == 0 && s == st.layout.nb_streams-1, 1, 0))
+		rp.addPacket(tmp_data, 0, len)
+		len = rp.opus_repacketizer_out_range_impl(0, rp.getNumFrames(), data[data_ptr:], max_data_bytes-tot_size, Ternary(s != st.layout.nb_streams-1, 1, 0), Ternary(vbr == 0 && s == st.layout.nb_streams-1, 1, 0))
 		data_ptr += len
 		tot_size += len
 	}
