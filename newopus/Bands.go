@@ -101,7 +101,7 @@ func normalise_bands(m *CeltMode, freq [][]int, X [][]int, bandE [][]int, end in
 		for i := 0; i < end; i++ {
 			shift := celt_zlog2(bandE[c][i]) - 13
 			E := VSHR32(bandE[c][i], shift)
-			g := EXTRACT16(celt_rcp(SHL32(E, 3)))
+			g := int(EXTRACT16(celt_rcp(SHL32(E, 3))))
 			j := M * int(eBands[i])
 			endBand := M * int(eBands[i+1])
 			for j < endBand {
@@ -135,10 +135,13 @@ func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE 
 	for i := start; i < end; i++ {
 		j := M * int(eBands[i])
 		band_end := M * int(eBands[i+1])
-		lg := ADD16(bandLogE[bandLogE_ptr+i], SHL16(eMeans[i], 6))
-		shift := int(16 - (lg >> CeltConstants.DB_SHIFT))
+		lg := ADD16Int(bandLogE[bandLogE_ptr+i], SHL16Int(int(CeltTables.EMeans[i]), 6))
+		shift := 16 - (int(lg) >> int(CeltConstants.DB_SHIFT))
 		g := 0
-		if shift <= 31 {
+		if shift > 31 {
+			shift = 0
+			g = 0
+		} else {
 			g = celt_exp2_frac(lg & ((1 << CeltConstants.DB_SHIFT) - 1))
 		}
 		if shift < 0 {
@@ -148,23 +151,23 @@ func denormalise_bands(m *CeltMode, X []int, freq []int, freq_ptr int, bandLogE 
 			}
 			for j < band_end {
 				freq[f] = SHR32(MULT16_16(X[x], g), -shift)
-				x++
 				j++
+				x++
 				f++
 			}
 		} else {
 			for j < band_end {
 				freq[f] = SHR32(MULT16_16(X[x], g), shift)
-				x++
 				j++
+				x++
 				f++
 			}
 		}
 	}
 
 	OpusAssert(start <= end)
-	for i := freq_ptr + bound; i < freq_ptr+N; i++ {
-		freq[i] = 0
+	for i := bound; i < N; i++ {
+		freq[freq_ptr+i] = 0
 	}
 }
 
@@ -202,7 +205,7 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 			r = SHR16Int(MIN16Int(thresh, r), 1)
 			r = SHR32(MULT16_16_Q15Int(sqrt_1, r), shift)
 
-			X := m.eBands[i] << LM
+			X := int(m.eBands[i]) << LM
 			renormalize := 0
 			for k := 0; k < 1<<LM; k++ {
 				if (collapse_masks[i*C+c] & (1 << uint(k))) == 0 {
@@ -710,14 +713,14 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 
 		rebalance := ctx.remaining_bits
 		if mbits >= sbits {
-			cm = quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15(gain, mid), fill)
+			cm = quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
 			rebalance = mbits - (rebalance - ctx.remaining_bits)
 			if rebalance > 3<<BITRES && itheta != 0 {
 				sbits += rebalance - (3 << BITRES)
 			}
-			cm |= quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15(gain, side), fill>>B) << (B0 >> 1)
+			cm |= quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
 		} else {
-			cm = quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15(gain, side), fill>>B) << (B0 >> 1)
+			cm = quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
 			rebalance = sbits - (rebalance - ctx.remaining_bits)
 			if rebalance > 3<<BITRES && itheta != 16384 {
 				mbits += rebalance - (3 << BITRES)

@@ -49,7 +49,7 @@ func silk_Encode(
 	samplesIn []int16,
 	nSamplesIn int,
 	psRangeEnc *EntropyCoder,
-	nBytesOut *int,
+	nBytesOut BoxedValueInt,
 	prefillFlag int) int {
 	ret := SilkError.SILK_NO_ERROR
 	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int
@@ -60,7 +60,7 @@ func silk_Encode(
 	MStargetRates_bps := [2]int{0, 0}
 	var buf []int16
 	var transition, curr_block, tot_blocks int
-	*nBytesOut = 0
+	nBytesOut.Val = 0
 
 	if encControl.reducedDependency != 0 {
 		psEnc.state_Fxx[0].first_frame_after_reset = 1
@@ -450,7 +450,7 @@ func silk_Encode(
 
 			psEnc.prev_decode_only_middle = int(psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded-1])
 
-			if *nBytesOut > 0 && psEnc.state_Fxx[0].nFramesEncoded == psEnc.state_Fxx[0].nFramesPerPacket {
+			if nBytesOut.Val > 0 && psEnc.state_Fxx[0].nFramesEncoded == psEnc.state_Fxx[0].nFramesPerPacket {
 				flags = 0
 				for n := 0; n < encControl.nChannelsInternal; n++ {
 					for i := 0; i < psEnc.state_Fxx[n].nFramesPerPacket; i++ {
@@ -470,10 +470,10 @@ func silk_Encode(
 				}
 
 				if psEnc.state_Fxx[0].inDTX != 0 && (encControl.nChannelsInternal == 1 || psEnc.state_Fxx[1].inDTX != 0) {
-					*nBytesOut = 0
+					nBytesOut.Val = 0
 				}
 
-				psEnc.nBitsExceeded += *nBytesOut * 8
+				psEnc.nBitsExceeded += nBytesOut.Val * 8
 				psEnc.nBitsExceeded -= (encControl.bitRate * encControl.payloadSize_ms) / 1000
 				if psEnc.nBitsExceeded < 0 {
 					psEnc.nBitsExceeded = 0

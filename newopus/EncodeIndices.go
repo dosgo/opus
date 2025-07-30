@@ -10,10 +10,10 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	if encode_LBRR != 0 {
 		psIndices = psEncC.indices_LBRR[FrameIndex]
 	} else {
-		psIndices = psEncC.indices
+		psIndices = &psEncC.indices
 	}
 
-	typeOffset = 2*psIndices.signalType + psIndices.quantOffsetType
+	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)
 	OpusAssert(typeOffset >= 0 && typeOffset < 6)
 	OpusAssert(encode_LBRR == 0 || typeOffset >= 2)
 	if encode_LBRR != 0 || typeOffset >= 2 {

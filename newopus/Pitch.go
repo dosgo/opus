@@ -133,7 +133,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	celt_fir5(x_lp, lpc2, x_lp, halflen, mem)
 }
 
-func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pitch *int) {
+func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pitch BoxedValueInt) {
 	OpusAssert(len > 0)
 	OpusAssert(max_pitch > 0)
 	lag := len + max_pitch
@@ -154,10 +154,10 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 	shift := celt_ilog2(MAX32(1, MAX32(xmax, ymax))) - 11
 	if shift > 0 {
 		for j := 0; j < len>>2; j++ {
-			x_lp4[j] = SHR16(x_lp4[j], shift)
+			x_lp4[j] = SHR16Int(x_lp4[j], shift)
 		}
 		for j := 0; j < lag>>2; j++ {
-			y_lp4[j] = SHR16(y_lp4[j], shift)
+			y_lp4[j] = SHR16Int(y_lp4[j], shift)
 		}
 		shift *= 2
 	} else {
@@ -196,30 +196,34 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 			offset = -1
 		}
 	}
-	*pitch = 2*best_pitch[0] - offset
+	pitch.Val = 2*best_pitch[0] - offset
 }
 
 var second_check = []int{0, 0, 3, 2, 3, 2, 5, 2, 3, 2, 3, 2, 5, 2, 3, 2}
 
-func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, prev_period int, prev_gain int) int {
+func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ BoxedValueInt, prev_period int, prev_gain int) int {
 	maxperiod /= 2
 	minperiod /= 2
-	*T0_ /= 2
+	T0_.Val /= 2
 	prev_period /= 2
 	N /= 2
 	x_ptr := maxperiod
-	if *T0_ >= maxperiod {
-		*T0_ = maxperiod - 1
+	if T0_.Val >= maxperiod {
+		T0_.Val = maxperiod - 1
 	}
 
-	T := *T0_
-	T0 := *T0_
+	T := T0_.Val
+	T0 := T0_.Val
 	yy_lookup := make([]int, maxperiod+1)
 	xx := 0
 	xy := 0
-	dual_inner_prod(x, x_ptr, x, x_ptr, x, x_ptr-T0, N, &xx, &xy)
-	yy_lookup[0] = xx
-	yy := xx
+	boxed_xx := BoxedValueInt{0}
+	boxed_xy := BoxedValueInt{0}
+	boxed_xy2 := BoxedValueInt{0}
+
+	dual_inner_prod(x, x_ptr, x, x_ptr, x, x_ptr-T0, N, &boxed_xx, &boxed_xy)
+	yy_lookup[0] = boxed_xx.Val
+	yy := boxed_xx.Val
 	for i := 1; i <= maxperiod; i++ {
 		xi := x_ptr - i
 		yy = yy + MULT16_16(x[xi], x[xi]) - MULT16_16(x[xi+N], x[xi+N])
@@ -251,27 +255,29 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 			T1b = (2*second_check[k]*T0 + k) / (2 * k)
 		}
 		xy2 := 0
-		dual_inner_prod(x, x_ptr, x, x_ptr-T1, x, x_ptr-T1b, N, &xy, &xy2)
+		dual_inner_prod(x, x_ptr, x, x_ptr-T1, x, x_ptr-T1b, N, &boxed_xy, &boxed_xy2)
+		xy = boxed_xy.Val
+		xy2 = boxed_xy2.Val
 		xy += xy2
 		yy = yy_lookup[T1] + yy_lookup[T1b]
 
 		x2y2 = 1 + MULT32_32_Q31(xx, yy)
 		sh = celt_ilog2(x2y2) >> 1
 		t = VSHR32(x2y2, 2*(sh-7))
-		g1 := VSHR32(MULT16_32_Q15(celt_rsqrt_norm(t), xy), sh+1)
+		g1 := VSHR32(MULT16_32_Q15Int(celt_rsqrt_norm(t), xy), sh+1)
 
 		cont := 0
 		if abs(T1-prev_period) <= 1 {
 			cont = prev_gain
 		} else if abs(T1-prev_period) <= 2 && 5*k*k < T0 {
-			cont = HALF16(prev_gain)
+			cont = HALF16Int(prev_gain)
 		}
 
-		thresh := MAX16(int(0.5+0.3*float32(1<<15)), MULT16_16_Q15(int(0.5+0.7*float32(1<<15)), g0)-cont)
+		thresh := MAX16Int(int(0.5+0.3*float32(1<<15)), MULT16_16_Q15Int(int(0.5+0.7*float32(1<<15)), g0)-cont)
 		if T1 < 3*minperiod {
-			thresh = MAX16(int(0.5+0.4*float32(1<<15)), MULT16_16_Q15(int(0.5+0.85*float32(1<<15)), g0)-cont)
+			thresh = MAX16Int(int(0.5+0.4*float32(1<<15)), MULT16_16_Q15Int(int(0.5+0.85*float32(1<<15)), g0)-cont)
 		} else if T1 < 2*minperiod {
-			thresh = MAX16(int(0.5+0.5*float32(1<<15)), MULT16_16_Q15(int(0.5+0.9*float32(1<<15)), g0)-cont)
+			thresh = MAX16Int(int(0.5+0.5*float32(1<<15)), MULT16_16_Q15Int(int(0.5+0.9*float32(1<<15)), g0)-cont)
 		}
 		if g1 > thresh {
 			best_xy = xy
@@ -289,7 +295,7 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *int, pre
 
 	xcorr := [3]int{}
 	for k := 0; k < 3; k++ {
-		xcorr[k] = celt_inner_prod(x, x_ptr, x, x_ptr-(T+k-1), N)
+		xcorr[k] = celt_inner_prod_int(x, x_ptr, x, x_ptr-(T+k-1), N)
 	}
 
 	offset := 0

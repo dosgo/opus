@@ -182,17 +182,17 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		copy(pre[c][:CeltConstants.COMBFILTER_MAXPERIOD], prefilter_mem[c])
 		copy(pre[c][CeltConstants.COMBFILTER_MAXPERIOD:], input[c][overlap:overlap+N])
 	}
-	pitch_index := 0
+	pitch_index := BoxedValueInt{0}
 	var gain1 int
 	if enabled != 0 {
 		pitch_buf := make([]int, (CeltConstants.COMBFILTER_MAXPERIOD+N)>>1)
 		pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
 
-		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
-		pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index
-		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
-		if pitch_index > CeltConstants.COMBFILTER_MAXPERIOD-2 {
-			pitch_index = CeltConstants.COMBFILTER_MAXPERIOD - 2
+		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, pitch_index)
+		pitch_index.Val = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index.Val
+		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, pitch_index, this.prefilter_period, this.prefilter_gain)
+		if pitch_index.Val > CeltConstants.COMBFILTER_MAXPERIOD-2 {
+			pitch_index.Val = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}
 		gain1 = int(MULT16_16_Q15(int16(math.Round(0.5+0.7*float64(int(1<<15)))), int16(gain1)))
 		if this.loss_rate > 2 {
@@ -247,7 +247,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 	}
 
 	gain.Val = gain1
-	pitch.Val = pitch_index
+	pitch.Val = pitch_index.Val
 	qgain.Val = qg
 
 	for c := 0; c < CC; c++ {

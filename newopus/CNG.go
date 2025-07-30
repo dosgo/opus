@@ -8,9 +8,9 @@ func silk_CNG_exc(
 	exc_buf_Q14 []int,
 	Gain_Q16 int,
 	length int,
-	rand_seed *int) {
+	rand_seed BoxedValueInt) {
 
-	seed := *rand_seed
+	seed := rand_seed.Val
 	exc_mask := CNG_BUF_MASK_MAX
 
 	for exc_mask > length {
@@ -25,7 +25,7 @@ func silk_CNG_exc(
 		exc_Q10[i] = int(silk_SAT16(silk_SMULWW(int(exc_buf_Q14[idx]), Gain_Q16>>4)))
 	}
 
-	*rand_seed = seed
+	rand_seed.Val = seed
 }
 
 func silk_CNG_Reset(psDec *SilkChannelDecoder) {
@@ -91,9 +91,9 @@ func silk_CNG(
 			gain_Q16 = silk_LSHIFT32(silk_SQRT_APPROX(gain_Q16), 8)
 		}
 
-		seed := psCNG.rand_seed
-		silk_CNG_exc(CNG_sig_Q10, MAX_LPC_ORDER, psCNG.CNG_exc_buf_Q14, gain_Q16, length, &seed)
-		psCNG.rand_seed = seed
+		boxed_rand_seed := BoxedValueInt{psCNG.rand_seed}
+		silk_CNG_exc(CNG_sig_Q10, MAX_LPC_ORDER, psCNG.CNG_exc_buf_Q14, gain_Q16, length, boxed_rand_seed)
+		psCNG.rand_seed = boxed_rand_seed.Val
 
 		A_Q12 := make([]int16, psDec.LPC_order)
 		silk_NLSF2A(A_Q12, psCNG.CNG_smth_NLSF_Q15, psDec.LPC_order)

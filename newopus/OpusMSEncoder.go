@@ -144,7 +144,8 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 
 		boxed_preemph := BoxedValueInt{preemph_mem[c]}
 		//celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
-		celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
+		//celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
+		celt_preemphasis1(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
 		preemph_mem[c] = boxed_preemph.Val
 
 		clt_mdct_forward(celt_mode.mdct, input, 0, freq[0], 0, celt_mode.window, overlap, celt_mode.maxLM-LM, 1)
@@ -161,7 +162,8 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		bandE := make([][]int, 1)
 		bandE[0] = make([]int, 21)
 		compute_band_energies(celt_mode, freq, bandE, 21, 1, LM)
-		amp2Log2(celt_mode, 21, 21, bandE[0], bandLogE, 21*c, 1)
+		amp2Log2Ptr(celt_mode, 21, 21, bandE[0], bandLogE, 21*c, 1)
+
 		for i := 1; i < 21; i++ {
 			bandLogE[21*c+i] = MAX16Int(bandLogE[21*c+i], bandLogE[21*c+i-1]-int(QCONST16(1.0, CeltConstants.DB_SHIFT)))
 		}
@@ -261,45 +263,45 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 	return OpusError.OPUS_OK
 }
 
-func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, mapping_family int, streams, coupled_streams *int, mapping []int16, application OpusApplication) int {
-	*streams = 0
-	*coupled_streams = 0
+func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, mapping_family int, streams, coupled_streams BoxedValueInt, mapping []int16, application OpusApplication) int {
+	streams.Val = 0
+	coupled_streams.Val = 0
 	if channels > 255 || channels < 1 {
 		return OpusError.OPUS_BAD_ARG
 	}
 	st.lfe_stream = -1
 	if mapping_family == 0 {
 		if channels == 1 {
-			*streams = 1
-			*coupled_streams = 0
+			streams.Val = 1
+			coupled_streams.Val = 0
 			mapping[0] = 0
 		} else if channels == 2 {
-			*streams = 1
-			*coupled_streams = 1
+			streams.Val = 1
+			coupled_streams.Val = 1
 			mapping[0] = 0
 			mapping[1] = 1
 		} else {
 			return OpusError.OPUS_UNIMPLEMENTED
 		}
 	} else if mapping_family == 1 && channels >= 1 && channels <= 8 {
-		*streams = vorbis_mappings[channels-1].nb_streams
-		*coupled_streams = vorbis_mappings[channels-1].nb_coupled_streams
+		streams.Val = vorbis_mappings[channels-1].nb_streams
+		coupled_streams.Val = vorbis_mappings[channels-1].nb_coupled_streams
 		for i := 0; i < channels; i++ {
 			mapping[i] = vorbis_mappings[channels-1].mapping[i]
 		}
 		if channels >= 6 {
-			st.lfe_stream = *streams - 1
+			st.lfe_stream = streams.Val - 1
 		}
 	} else if mapping_family == 255 {
 		for i := 0; i < channels; i++ {
 			mapping[i] = int16(i)
 		}
-		*streams = channels
-		*coupled_streams = 0
+		streams.Val = channels
+		coupled_streams.Val = 0
 	} else {
 		return OpusError.OPUS_UNIMPLEMENTED
 	}
-	return st.opus_multistream_encoder_init(Fs, channels, *streams, *coupled_streams, mapping, application, Ternary(channels > 2 && mapping_family == 1, 1, 0))
+	return st.opus_multistream_encoder_init(Fs, channels, streams.Val, coupled_streams.Val, mapping, application, Ternary(channels > 2 && mapping_family == 1, 1, 0))
 }
 
 func CreateOpusMSEncoder(Fs, channels, streams, coupled_streams int, mapping []int16, application OpusApplication) (*OpusMSEncoder, error) {
@@ -320,40 +322,41 @@ func CreateOpusMSEncoder(Fs, channels, streams, coupled_streams int, mapping []i
 	return st, nil
 }
 
-func GetStreamCount(channels, mapping_family int, nb_streams, nb_coupled_streams *int) error {
+func GetStreamCount(channels, mapping_family int, nb_streams, nb_coupled_streams BoxedValueInt) error {
 	if mapping_family == 0 {
 		if channels == 1 {
-			*nb_streams = 1
-			*nb_coupled_streams = 0
+			nb_streams.Val = 1
+			nb_coupled_streams.Val = 0
 		} else if channels == 2 {
-			*nb_streams = 1
-			*nb_coupled_streams = 1
+			nb_streams.Val = 1
+			nb_coupled_streams.Val = 1
 		} else {
 			return errors.New("More than 2 channels requires custom mappings")
 		}
 	} else if mapping_family == 1 && channels >= 1 && channels <= 8 {
-		*nb_streams = vorbis_mappings[channels-1].nb_streams
-		*nb_coupled_streams = vorbis_mappings[channels-1].nb_coupled_streams
+		nb_streams.Val = vorbis_mappings[channels-1].nb_streams
+		nb_coupled_streams.Val = vorbis_mappings[channels-1].nb_coupled_streams
 	} else if mapping_family == 255 {
-		*nb_streams = channels
-		*nb_coupled_streams = 0
+		nb_streams.Val = channels
+		nb_coupled_streams.Val = 0
 	} else {
 		return errors.New("Invalid mapping family")
 	}
 	return nil
 }
 
-func CreateSurroundOpusMSEncoder(Fs, channels, mapping_family int, streams, coupled_streams *int, mapping []int16, application OpusApplication) (*OpusMSEncoder, error) {
+func CreateSurroundOpusMSEncoder(Fs, channels, mapping_family int, streams, coupled_streams BoxedValueInt, mapping []int16, application OpusApplication) (*OpusMSEncoder, error) {
 	if channels > 255 || channels < 1 || application == OPUS_APPLICATION_UNIMPLEMENTED {
 		return nil, errors.New("Invalid channel count or application")
 	}
-	var nb_streams, nb_coupled_streams int
-	err := GetStreamCount(channels, mapping_family, &nb_streams, &nb_coupled_streams)
+	nb_streams := BoxedValueInt{0}
+	nb_coupled_streams := BoxedValueInt{0}
+	err := GetStreamCount(channels, mapping_family, nb_streams, nb_coupled_streams)
 	if err != nil {
 		return nil, err
 	}
 
-	st, err := NewOpusMSEncoder(nb_streams, nb_coupled_streams)
+	st, err := NewOpusMSEncoder(nb_streams.Val, nb_coupled_streams.Val)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +547,10 @@ func (st *OpusMSEncoder) opus_multistream_encode_native(pcm []int16, pcm_ptr, an
 			return len
 		}
 		rp.addPacket(tmp_data, 0, len)
-		len = rp.opus_repacketizer_out_range_impl(0, rp.getNumFrames(), data[data_ptr:], max_data_bytes-tot_size, Ternary(s != st.layout.nb_streams-1, 1, 0), Ternary(vbr == 0 && s == st.layout.nb_streams-1, 1, 0))
+
+		len = rp.opus_repacketizer_out_range_impl(0, rp.getNumFrames(),
+			data, data_ptr, max_data_bytes-tot_size, boolToInt(s != st.layout.nb_streams-1), boolToInt(vbr == 0 && s == st.layout.nb_streams-1))
+
 		data_ptr += len
 		tot_size += len
 	}

@@ -582,7 +582,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 	}
 }
 
-func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
+func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut BoxedValueInt, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
 	sEncCtrl := SilkEncoderControl{}
 	var iter, maxIter, found_upper, found_lower, ret int
 	var x_frame int
@@ -716,13 +716,13 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *int, psRangeEnc *Entr
 	}
 	copy(s.x_buf[:], s.x_buf[s.frame_length:])
 	if s.prefillFlag != 0 {
-		*pnBytesOut = 0
+		pnBytesOut.Val = 0
 		return ret
 	}
 	s.prevLag = sEncCtrl.pitchL[s.nb_subfr-1]
 	s.prevSignalType = s.indices.signalType
 	s.first_frame_after_reset = 0
-	*pnBytesOut = int(uint(psRangeEnc.tell()+7) >> 3)
+	pnBytesOut.Val = int(uint(psRangeEnc.tell()+7) >> 3)
 	return ret
 }
 

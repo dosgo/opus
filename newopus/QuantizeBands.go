@@ -349,10 +349,10 @@ func amp2Log2(m *CeltMode, effEnd int, end int, bandE [][]int16, bandLogE [][]in
 	}
 }
 
-func amp2Log2Ptr(m *CeltMode, effEnd int, end int, bandE []int16, bandLogE []int16, bandLogEPtr int, C int) {
+func amp2Log2Ptr(m *CeltMode, effEnd int, end int, bandE []int, bandLogE []int, bandLogEPtr int, C int) {
 	for c := 0; c < C; c++ {
 		for i := 0; i < effEnd; i++ {
-			bandLogE[bandLogEPtr+c*m.nbEBands+i] = int16(celt_log2(SHL32(int(bandE[i+c*m.nbEBands]), 2))) - SHL16(int16(CeltTables.EMeans[i]), 6)
+			bandLogE[bandLogEPtr+c*m.nbEBands+i] = celt_log2(SHL32(int(bandE[i+c*m.nbEBands]), 2)) - SHL16Int(int(CeltTables.EMeans[i]), 6)
 		}
 		for i := effEnd; i < end; i++ {
 			bandLogE[bandLogEPtr+c*m.nbEBands+i] = -(14 << CeltConstants.DB_SHIFT)

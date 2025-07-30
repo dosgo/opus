@@ -353,14 +353,14 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		mem.XY = MIN32(mem.XY, sqrt_xx*sqrt_yy)
 		corr := SHR32(frac_div32(mem.XY, CeltConstants.EPSILON+MULT16_16(sqrt_xx, sqrt_yy)), 16)
 		ldiff := CeltConstants.Q15ONE * ABS16(qrrt_xx-qrrt_yy) / (CeltConstants.EPSILON + qrrt_xx + qrrt_yy)
-		width := MULT16_16_Q15(celt_sqrt(1<<30-MULT16_16(corr, corr)), ldiff)
+		width := MULT16_16_Q15Int(celt_sqrt(1<<30-MULT16_16(corr, corr)), ldiff)
 		mem.smoothed_width += (width - mem.smoothed_width) / int(frame_rate)
-		mem.max_follower = MAX16(mem.max_follower-int(0.5+(0.02)*(1<<15))/int(frame_rate), mem.smoothed_width)
+		mem.max_follower = MAX16Int(mem.max_follower-int(0.5+(0.02)*(1<<15))/int(frame_rate), mem.smoothed_width)
 	} else {
 		mem.smoothed_width = 0
 		mem.max_follower = 0
 	}
-	return EXTEND32(MIN32(CeltConstants.Q15ONE, 20*mem.max_follower))
+	return EXTEND32Int(MIN32(CeltConstants.Q15ONE, 20*mem.max_follower))
 }
 
 func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []int16, output_ptr int, overlap int, channels int, window []int, Fs int) {

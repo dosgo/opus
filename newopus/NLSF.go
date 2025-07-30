@@ -479,7 +479,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 		OpusAssert(f_int < LSF_COS_TAB_SZ)
 		cos_val := SilkTables.Silk_LSFCosTab_Q12[f_int]
 		delta := SilkTables.Silk_LSFCosTab_Q12[f_int+1] - cos_val
-		cos_LSF_QA[ordering[k]] = int(silk_RSHIFT_ROUND(int64(cos_val)<<8+int64(delta)*int64(f_frac), 20-QA))
+		cos_LSF_QA[ordering[k]] = int(silk_RSHIFT_ROUND(int(cos_val)<<8+int(delta)*int(f_frac), 20-QA))
 	}
 
 	dd := d / 2

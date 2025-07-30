@@ -236,7 +236,7 @@ func MAC16_16IntAll(c, a, b int) int {
 }
 
 func MAC16_32_Q15(c int, a int16, b int16) int {
-	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 15)), SHR(MULT16_16(int(a), b&0x00007fff), 15)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 15)), SHR(MULT16_16(int(a), int(b&0x00007fff)), 15)))
 }
 
 func MAC16_32_Q15Int(c, a, b int) int {
@@ -244,7 +244,7 @@ func MAC16_32_Q15Int(c, a, b int) int {
 }
 
 func MAC16_32_Q16(c int, a int16, b int16) int {
-	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 16)), SHR(MULT16_16SU(int(a), b&0x0000ffff), 16)))
+	return ADD32(c, ADD32(MULT16_16(int(a), SHR(int(b), 16)), SHR(MULT16_16SU(int(a), int(int(b)&0x0000ffff)), 16)))
 }
 
 func MAC16_32_Q16Int(c, a, b int) int {
@@ -585,8 +585,8 @@ func celt_sqrt(x int) int {
 	n := int16(x - 32768)
 	rt := ADD16(sqrt_C[0], MULT16_16_Q15(n, ADD16(sqrt_C[1], MULT16_16_Q15(n, ADD16(sqrt_C[2],
 		MULT16_16_Q15(n, ADD16(sqrt_C[3], MULT16_16_Q15(n, sqrt_C[4]))))))))
-	rt = VSHR32(int(rt), 7-k)
-	return rt
+	rt = int16(VSHR32(int(rt), 7-k))
+	return int(rt)
 }
 
 func celt_rcp(x int) int {
@@ -603,11 +603,12 @@ func celt_rcp(x int) int {
 
 func celt_rsqrt_norm(x int) int {
 	n := x - 32768
-	r := ADD16(23557, MULT16_16_Q15(int16(n), ADD16(-13490, MULT16_16_Q15(int16(n), 6713))))
-	r2 := MULT16_16_Q15(r, r)
-	y := SHL16(SUB16(ADD16(MULT16_16_Q15(r2, int16(n)), r2), 1))
-	return ADD16(r, MULT16_16_Q15(r, MULT16_16_Q15(int16(y),
-		SUB16(MULT16_16_Q15(int16(y), 12288), 16384))))
+	r := ADD16Int(23557, MULT16_16_Q15Int(int(n), ADD16Int(-13490, MULT16_16_Q15Int(int(n), 6713))))
+	r2 := MULT16_16_Q15Int(r, r)
+
+	y := SHL16Int(SUB16Int(ADD16Int(MULT16_16_Q15Int(r2, n), r2), 16384), 1)
+	return ADD16Int(r, MULT16_16_Q15Int(r, MULT16_16_Q15Int(int(y),
+		SUB16Int(MULT16_16_Q15Int(int(y), 12288), 16384))))
 }
 
 func frac_div32(a, b int) int {
@@ -634,28 +635,28 @@ func celt_log2(x int) int {
 	}
 	i := celt_ilog2(x)
 	n := VSHR32(x, i-15) - 32768 - 16384
-	frac := ADD16(log2_C0, MULT16_16_Q15(int16(n), ADD16(15746, MULT16_16_Q15(int16(n), ADD16(-5217, MULT16_16_Q15(int16(n), ADD16(2545, MULT16_16_Q15(int16(n), -1401))))))))
-	return SHL16(int16(i-13), 10) + SHR16(int(frac), 4)
+	frac := ADD16Int(log2_C0, MULT16_16_Q15Int(int(n), ADD16Int(15746, MULT16_16_Q15Int(int(n), ADD16Int(-5217, MULT16_16_Q15Int(int(n), ADD16Int(2545, MULT16_16_Q15Int(int(n), -1401))))))))
+	return SHL16Int(int(i-13), 10) + SHR16Int(int(frac), 4)
 }
 
 func celt_exp2_frac(x int) int {
-	frac := SHL16(int16(x), 4)
-	return ADD16(16383, MULT16_16_Q15(frac, ADD16(22804, MULT16_16_Q15(frac, ADD16(14819, MULT16_16_Q15(10204, int16(frac)))))))
+	frac := SHL16Int(int(x), 4)
+	return ADD16Int(16383, MULT16_16_Q15Int(frac, ADD16Int(22804, MULT16_16_Q15Int(frac, ADD16Int(14819, MULT16_16_Q15Int(10204, int(frac)))))))
 }
 
 func celt_exp2(inLog_Q7 int) int {
-	integer := SHR16(int16(inLog_Q7), 10)
+	integer := SHR16Int((inLog_Q7), 10)
 	if integer > 14 {
 		return 0x7f000000
 	} else if integer < -15 {
 		return 0
 	}
-	frac := celt_exp2_frac(int(inLog_Q7 - SHL16(integer, 10)))
-	return VSHR32(EXTEND32(frac), -int(integer)-2)
+	frac := celt_exp2_frac(int(inLog_Q7 - SHL16Int(integer, 10)))
+	return VSHR32(EXTEND32Int(frac), -int(integer)-2)
 }
 
 func celt_atan01(x int) int {
-	return MULT16_16_P15(int16(x), ADD32(32767, MULT16_16_P15(int16(x), ADD32(-21, MULT16_16_P15(int16(x), ADD32(-11943, MULT16_16_P15(4936, int16(x))))))))
+	return MULT16_16_P15Int(int(x), ADD32(32767, MULT16_16_P15Int(int(x), ADD32(-21, MULT16_16_P15Int(int(x), ADD32(-11943, MULT16_16_P15Int(4936, int(x))))))))
 }
 
 func celt_atan2p(y, x int) int {
@@ -664,13 +665,13 @@ func celt_atan2p(y, x int) int {
 		if arg >= 32767 {
 			arg = 32767
 		}
-		return SHR32(celt_atan01(EXTRACT16(arg)), 1)
+		return SHR32(celt_atan01(int(EXTRACT16(arg))), 1)
 	}
 	arg := celt_div(SHL32(EXTEND32Int(x), 15), y)
 	if arg >= 32767 {
 		arg = 32767
 	}
-	return 25736 - SHR16(celt_atan01(EXTRACT16(arg)), 1)
+	return 25736 - SHR16Int(celt_atan01(int(EXTRACT16(arg))), 1)
 }
 
 func celt_cos_norm(x int) int {
@@ -680,9 +681,9 @@ func celt_cos_norm(x int) int {
 	}
 	if (x & 0x00007fff) != 0 {
 		if x < SHL32(EXTEND32(1), 15) {
-			return _celt_cos_pi_2(EXTRACT16(x))
+			return _celt_cos_pi_2(int(EXTRACT16(x)))
 		}
-		return NEG32(_celt_cos_pi_2(EXTRACT16(65536 - x)))
+		return NEG32(_celt_cos_pi_2(int(EXTRACT16(65536 - x))))
 	} else if (x & 0x0000ffff) != 0 {
 		return 0
 	} else if (x & 0x0001ffff) != 0 {
@@ -692,8 +693,8 @@ func celt_cos_norm(x int) int {
 }
 
 func _celt_cos_pi_2(x int) int {
-	x2 := MULT16_16_P15(int16(x), int16(x))
-	return ADD32(1, MIN32(32766, ADD32(SUB16(32767, x2), MULT16_16_P15(int16(x2), ADD32(-7651, MULT16_16_P15(int16(x2), ADD32(8277, MULT16_16_P15(-626, int16(x2)))))))))
+	x2 := MULT16_16_P15Int(int(x), int(x))
+	return ADD32(1, MIN32(32766, ADD32(SUB16Int(32767, x2), MULT16_16_P15Int(int(x2), ADD32(-7651, MULT16_16_P15Int(int(x2), ADD32(8277, MULT16_16_P15Int(-626, int(x2)))))))))
 }
 
 func FLOAT2INT16(x float32) int16 {
