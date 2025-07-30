@@ -2,7 +2,7 @@ package opus
 
 import "math"
 
-func gen_toc(mode OpusMode, framerate int, bandwidth OpusBandwidth, channels int) byte {
+func gen_toc(mode int, framerate int, bandwidth int, channels int) byte {
 	var period int
 	var toc int16
 	period = 0
@@ -213,7 +213,7 @@ func optimize_framesize(x []int16, x_ptr int, len int, C int, Fs int, bitrate in
 	subframe := Fs / 400
 	sub := make([]int, subframe)
 	e[0] = mem[0]
-	e_1[0] = 1.0 / (CeltConstants.EPSILON + mem[0])
+	e_1[0] = 1.0/float32(CeltConstants.EPSILON) + mem[0]
 	if buffering != 0 {
 		offset = 2*subframe - buffering
 		if offset < 0 || offset > subframe {
@@ -221,9 +221,9 @@ func optimize_framesize(x []int16, x_ptr int, len int, C int, Fs int, bitrate in
 		}
 		len -= offset
 		e[1] = mem[1]
-		e_1[1] = 1.0 / (CeltConstants.EPSILON + mem[1])
+		e_1[1] = 1.0 / (float32(CeltConstants.EPSILON) + mem[1])
 		e[2] = mem[2]
-		e_1[2] = 1.0 / (CeltConstants.EPSILON + mem[2])
+		e_1[2] = 1.0 / (float32(CeltConstants.EPSILON) + mem[2])
 		pos = 3
 	} else {
 		pos = 1
@@ -231,7 +231,7 @@ func optimize_framesize(x []int16, x_ptr int, len int, C int, Fs int, bitrate in
 	}
 	N = IMIN(len/subframe, MAX_DYNAMIC_FRAMESIZE)
 	for i := 0; i < N; i++ {
-		tmp := CeltConstants.EPSILON
+		tmp := float32(CeltConstants.EPSILON)
 		var tmpx int
 		downmix_int(x, x_ptr, sub, 0, subframe, i*subframe+offset, 0, -2, C)
 		if i == 0 {
@@ -345,7 +345,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 	mem.XX = MAX32(0, mem.XX)
 	mem.XY = MAX32(0, mem.XY)
 	mem.YY = MAX32(0, mem.YY)
-	if MAX32(mem.XX, mem.YY) > int(0.5+(8e-4)*(1<<18)) {
+	if MAX32(mem.XX, mem.YY) > int(math.Round(0.5+(8e-4)*(1<<18))) {
 		sqrt_xx := celt_sqrt(mem.XX)
 		sqrt_yy := celt_sqrt(mem.YY)
 		qrrt_xx := celt_sqrt(sqrt_xx)
@@ -355,7 +355,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		ldiff := CeltConstants.Q15ONE * ABS16(qrrt_xx-qrrt_yy) / (CeltConstants.EPSILON + qrrt_xx + qrrt_yy)
 		width := MULT16_16_Q15Int(celt_sqrt(1<<30-MULT16_16(corr, corr)), ldiff)
 		mem.smoothed_width += (width - mem.smoothed_width) / int(frame_rate)
-		mem.max_follower = MAX16Int(mem.max_follower-int(0.5+(0.02)*(1<<15))/int(frame_rate), mem.smoothed_width)
+		mem.max_follower = MAX16Int(mem.max_follower-int(math.Round(0.5+(0.02)*(1<<15)))/int(frame_rate), mem.smoothed_width)
 	} else {
 		mem.smoothed_width = 0
 		mem.max_follower = 0
@@ -368,7 +368,7 @@ func smooth_fade(in1 []int16, in1_ptr int, in2 []int16, in2_ptr int, output []in
 	for c := 0; c < channels; c++ {
 		for i := 0; i < overlap; i++ {
 			w := MULT16_16_Q15Int(window[i*inc], window[i*inc])
-			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16Int(MULT16_16(w, int(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int(in1[in1_ptr+(i*channels)+c])), 15))
+			output[output_ptr+(i*channels)+c] = int16(SHR32(MAC16_16IntAll(MULT16_16(w, int(in2[in2_ptr+(i*channels)+c])), CeltConstants.Q15ONE-w, int(in1[in1_ptr+(i*channels)+c])), 15))
 		}
 	}
 }

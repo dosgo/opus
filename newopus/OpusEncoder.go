@@ -638,9 +638,10 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			st.silk_mode.bitRate = imax(1, st.silk_mode.bitRate-2000)
 		}
 		copy(pcm_silk, pcm_buf[total_buffer*st.channels:(total_buffer+frame_size)*st.channels])
-		silkBytes := nBytes
-		ret := silk_Encode(silk_enc, &st.silk_mode, pcm_silk, frame_size, &enc, &silkBytes, 0)
-		nBytes = silkBytes
+
+		boxed_silkBytes := BoxedValueInt{nBytes}
+		ret := silk_Encode(silk_enc, &st.silk_mode, pcm_silk, frame_size, &enc, boxed_silkBytes, 0)
+		nBytes = boxed_silkBytes.Val
 		if ret != 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
 		}

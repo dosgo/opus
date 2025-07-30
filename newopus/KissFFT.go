@@ -5,7 +5,7 @@ import "math"
 const MAXFACTORS = 8
 
 func S_MUL(a, b int) int {
-	return MULT16_32_Q15(int16(b), a)
+	return MULT16_32_Q15Int((b), a)
 }
 
 func HALF_OF(x int) int {
@@ -93,12 +93,12 @@ func kf_bfly4(Fout []int, fout_ptr int, fstride int, st *FFTState, m int, N int,
 			tw2 = 0
 			tw3 = 0
 			for j = 0; j < m; j++ {
-				scratch0 = S_MUL(Fout[m1], st.twiddles[tw1]) - S_MUL(Fout[m1+1], st.twiddles[tw1+1])
-				scratch1 = S_MUL(Fout[m1], st.twiddles[tw1+1]) + S_MUL(Fout[m1+1], st.twiddles[tw1])
-				scratch2 = S_MUL(Fout[m2], st.twiddles[tw2]) - S_MUL(Fout[m2+1], st.twiddles[tw2+1])
-				scratch3 = S_MUL(Fout[m2], st.twiddles[tw2+1]) + S_MUL(Fout[m2+1], st.twiddles[tw2])
-				scratch4 = S_MUL(Fout[m3], st.twiddles[tw3]) - S_MUL(Fout[m3+1], st.twiddles[tw3+1])
-				scratch5 = S_MUL(Fout[m3], st.twiddles[tw3+1]) + S_MUL(Fout[m3+1], st.twiddles[tw3])
+				scratch0 = S_MUL(Fout[m1], int(st.twiddles[tw1])) - S_MUL(Fout[m1+1], int(st.twiddles[tw1+1]))
+				scratch1 = S_MUL(Fout[m1], int(st.twiddles[tw1+1])) + S_MUL(Fout[m1+1], int(st.twiddles[tw1]))
+				scratch2 = S_MUL(Fout[m2], int(st.twiddles[tw2])) - S_MUL(Fout[m2+1], int(st.twiddles[tw2+1]))
+				scratch3 = S_MUL(Fout[m2], int(st.twiddles[tw2+1])) + S_MUL(Fout[m2+1], int(st.twiddles[tw2]))
+				scratch4 = S_MUL(Fout[m3], int(st.twiddles[tw3])) - S_MUL(Fout[m3+1], int(st.twiddles[tw3+1]))
+				scratch5 = S_MUL(Fout[m3], int(st.twiddles[tw3+1])) + S_MUL(Fout[m3+1], int(st.twiddles[tw3]))
 				scratch10 = Fout[fout_ptr+0] - scratch2
 				scratch11 = Fout[fout_ptr+1] - scratch3
 				Fout[fout_ptr+0] += scratch2
@@ -143,10 +143,10 @@ func kf_bfly3(Fout []int, fout_ptr int, fstride int, st *FFTState, m int, N int,
 		tw2 = 0
 		k = m
 		for k != 0 {
-			scratch2 = S_MUL(Fout[fout_ptr+m1], st.twiddles[tw1]) - S_MUL(Fout[fout_ptr+m1+1], st.twiddles[tw1+1])
-			scratch3 = S_MUL(Fout[fout_ptr+m1], st.twiddles[tw1+1]) + S_MUL(Fout[fout_ptr+m1+1], st.twiddles[tw1])
-			scratch4 = S_MUL(Fout[fout_ptr+m2], st.twiddles[tw2]) - S_MUL(Fout[fout_ptr+m2+1], st.twiddles[tw2+1])
-			scratch5 = S_MUL(Fout[fout_ptr+m2], st.twiddles[tw2+1]) + S_MUL(Fout[fout_ptr+m2+1], st.twiddles[tw2])
+			scratch2 = S_MUL(Fout[fout_ptr+m1], int(st.twiddles[tw1])) - S_MUL(Fout[fout_ptr+m1+1], int(st.twiddles[tw1+1]))
+			scratch3 = S_MUL(Fout[fout_ptr+m1], int(st.twiddles[tw1+1])) + S_MUL(Fout[fout_ptr+m1+1], int(st.twiddles[tw1]))
+			scratch4 = S_MUL(Fout[fout_ptr+m2], int(st.twiddles[tw2])) - S_MUL(Fout[fout_ptr+m2+1], int(st.twiddles[tw2+1]))
+			scratch5 = S_MUL(Fout[fout_ptr+m2], int(st.twiddles[tw2+1])) + S_MUL(Fout[fout_ptr+m2+1], int(st.twiddles[tw2]))
 
 			scratch6 = scratch2 + scratch4
 			scratch7 = scratch3 + scratch5
@@ -210,14 +210,14 @@ func kf_bfly5(Fout []int, fout_ptr int, fstride int, st *FFTState, m int, N int,
 			scratch0 = Fout[Fout0+0]
 			scratch1 = Fout[Fout0+1]
 
-			scratch2 = S_MUL(Fout[Fout1+0], st.twiddles[tw1]) - S_MUL(Fout[Fout1+1], st.twiddles[tw1+1])
-			scratch3 = S_MUL(Fout[Fout1+0], st.twiddles[tw1+1]) + S_MUL(Fout[Fout1+1], st.twiddles[tw1])
-			scratch4 = S_MUL(Fout[Fout2+0], st.twiddles[tw2]) - S_MUL(Fout[Fout2+1], st.twiddles[tw2+1])
-			scratch5 = S_MUL(Fout[Fout2+0], st.twiddles[tw2+1]) + S_MUL(Fout[Fout2+1], st.twiddles[tw2])
-			scratch6 = S_MUL(Fout[Fout3+0], st.twiddles[tw3]) - S_MUL(Fout[Fout3+1], st.twiddles[tw3+1])
-			scratch7 = S_MUL(Fout[Fout3+0], st.twiddles[tw3+1]) + S_MUL(Fout[Fout3+1], st.twiddles[tw3])
-			scratch8 = S_MUL(Fout[Fout4+0], st.twiddles[tw4]) - S_MUL(Fout[Fout4+1], st.twiddles[tw4+1])
-			scratch9 = S_MUL(Fout[Fout4+0], st.twiddles[tw4+1]) + S_MUL(Fout[Fout4+1], st.twiddles[tw4])
+			scratch2 = S_MUL(Fout[Fout1+0], int(st.twiddles[tw1])) - S_MUL(Fout[Fout1+1], int(st.twiddles[tw1+1]))
+			scratch3 = S_MUL(Fout[Fout1+0], int(st.twiddles[tw1+1])) + S_MUL(Fout[Fout1+1], int(st.twiddles[tw1]))
+			scratch4 = S_MUL(Fout[Fout2+0], int(st.twiddles[tw2])) - S_MUL(Fout[Fout2+1], int(st.twiddles[tw2+1]))
+			scratch5 = S_MUL(Fout[Fout2+0], int(st.twiddles[tw2+1])) + S_MUL(Fout[Fout2+1], int(st.twiddles[tw2]))
+			scratch6 = S_MUL(Fout[Fout3+0], int(st.twiddles[tw3])) - S_MUL(Fout[Fout3+1], int(st.twiddles[tw3+1]))
+			scratch7 = S_MUL(Fout[Fout3+0], int(st.twiddles[tw3+1])) + S_MUL(Fout[Fout3+1], int(st.twiddles[tw3]))
+			scratch8 = S_MUL(Fout[Fout4+0], int(st.twiddles[tw4])) - S_MUL(Fout[Fout4+1], int(st.twiddles[tw4+1]))
+			scratch9 = S_MUL(Fout[Fout4+0], int(st.twiddles[tw4+1])) + S_MUL(Fout[Fout4+1], int(st.twiddles[tw4]))
 
 			tw1 += 2 * fstride
 			tw2 += 4 * fstride
@@ -283,8 +283,8 @@ func opus_fft_impl(st *FFTState, fout []int, fout_ptr int) {
 	fstride[0] = 1
 	L = 0
 	for {
-		p = st.factors[2*L]
-		m = st.factors[2*L+1]
+		p = int(st.factors[2*L])
+		m = int(st.factors[2*L+1])
 		if L+1 < MAXFACTORS {
 			fstride[L+1] = fstride[L] * p
 		}
@@ -294,10 +294,10 @@ func opus_fft_impl(st *FFTState, fout []int, fout_ptr int) {
 		}
 	}
 
-	m = st.factors[2*L-1]
+	m = int(st.factors[2*L-1])
 	for i = L - 1; i >= 0; i-- {
 		if i != 0 {
-			m2 = st.factors[2*i-1]
+			m2 = int(st.factors[2*i-1])
 		} else {
 			m2 = 1
 		}
