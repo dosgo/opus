@@ -66,7 +66,7 @@ func bitexact_log2tan(isin int, icos int) int {
 
 func compute_band_energies(m *CeltMode, X [][]int, bandE [][]int, end int, C int, LM int) {
 	eBands := m.eBands
-	N := m.shortMdctSize << LM
+	//N := m.shortMdctSize << LM
 	for c := 0; c < C; c++ {
 		for i := 0; i < end; i++ {
 			maxval := celt_maxabs32(X[c], int(eBands[i]<<LM), int(eBands[i+1]-eBands[i])<<LM)
@@ -196,7 +196,7 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 			Ediff = MAX32(0, Ediff)
 			r := 0
 			if Ediff < 16384 {
-				r32 := SHR32(celt_exp2(-EXTRACT16(Ediff)), 1)
+				r32 := SHR32(celt_exp2(-int(EXTRACT16(Ediff))), 1)
 				r = 2 * MIN16Int(16383, r32)
 			}
 			if LM == 3 {
@@ -235,12 +235,12 @@ func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE
 	left := VSHR32(bandE[0][i], shift)
 	right := VSHR32(bandE[1][i], shift)
 	norm := CeltConstants.EPSILON + celt_sqrt(CeltConstants.EPSILON+MULT16_16(left, left)+MULT16_16(right, right))
-	a1 := DIV32_16(SHL32(left, 14), norm)
-	a2 := DIV32_16(SHL32(right, 14), norm)
+	a1 := DIV32_16Int(SHL32(left, 14), norm)
+	a2 := DIV32_16Int(SHL32(right, 14), norm)
 	for j := 0; j < N; j++ {
 		l := X[X_ptr+j]
 		r := Y[Y_ptr+j]
-		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16Int(MULT16_16(a1, l), a2, r), 14)))
+		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16IntAll(MULT16_16(a1, l), a2, r), 14)))
 	}
 }
 
@@ -257,8 +257,8 @@ func stereo_merge(X []int, X_ptr int, Y []int, Y_ptr int, mid int, N int) {
 	xp := &BoxedValueInt{Val: 0}
 	side := &BoxedValueInt{Val: 0}
 	dual_inner_prod(Y, Y_ptr, X, X_ptr, Y, Y_ptr, N, xp, side)
-	xp.Val = MULT16_32_Q15(mid, xp.Val)
-	mid2 := SHR16(mid, 1)
+	xp.Val = MULT16_32_Q15Int(mid, xp.Val)
+	mid2 := SHR16Int(mid, 1)
 	El := MULT16_16(mid2, mid2) + side.Val - (2 * xp.Val)
 	Er := MULT16_16(mid2, mid2) + side.Val + (2 * xp.Val)
 	if Er < QCONST32(6e-4, 28) || El < QCONST32(6e-4, 28) {
@@ -281,10 +281,10 @@ func stereo_merge(X []int, X_ptr int, Y []int, Y_ptr int, mid int, N int) {
 	}
 
 	for j := 0; j < N; j++ {
-		l := MULT16_16_P15(mid, X[X_ptr+j])
+		l := MULT16_16_P15Int(mid, X[X_ptr+j])
 		r := Y[Y_ptr+j]
-		X[X_ptr+j] = EXTRACT16(PSHR32(MULT16_16(lgain, SUB16(l, r)), kl+1))
-		Y[Y_ptr+j] = EXTRACT16(PSHR32(MULT16_16(rgain, ADD16(l, r)), kr+1))
+		X[X_ptr+j] = int(EXTRACT16(PSHR32(MULT16_16(lgain, SUB16Int(l, r)), kl+1)))
+		Y[Y_ptr+j] = int(EXTRACT16(PSHR32(MULT16_16(rgain, ADD16Int(l, r)), kr+1)))
 	}
 }
 
@@ -431,10 +431,11 @@ func haar1(X []int, X_ptr int, N0 int, stride int) {
 	for i := 0; i < stride; i++ {
 		for j := 0; j < N0; j++ {
 			tmpidx := X_ptr + i + stride*2*j
-			tmp1 := MULT16_16(QCONST16(.70710678, 15), X[tmpidx])
-			tmp2 := MULT16_16(QCONST16(.70710678, 15), X[tmpidx+stride])
-			X[tmpidx] = EXTRACT16(PSHR32(ADD32(tmp1, tmp2), 15))
-			X[tmpidx+stride] = EXTRACT16(PSHR32(SUB32(tmp1, tmp2), 15))
+			tmp1 := MULT16_16(int(math.Round(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx])
+			tmp2 := MULT16_16(int(math.Round(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx+stride])
+
+			X[tmpidx] = int(EXTRACT16(PSHR32(ADD32(tmp1, tmp2), 15)))
+			X[tmpidx+stride] = int(EXTRACT16(PSHR32(SUB32(tmp1, tmp2), 15)))
 		}
 	}
 }
@@ -465,8 +466,8 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 	intensity := ctx.intensity
 	ec := ctx.ec
 	bandE := ctx.bandE
-
-	pulse_cap := m.logN[i] + LM*(1<<BITRES)
+	var inv = 0
+	pulse_cap := int(m.logN[i]) + LM*(1<<BITRES)
 	offset := (pulse_cap >> 1)
 	if stereo != 0 && N == 2 {
 		offset -= CeltConstants.QTHETA_OFFSET_TWOPHASE
@@ -494,12 +495,12 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 			p0 := 3
 			x := itheta
 			x0 := qn / 2
-			ft := CapToUint32(p0*(x0+1) + x0)
+			ft := CapToUintLong(int64(p0*(x0+1) + x0))
 			if encode != 0 {
 				if x <= x0 {
-					ec.encode(p0*x, p0*(x+1), ft)
+					ec.encode(int64(p0*x), int64(p0*(x+1)), ft)
 				} else {
-					ec.encode((x-1-x0)+(x0+1)*p0, (x-x0)+(x0+1)*p0, ft)
+					ec.encode(int64((x-1-x0)+(x0+1)*p0), int64((x-x0)+(x0+1)*p0), ft)
 				}
 			} else {
 				fs := int(ec.decode(ft))
@@ -509,9 +510,9 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 					x = x0 + 1 + (fs - (x0+1)*p0)
 				}
 				if x <= x0 {
-					ec.dec_update(p0*x, p0*(x+1), ft)
+					ec.dec_update(int64(p0*x), int64(p0*(x+1)), ft)
 				} else {
-					ec.dec_update((x-1-x0)+(x0+1)*p0, (x-x0)+(x0+1)*p0, ft)
+					ec.dec_update(int64((x-1-x0)+(x0+1)*p0), int64((x-x0)+(x0+1)*p0), ft)
 				}
 				itheta = x
 			}
@@ -522,6 +523,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 				itheta = int(ec.dec_uint(int64(qn + 1)))
 			}
 		} else {
+			var fs = 1
 			ft := ((qn >> 1) + 1) * ((qn >> 1) + 1)
 			if encode != 0 {
 				fs := 0
@@ -533,20 +535,20 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 					fs = qn + 1 - itheta
 					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
 				}
-				ec.encode(fl, fl+fs, ft)
+				ec.encode(int64(fl), int64(fl+fs), int64(ft))
 			} else {
-				fm := int(ec.decode(ft))
+				fm := int(ec.decode(int64(ft)))
 				fl := 0
 				if fm < (qn>>1)*((qn>>1)+1)>>1 {
-					itheta = (isqrt32(8*fm+1) - 1) >> 1
+					itheta = (isqrt32(int64(8*fm+1)) - 1) >> 1
 					fs = itheta + 1
 					fl = itheta * (itheta + 1) >> 1
 				} else {
-					itheta = (2*(qn+1) - isqrt32(8*(ft-fm-1)+1)) >> 1
+					itheta = (2*(qn+1) - isqrt32(int64(8*(ft-fm-1)+1))) >> 1
 					fs = qn + 1 - itheta
 					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
 				}
-				ec.dec_update(fl, fl+fs, ft)
+				ec.dec_update(int64(fl), int64(fl+fs), int64(ft))
 			}
 		}
 		OpusAssert(itheta >= 0)
@@ -559,7 +561,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 			}
 		}
 	} else if stereo != 0 {
-		inv := 0
+
 		if encode != 0 {
 			if itheta > 8192 {
 				inv = 1
@@ -632,7 +634,7 @@ func quant_band_n1(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, b int,
 				if x[x_ptr] < 0 {
 					sign = 1
 				}
-				ec.enc_bits(sign, 1)
+				ec.enc_bits(int64(sign), 1)
 			} else {
 				sign = ec.dec_bits(1)
 			}
@@ -670,9 +672,9 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	cache_ptr := m.cache.index[(LM+1)*m.nbEBands+i]
 
 	cm := 0
-	if LM != -1 && b > cache[cache_ptr]+12 && N > 2 {
+	if LM != -1 && b > int(cache[cache_ptr])+12 && N > 2 {
 		B0 := B
-		N0 := N
+		//N0 := N
 		Y := X_ptr + N
 		LM -= 1
 		if B == 1 {
@@ -1112,20 +1114,63 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			dual_stereo = 0
 
 			if resynth != 0 {
-				for j := 0; j < M*eBands[i]-norm_offset; j++ {
+				for j := 0; j < M*int(eBands[i])-norm_offset; j++ {
 					norm[j] = HALF32(norm[j] + norm[norm2+j])
 				}
 			}
 		}
 
 		if dual_stereo != 0 {
-			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
-			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, effective_lowband, norm2+lowband_ptr, LM, last, norm2+lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
+			var lowband []int
+			var lowband_out []int
+			if effective_lowband != -1 {
+				lowband = norm
+			}
+			if last == 0 {
+				lowband_out = norm
+			}
+			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, lowband, effective_lowband, LM, lowband_out, M*int(eBands[i])-norm_offset, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
+			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, lowband, norm2+effective_lowband, LM, lowband_out, norm2+(M*int(eBands[i])-norm_offset), CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
 		} else {
+			var lowband []int
+			var lowband_out []int
+			if effective_lowband != -1 {
+				lowband = norm
+			}
+			if last == 0 {
+				lowband_out = norm
+			}
+
 			if Y != nil {
-				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N, b, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, lowband_scratch, lowband_scratch_ptr, int(x_cm|y_cm)))
+				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N,
+					b,
+					B,
+					lowband,
+					effective_lowband,
+					LM,
+					lowband_out,
+					M*int(eBands[i])-norm_offset,
+					lowband_scratch,
+					lowband_scratch_ptr,
+					int(x_cm|y_cm)))
+
 			} else {
-				x_cm = int64(quant_band(ctx, X, X_ptr, N, b, B, effective_lowband, lowband_ptr, LM, last, lowband_out_ptr, gain, lowband_scratch, lowband_scratch_ptr, int(x_cm|y_cm)))
+				x_cm = int64(quant_band(
+					ctx,
+					X,
+					X_ptr,
+					N,
+					b,
+					B,
+					lowband,
+					effective_lowband,
+					LM,
+					lowband_out,
+					M*int(eBands[i])-norm_offset,
+					CeltConstants.Q15ONE,
+					lowband_scratch,
+					lowband_scratch_ptr,
+					int(x_cm|y_cm))) // opt: lots of pointers are created here too
 			}
 			y_cm = x_cm
 		}

@@ -403,7 +403,7 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 
 func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM int, C int, analysis *AnalysisInfo, stereo_saving *BoxedValueInt, tf_estimate int, intensity int, surround_trim int) int {
 	diff := 0
-	trim := int(0.5 + (5.0)*float64((int(1))<<(8)))
+	trim := int(math.Round(0.5 + (5.0)*float64((int(1))<<(8))))
 	logXC := 0
 	logXC2 := 0
 
@@ -414,7 +414,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 			partial := celt_inner_prod_int(X[0], int(m.eBands[i])<<LM, X[1], int(m.eBands[i])<<LM, int(m.eBands[i+1]-m.eBands[i])<<LM)
 			sum = ADD16Int(sum, int(EXTRACT16(SHR32(partial, 18))))
 		}
-		sum = MULT16_16_Q15Int(int(1.0/8*32767.5), int(sum))
+		sum = MULT16_16_Q15Int(int(math.Round(1.0/8*32767.5)), (sum))
 		if sum > 1024 {
 			sum = 1024
 		} else if sum < -1024 {
@@ -432,7 +432,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		logXC2 = MAX16Int(HALF16Int(logXC), celt_log2(int(math.Round(0.5+(1.001)*((1)<<(20))))-MULT16_16(minXC, minXC)))
 		logXC = (logXC - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
 		logXC2 = (logXC2 - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
-		trim += MAX16(-1024, MULT16_16_Q15(int16(0.75*32767.5), int16(logXC)))
+		trim += MAX16Int(-1024, MULT16_16_Q15Int(int(math.Round(0.75*32767.5)), int(logXC)))
 		if stereo_saving.Val+64 < -logXC2/2 {
 			stereo_saving.Val = -logXC2/2 - 64
 		} else {
@@ -446,7 +446,7 @@ func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM i
 		}
 	}
 	diff /= C * (end - 1)
-	trim -= MAX16(-512, MIN16(512, (diff+int(1.0*float32(1<<CeltConstants.DB_SHIFT)))/(6*(1<<(CeltConstants.DB_SHIFT-8)))))
+	trim -= MAX16Int(-512, MIN16Int(512, (diff+int(1.0*float64(int(1)<<CeltConstants.DB_SHIFT)))/(6*(1<<(CeltConstants.DB_SHIFT-8)))))
 	trim -= surround_trim >> (CeltConstants.DB_SHIFT - 8)
 	trim -= 2 * (tf_estimate >> (14 - 8))
 
@@ -484,7 +484,7 @@ func stereo_analysis(m *CeltMode, X [][]int, LM int) int {
 			sumMS = ADD32(sumMS, ADD32(ABS32(M), ABS32(S)))
 		}
 	}
-	sumMS = MULT16_32_Q15(int(0.707107*32767.5), sumMS)
+	sumMS = MULT16_32_Q15Int(int(math.Round(0.707107*32767.5)), sumMS)
 	thetas = 13
 	if LM <= 1 {
 		thetas -= 8
