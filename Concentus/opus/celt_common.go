@@ -1024,7 +1024,6 @@ func init() {
 
 func comb_filter(y []int, y_ptr int, x []int, x_ptr int, T0 int, T1 int, N int, g0 int, g1 int, tapset0 int, tapset1 int, window []int, overlap int) {
 	if g0 == 0 && g1 == 0 {
-		copy(y[y_ptr:y_ptr+N], x[x_ptr:x_ptr+N])
 		return
 	}
 
