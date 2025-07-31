@@ -118,6 +118,10 @@ func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder
 		return nil, errors.New("Number of channels must be 1 or 2")
 	}
 	st := &OpusEncoder{}
+
+	st.SilkEncoder = NewSilkEncoder()
+	st.Celt_Encoder = CeltEncoder{}
+	st.analysis = NewTonalityAnalysisState()
 	ret := st.opus_init_encoder(Fs, channels, application)
 	if ret != OpusError.OPUS_OK {
 		if ret == OpusError.OPUS_BAD_ARG {

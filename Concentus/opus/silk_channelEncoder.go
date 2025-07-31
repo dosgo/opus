@@ -79,7 +79,7 @@ type SilkChannelEncoder struct {
 	useInBandFEC                  int
 	LBRR_enabled                  int
 	LBRR_GainIncreases            int
-	indices_LBRR                  [MAX_FRAMES_PER_PACKET]*SideInfoIndices
+	indices_LBRR                  []*SideInfoIndices
 	pulses_LBRR                   [MAX_FRAMES_PER_PACKET][]int8
 	sShape                        SilkShapeState
 	sPrefilt                      SilkPrefilterState
@@ -87,6 +87,15 @@ type SilkChannelEncoder struct {
 	LTPCorr_Q15                   int
 }
 
+func NewSilkChannelEncoder() *SilkChannelEncoder {
+	obj := &SilkChannelEncoder{}
+	obj.indices_LBRR = make([]*SideInfoIndices, MAX_FRAMES_PER_PACKET)
+
+	for i := 0; i < MAX_FRAMES_PER_PACKET; i++ {
+		obj.indices_LBRR[i] = NewSideInfoIndices()
+	}
+	return obj
+}
 func (s *SilkChannelEncoder) Reset() {
 	for i := range s.In_HP_State {
 		s.In_HP_State[i] = 0

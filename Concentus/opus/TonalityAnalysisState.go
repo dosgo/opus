@@ -37,8 +37,8 @@ type TonalityAnalysisState struct {
 	info                    [DETECT_SIZE]*AnalysisInfo
 }
 
-func NewTonalityAnalysisState() *TonalityAnalysisState {
-	t := &TonalityAnalysisState{}
+func NewTonalityAnalysisState() TonalityAnalysisState {
+	t := TonalityAnalysisState{}
 	for i := 0; i < DETECT_SIZE; i++ {
 		t.info[i] = &AnalysisInfo{}
 	}

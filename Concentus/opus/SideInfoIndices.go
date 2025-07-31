@@ -1,5 +1,7 @@
 package opus
 
+import "bytes"
+
 type SideInfoIndices struct {
 	GainsIndices      []byte
 	LTPIndex          []byte
@@ -14,10 +16,38 @@ type SideInfoIndices struct {
 	Seed              byte
 }
 
+func NewSideInfoIndices() *SideInfoIndices {
+	obj := &SideInfoIndices{}
+	obj.GainsIndices = make([]byte, SilkConstants.MAX_NB_SUBFR)
+	obj.LTPIndex = make([]byte, SilkConstants.MAX_NB_SUBFR)
+	obj.NLSFIndices = make([]byte, SilkConstants.MAX_LPC_ORDER+1)
+	return obj
+}
 func (si *SideInfoIndices) Reset() {
-	*si = SideInfoIndices{}
+	copy(si.GainsIndices, bytes.Repeat([]byte{0}, len(si.GainsIndices)))
+	copy(si.LTPIndex, bytes.Repeat([]byte{0}, len(si.LTPIndex)))
+	copy(si.NLSFIndices, bytes.Repeat([]byte{0}, len(si.NLSFIndices)))
+	si.lagIndex = 0
+	si.contourIndex = 0
+	si.signalType = 0
+	si.quantOffsetType = 0
+	si.NLSFInterpCoef_Q2 = 0
+	si.PERIndex = 0
+	si.LTP_scaleIndex = 0
+	si.Seed = 0
 }
 
 func (si *SideInfoIndices) Assign(other *SideInfoIndices) {
-	*si = *other
+
+	copy(si.GainsIndices, other.GainsIndices)
+	copy(si.LTPIndex, other.LTPIndex)
+	copy(si.NLSFIndices, other.NLSFIndices)
+	si.lagIndex = other.lagIndex
+	si.contourIndex = other.contourIndex
+	si.signalType = other.signalType
+	si.quantOffsetType = other.quantOffsetType
+	si.NLSFInterpCoef_Q2 = other.NLSFInterpCoef_Q2
+	si.PERIndex = other.PERIndex
+	si.LTP_scaleIndex = other.LTP_scaleIndex
+	si.Seed = other.Seed
 }
