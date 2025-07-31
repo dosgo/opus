@@ -32,7 +32,7 @@ func main() {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
-
+		fmt.Printf("pcm %+v\r\n", len(pcm))
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 		//System.out.println(bytesEncoded + " bytes encoded");
 		fmt.Printf("bytesEncoded:%d data_packet:%+v\r\n", bytesEncoded, data_packet)

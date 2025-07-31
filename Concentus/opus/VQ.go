@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 var SPREAD_FACTOR = [3]int{15, 10, 5}
 
@@ -175,7 +178,7 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 			iy[j] = -iy[j]
 		}
 	}
-
+	fmt.Printf("iy:%+v N:%d K:%d\r\n", iy, N, K)
 	encode_pulses(iy, N, K, enc)
 	collapse_mask := extract_collapse_mask(iy, N, B)
 	return collapse_mask

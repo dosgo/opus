@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type band_ctx struct {
 	encode         int
@@ -746,9 +749,10 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 		}
 	} else {
 		q := bits2pulses(m, i, LM, b)
+		fmt.Printf("bits2pulses:%d-%d-%d-%d\r\n", m, i, LM, b)
 		curr_bits := pulses2bits(m, i, LM, q)
 		ctx.remaining_bits -= curr_bits
-
+		fmt.Printf("qqqqqq:%d\r\n", q)
 		for ctx.remaining_bits < 0 && q > 0 {
 			ctx.remaining_bits += curr_bits
 			q--
@@ -758,6 +762,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 
 		if q != 0 {
 			K := get_pulses(q)
+			fmt.Printf("k:%d q:%d\r\n", K, q)
 			if encode != 0 {
 				cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
 			} else {

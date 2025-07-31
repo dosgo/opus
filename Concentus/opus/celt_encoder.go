@@ -936,6 +936,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 
 	boxed_rng := BoxedValueInt{this.rng}
 	quant_all_bands(1, mode, start, end, X[0], boolToSlice(C == 2, X[1]), collapse_masks, bandE, pulses, shortBlocks, this.spread_decision, dual_stereo, this.intensity, tf_res, nbCompressedBytes*(8<<BITRES)-anti_collapse_rsv, balance, enc, LM, codedBands, &boxed_rng)
+
 	this.rng = boxed_rng.Val
 
 	if anti_collapse_rsv > 0 {
