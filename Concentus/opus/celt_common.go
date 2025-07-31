@@ -355,6 +355,142 @@ func l1_metric(tmp []int, N int, LM int, bias int) int {
 	return L1
 }
 
+func tf_analysis(m *CeltMode, len int, isTransient int, tf_res []int, lambda int, X [][]int, N0 int, LM int, tf_sum *BoxedValueInt, tf_estimate int, tf_chan int) int {
+	metric := make([]int, len)
+	cost0 := 0
+	cost1 := 0
+	path0 := make([]int, len)
+	path1 := make([]int, len)
+	selcost := [2]int{0, 0}
+	tf_select := 0
+	bias := 0
+
+	bias = int(MULT16_16_Q14(int16(math.Round(0.5+0.04*(1<<15))), MAX16(int16(0)-int16(math.Round(0.5+0.25*(1<<14))), int16(math.Round(0.5+0.5*(1<<14)))-int16(tf_estimate))))
+
+	tmp := make([]int, (m.eBands[len]-m.eBands[len-1])<<LM)
+	tmp_1 := make([]int, (m.eBands[len]-m.eBands[len-1])<<LM)
+
+	tf_sum.Val = 0
+	for i := 0; i < len; i++ {
+		N := int(m.eBands[i+1]-m.eBands[i]) << LM
+		narrow := 0
+		if (m.eBands[i+1] - m.eBands[i]) == 1 {
+			narrow = 1
+		} else {
+			narrow = 0
+		}
+		copy(tmp, X[tf_chan][m.eBands[i]<<LM:])
+
+		_LM := LM
+		if isTransient == 0 {
+			_LM = 0
+		}
+
+		L1 := l1_metric(tmp, N, _LM, bias)
+		best_L1 := L1
+		best_level := 0
+		if isTransient != 0 && narrow == 0 {
+			copy(tmp_1, tmp)
+			haar1ZeroOffset(tmp_1, N>>LM, 1<<LM)
+			L1 = l1_metric(tmp_1, N, LM+1, bias)
+			if L1 < best_L1 {
+				best_L1 = L1
+				best_level = -1
+			}
+		}
+		for k := 0; k < LM+boolToInt(!(isTransient != 0 || narrow != 0)); k++ {
+			B := 0
+			if isTransient != 0 {
+				B = LM - k - 1
+			} else {
+				B = k + 1
+			}
+			haar1ZeroOffset(tmp, N>>k, 1<<k)
+			L1 = l1_metric(tmp, N, B, bias)
+			if L1 < best_L1 {
+				best_L1 = L1
+				best_level = k + 1
+			}
+		}
+		if isTransient != 0 {
+			metric[i] = 2 * best_level
+		} else {
+			metric[i] = -2 * best_level
+		}
+		_lm := 0
+		if isTransient != 0 {
+			_lm = LM
+		}
+
+		tf_sum.Val += (_lm) - metric[i]/2
+		if narrow != 0 && (metric[i] == 0 || metric[i] == -2*LM) {
+			metric[i] -= 1
+		}
+	}
+
+	for sel := 0; sel < 2; sel++ {
+		cost0 = 0
+		cost1 = 0
+		if isTransient == 0 {
+			cost1 = lambda
+		}
+		for i := 1; i < len; i++ {
+			curr0 := IMIN(cost0, cost1+lambda)
+			curr1 := IMIN(cost0+lambda, cost1)
+			cost0 = curr0 + abs(metric[i]-2*int(CeltTables.Tf_select_table[LM][4*isTransient+2*sel+0]))
+			cost1 = curr1 + abs(metric[i]-2*int(CeltTables.Tf_select_table[LM][4*isTransient+2*sel+1]))
+		}
+		cost0 = IMIN(cost0, cost1)
+		selcost[sel] = cost0
+	}
+	if selcost[1] < selcost[0] && isTransient != 0 {
+		tf_select = 1
+	}
+	cost0 = 0
+	cost1 = 0
+	if isTransient == 0 {
+		cost1 = lambda
+	}
+	for i := 1; i < len; i++ {
+		var curr0 = 0
+		var curr1 = 0
+		from0 := cost0
+		from1 := cost1 + lambda
+		if from0 < from1 {
+			curr0 = from0
+			path0[i] = 0
+		} else {
+			curr0 = from1
+			path0[i] = 1
+		}
+
+		from0 = cost0 + lambda
+		from1 = cost1
+		if from0 < from1 {
+			curr1 = from0
+			path1[i] = 0
+		} else {
+			curr1 = from1
+			path1[i] = 1
+		}
+		cost0 = curr0 + abs(metric[i]-2*int(CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+0]))
+		cost1 = curr1 + abs(metric[i]-2*int(CeltTables.Tf_select_table[LM][4*isTransient+2*tf_select+1]))
+	}
+	if cost0 < cost1 {
+		tf_res[len-1] = 0
+	} else {
+		tf_res[len-1] = 1
+	}
+	for i := len - 2; i >= 0; i-- {
+		if tf_res[i+1] == 1 {
+			tf_res[i] = path1[i+1]
+		} else {
+			tf_res[i] = path0[i+1]
+		}
+	}
+	return tf_select
+}
+
 func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_select int, enc *EntropyCoder) {
 	curr := 0
 	tf_select_rsv := 0

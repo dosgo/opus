@@ -440,6 +440,21 @@ func haar1(X []int, X_ptr int, N0 int, stride int) {
 	}
 }
 
+func haar1ZeroOffset(X []int, N0 int, stride int) {
+	var i, j int
+	N0 >>= 1
+	for i = 0; i < stride; i++ {
+		for j = 0; j < N0; j++ {
+			tmpidx := i + (stride * 2 * j)
+
+			tmp1 := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[tmpidx])
+			tmp2 := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[tmpidx+stride])
+			X[tmpidx] = int(EXTRACT16(PSHR32(ADD32(tmp1, tmp2), 15)))
+			X[tmpidx+stride] = int(EXTRACT16(PSHR32(SUB32(tmp1, tmp2), 15)))
+		}
+	}
+}
+
 func compute_qn(N int, b int, offset int, pulse_cap int, stereo int) int {
 	exp2_table8 := []int16{16384, 17866, 19483, 21247, 23170, 25267, 27554, 30048}
 	N2 := 2*N - 1

@@ -273,10 +273,756 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 }
 
 func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
-	// ... (the rest of the function is too long to include in full due to character limits)
-	// The complete function would be translated similarly, preserving all logic and variable names.
-	// Due to the length, we only show the beginning of the function as an example.
-	return 0
+	var i, c, N, bits int
+	var input [][]int
+	var freq [][]int
+	var X [][]int
+	var bandE [][]int
+	var bandLogE [][]int
+	var bandLogE2 [][]int
+	var fine_quant []int
+	var error [][]int
+	var pulses []int
+	var cap []int
+	var offsets []int
+	var fine_priority []int
+	var tf_res []int
+	var collapse_masks []int16
+	shortBlocks := 0
+	isTransient := 0
+	CC := this.channels
+	C := this.stream_channels
+	var LM, M int
+	tf_select := 0
+	var nbFilledBytes, nbAvailableBytes int
+	start := this.start
+	end := this.end
+	var effEnd int
+	var codedBands int
+	//var tf_sum = 0
+	alloc_trim := 5
+	pitch_index := CeltConstants.COMBFILTER_MINPERIOD
+	gain1 := 0
+	dual_stereo := 0
+	var effectiveBytes int
+	dynalloc_logp := 6
+	vbr_rate := 0
+	total_bits := 0
+	total_boost := 0
+	balance := 0
+	tell := 0
+	prefilter_tapset := 0
+	pf_on := 0
+	anti_collapse_rsv := 0
+	anti_collapse_on := 0
+	silence := 0
+	tf_chan := 0
+	tf_estimate := 0
+	pitch_change := 0
+	var tot_boost int
+	sample_max := 0
+	maxDepth := 0
+	var mode *CeltMode
+	nbEBands := 0
+	overlap := 0
+	var eBands []int16
+	secondMdct := 0
+	signalBandwidth := 0
+	transient_got_disabled := 0
+	surround_masking := 0
+	temporal_vbr := 0
+	surround_trim := 0
+	equiv_rate := 510000
+	var surround_dynalloc []int
+
+	mode = this.mode
+	nbEBands = mode.nbEBands
+	overlap = mode.overlap
+	eBands = mode.eBands
+	start = this.start
+	end = this.end
+	tf_estimate = 0
+	if nbCompressedBytes < 2 || pcm == nil {
+		return OpusError.OPUS_BAD_ARG
+	}
+
+	frame_size *= this.upsample
+	for LM = 0; LM <= mode.maxLM; LM++ {
+		if mode.shortMdctSize<<LM == frame_size {
+			break
+		}
+	}
+	if LM > mode.maxLM {
+		return OpusError.OPUS_BAD_ARG
+	}
+	M = 1 << LM
+	N = M * mode.shortMdctSize
+
+	if enc == nil {
+		tell = 1
+		nbFilledBytes = 0
+	} else {
+		tell = enc.tell()
+		nbFilledBytes = (tell + 4) >> 3
+	}
+
+	OpusAssert(this.signalling == 0)
+
+	nbCompressedBytes = IMIN(nbCompressedBytes, 1275)
+	nbAvailableBytes = nbCompressedBytes - nbFilledBytes
+
+	if this.vbr != 0 && this.bitrate != OPUS_BITRATE_MAX {
+		den := mode.Fs >> BITRES
+		vbr_rate = (this.bitrate*frame_size + (den >> 1)) / den
+		effectiveBytes = vbr_rate >> (3 + BITRES)
+	} else {
+		var tmp int
+		vbr_rate = 0
+		tmp = this.bitrate * frame_size
+		if tell > 1 {
+			tmp += tell
+		}
+		if this.bitrate != OPUS_BITRATE_MAX {
+			tmp2 := (tmp + 4*mode.Fs) / (8 * mode.Fs)
+			if this.signalling != 0 {
+				tmp2--
+			}
+			nbCompressedBytes = IMAX(2, IMIN(nbCompressedBytes, tmp2))
+		}
+		effectiveBytes = nbCompressedBytes
+	}
+	if this.bitrate != OPUS_BITRATE_MAX {
+		equiv_rate = this.bitrate - (40*C+20)*((400>>LM)-50)
+	}
+
+	if enc == nil {
+		enc = NewEntropyCoder()
+		enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
+	}
+
+	if vbr_rate > 0 {
+		if this.constrained_vbr != 0 {
+			var vbr_bound, max_allowed int
+			vbr_bound = vbr_rate
+			min_val := 0
+			if tell == 1 {
+				min_val = 2
+			}
+			max_allowed = IMIN(IMAX(min_val, (vbr_rate+vbr_bound-this.vbr_reservoir)>>(BITRES+3)), nbAvailableBytes)
+			if max_allowed < nbAvailableBytes {
+				nbCompressedBytes = nbFilledBytes + max_allowed
+				nbAvailableBytes = max_allowed
+				enc.enc_shrink(nbCompressedBytes)
+			}
+		}
+	}
+	total_bits = nbCompressedBytes * 8
+
+	effEnd = end
+	if effEnd > mode.effEBands {
+		effEnd = mode.effEBands
+	}
+
+	input = make([][]int, CC)
+	for i := range input {
+		input[i] = make([]int, N+overlap)
+	}
+
+	sample_max = MAX32(this.overlap_max, int(celt_maxabs32Short(pcm, pcm_ptr, C*(N-overlap)))/this.upsample)
+	this.overlap_max = int(celt_maxabs32Short(pcm, pcm_ptr+(C*(N-overlap)/this.upsample), C*overlap/this.upsample))
+	sample_max = MAX32(sample_max, this.overlap_max)
+	if sample_max == 0 {
+		silence = 1
+	} else {
+		silence = 0
+	}
+	if tell == 1 {
+		enc.enc_bit_logp(silence, 15)
+	} else {
+		silence = 0
+	}
+	if silence != 0 {
+		if vbr_rate > 0 {
+			effectiveBytes = IMIN(nbCompressedBytes, nbFilledBytes+2)
+			nbCompressedBytes = effectiveBytes
+			total_bits = nbCompressedBytes * 8
+			nbAvailableBytes = 2
+			enc.enc_shrink(nbCompressedBytes)
+		}
+		tell = nbCompressedBytes * 8
+		enc.nbits_total += tell - enc.tell()
+	}
+	c = 0
+
+	boxed_memE := BoxedValueInt{0}
+	for c < CC {
+		need_clip := 0
+		boxed_memE.Val = this.preemph_memE[c]
+		celt_preemphasis(pcm, pcm_ptr+c, input[c], overlap, N, CC, this.upsample, mode.preemph, &boxed_memE, need_clip)
+		this.preemph_memE[c] = boxed_memE.Val
+		c++
+	}
+
+	{
+		var enabled, qg int
+		enabled = 0
+		if (this.lfe != 0 && nbAvailableBytes > 3) || nbAvailableBytes > 12*C {
+			if start == 0 && silence == 0 && this.disable_pf == 0 && this.complexity >= 5 {
+				if !(this.consec_transient != 0 && LM != 3 && this.variable_duration == OPUS_FRAMESIZE_VARIABLE) {
+					enabled = 1
+				}
+			}
+		}
+		prefilter_tapset = this.tapset_decision
+
+		boxed_pitch_index := BoxedValueInt{0}
+		boxed_gain1 := BoxedValueInt{0}
+		boxed_qg := BoxedValueInt{0}
+
+		pf_on = this.run_prefilter(input, this.prefilter_mem, CC, N, prefilter_tapset, &boxed_pitch_index, &boxed_gain1, &boxed_qg, enabled, nbAvailableBytes)
+		pitch_index = boxed_pitch_index.Val
+		gain1 = boxed_gain1.Val
+		qg = boxed_qg.Val
+
+		if gain1 > int(math.Round(0.5+(.4)*float64(1<<15))) || this.prefilter_gain > int(math.Round(0.5+(.4)*float64(1<<15))) {
+			if (this.analysis.valid == 0 || this.analysis.tonality > .3) &&
+				(float64(pitch_index) > 1.26*float64(this.prefilter_period) || float64(pitch_index) < .79*float64(this.prefilter_period)) {
+				pitch_change = 1
+			}
+		}
+		if pf_on == 0 {
+			if start == 0 && tell+16 <= total_bits {
+				enc.enc_bit_logp(0, 1)
+			}
+		} else {
+			enc.enc_bit_logp(1, 1)
+			pitch_index += 1
+			octave := EC_ILOG(int64(pitch_index)) - 5
+			enc.enc_uint(int64(octave), 6)
+			enc.enc_bits(int64(pitch_index-(16<<octave)), 4+octave)
+			pitch_index -= 1
+			enc.enc_bits(int64(qg), 3)
+			enc.enc_icdf(prefilter_tapset, tapset_icdf, 2)
+		}
+	}
+
+	isTransient = 0
+	shortBlocks = 0
+	if this.complexity >= 1 && this.lfe == 0 {
+
+		boxed_tf_estimate := &BoxedValueInt{0}
+		boxed_tf_chan := &BoxedValueInt{0}
+
+		isTransient = transient_analysis(input, N+overlap, CC, boxed_tf_estimate, boxed_tf_chan)
+		tf_estimate = boxed_tf_estimate.Val
+		tf_chan = boxed_tf_chan.Val
+	}
+
+	if LM > 0 && enc.tell()+3 <= total_bits {
+		if isTransient != 0 {
+			shortBlocks = M
+		}
+	} else {
+		isTransient = 0
+		transient_got_disabled = 1
+	}
+
+	freq = make([][]int, CC)
+	for i := range freq {
+		freq[i] = make([]int, N)
+	}
+	bandE = make([][]int, CC)
+	for i := range bandE {
+		bandE[i] = make([]int, nbEBands)
+	}
+	bandLogE = make([][]int, CC)
+	for i := range bandLogE {
+		bandLogE[i] = make([]int, nbEBands)
+	}
+
+	if shortBlocks != 0 && this.complexity >= 8 {
+		secondMdct = 1
+	} else {
+		secondMdct = 0
+	}
+	bandLogE2 = make([][]int, CC)
+	for i := range bandLogE2 {
+		bandLogE2[i] = make([]int, nbEBands)
+	}
+	if secondMdct != 0 {
+		compute_mdcts(mode, 0, input, freq, C, CC, LM, this.upsample)
+		compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+		amp2Log2(mode, effEnd, end, bandE, bandLogE2, C)
+		for i = 0; i < nbEBands; i++ {
+			bandLogE2[0][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+		}
+		if C == 2 {
+			for i = 0; i < nbEBands; i++ {
+				bandLogE2[1][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+			}
+		}
+	}
+
+	compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample)
+	if CC == 2 && C == 1 {
+		tf_chan = 0
+	}
+	compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+
+	if this.lfe != 0 {
+		minVal := MULT16_32_Q15Int(int(math.Round(0.5+1e-4*float64(1<<15))), bandE[0][0])
+		for i = 2; i < end; i++ {
+			bandE[0][i] = IMIN(bandE[0][i], minVal)
+			bandE[0][i] = MAX32(bandE[0][i], CeltConstants.EPSILON)
+		}
+	}
+
+	amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
+
+	surround_dynalloc = make([]int, C*nbEBands)
+	if start == 0 && this.energy_mask != nil && this.lfe == 0 {
+		mask_end := IMAX(2, this.lastCodedBands)
+		var midband int
+		count_dynalloc := 0
+		mask_avg := 0
+		diff := 0
+		count := 0
+		for c = 0; c < C; c++ {
+			for i = 0; i < mask_end; i++ {
+				mask := MAX16Int(
+					MIN16Int(this.energy_mask[nbEBands*c+i], int(0.5+0.25*float64(int(1)<<CeltConstants.DB_SHIFT))),
+					-int(0.5+2.0*float64(int(1)<<CeltConstants.DB_SHIFT)),
+				)
+				if mask > 0 {
+					mask = HALF16Int(mask)
+				}
+				mask_avg += MULT16_16(mask, int(eBands[i+1]-eBands[i]))
+				count += int(eBands[i+1] - eBands[i])
+				diff += MULT16_16(mask, 1+2*i-mask_end)
+			}
+		}
+		OpusAssert(count > 0)
+		mask_avg = DIV32_16Int(mask_avg, count)
+		mask_avg += int(0.5 + 0.2*float64(int(1)<<CeltConstants.DB_SHIFT))
+		diff = diff * 6 / (C * (mask_end - 1) * (mask_end + 1) * mask_end)
+		diff = HALF32(diff)
+		diff = MAX32(MIN32(diff, int(0.5+0.031*float64(int(1)<<CeltConstants.DB_SHIFT))), -int(0.5+0.031*float64(int(1)<<CeltConstants.DB_SHIFT)))
+		for midband = 0; eBands[midband+1] < eBands[mask_end]/2; midband++ {
+		}
+		for i = 0; i < mask_end; i++ {
+			lin := mask_avg + diff*(i-midband)
+			unmask := int(0)
+			if C == 2 {
+				unmask = MAX16Int(this.energy_mask[i], this.energy_mask[nbEBands+i])
+			} else {
+				unmask = this.energy_mask[i]
+			}
+			unmask = MIN16Int(unmask, int(0.5+0.0*float64(int(1)<<CeltConstants.DB_SHIFT)))
+			unmask -= int(lin)
+			if unmask > int(0.5+0.25*float64(int(1)<<CeltConstants.DB_SHIFT)) {
+				surround_dynalloc[i] = int(unmask) - int(0.5+0.25*float64(int(1)<<CeltConstants.DB_SHIFT))
+				count_dynalloc++
+			}
+		}
+		if count_dynalloc >= 3 {
+			mask_avg += int(0.5 + 0.25*float64(int(1)<<CeltConstants.DB_SHIFT))
+			if mask_avg > 0 {
+				mask_avg = 0
+				diff = 0
+				for i := range surround_dynalloc {
+					surround_dynalloc[i] = 0
+				}
+			} else {
+				for i = 0; i < mask_end; i++ {
+					surround_dynalloc[i] = MAX16Int(0, surround_dynalloc[i]-int(0.5+0.25*float64(int(1)<<CeltConstants.DB_SHIFT)))
+				}
+			}
+		}
+		mask_avg += int(0.5 + 0.2*float64(int(1)<<CeltConstants.DB_SHIFT))
+		surround_trim = 64 * diff
+		surround_masking = mask_avg
+	}
+	if this.lfe == 0 {
+		follow := -int16(0.5 + 10.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		frame_avg := 0
+		offset := 0
+		if shortBlocks != 0 {
+			offset = HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+		}
+		for i = start; i < end; i++ {
+			follow = MAX16(follow-int16(0.5+1.0*float64(int(1)<<CeltConstants.DB_SHIFT)), int16(bandLogE[0][i]-offset))
+			if C == 2 {
+				follow = MAX16(follow, int16(bandLogE[1][i]-offset))
+			}
+			frame_avg += int(follow)
+		}
+		frame_avg /= (end - start)
+		temporal_vbr = int(int(frame_avg) - this.spec_avg)
+		temporal_vbr = MIN16Int(int(0.5+3.0*float64(int(1)<<CeltConstants.DB_SHIFT)), MAX16Int(-int(0.5+1.5*float64(int(1)<<CeltConstants.DB_SHIFT)), temporal_vbr))
+		this.spec_avg += int(MULT16_16_Q15Int(int(math.Round(0.5+0.02*float64(1<<15))), int(temporal_vbr)))
+	}
+	if secondMdct == 0 {
+		copy(bandLogE2[0], bandLogE[0][:nbEBands])
+		if C == 2 {
+			copy(bandLogE2[1], bandLogE[1][:nbEBands])
+		}
+	}
+
+	if LM > 0 && enc.tell()+3 <= total_bits && isTransient == 0 && this.complexity >= 5 && this.lfe == 0 {
+		if patch_transient_decision(bandLogE, this.oldBandE, nbEBands, start, end, C) != 0 {
+			isTransient = 1
+			shortBlocks = M
+			compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample)
+			compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+			amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
+			for i = 0; i < nbEBands; i++ {
+				bandLogE2[0][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+			}
+			if C == 2 {
+				for i = 0; i < nbEBands; i++ {
+					bandLogE2[1][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+				}
+			}
+			tf_estimate = int(math.Round(0.5 + 0.2*float64(1<<14)))
+		}
+	}
+
+	if LM > 0 && enc.tell()+3 <= total_bits {
+		enc.enc_bit_logp(isTransient, 3)
+	}
+
+	X = make([][]int, C)
+	for i := range X {
+		X[i] = make([]int, N)
+	}
+
+	normalise_bands(mode, freq, X, bandE, effEnd, C, M)
+
+	tf_res = make([]int, nbEBands)
+	if effectiveBytes >= 15*C && start == 0 && this.complexity >= 2 && this.lfe == 0 {
+		lambda := 0
+		if effectiveBytes < 40 {
+			lambda = 12
+		} else if effectiveBytes < 60 {
+			lambda = 6
+		} else if effectiveBytes < 100 {
+			lambda = 4
+		} else {
+			lambda = 3
+		}
+		lambda *= 2
+
+		boxed_tf_sum := BoxedValueInt{0}
+		tf_select = tf_analysis(mode, effEnd, isTransient, tf_res, lambda, X, N, LM, &boxed_tf_sum, tf_estimate, tf_chan)
+		//tf_sum = boxed_tf_sum.Val
+		for i = effEnd; i < end; i++ {
+			tf_res[i] = tf_res[effEnd-1]
+		}
+	} else {
+		for i = 0; i < end; i++ {
+			tf_res[i] = isTransient
+		}
+		tf_select = 0
+	}
+
+	error = make([][]int, C)
+	for i := range error {
+		error[i] = make([]int, nbEBands)
+	}
+
+	boxed_delayedintra := BoxedValueInt{this.delayedIntra}
+	force_intra := 0
+	if this.complexity >= 4 {
+		force_intra = 1
+	}
+	quant_coarse_energy(mode, start, end, effEnd, bandLogE, this.oldBandE, total_bits, error, enc, C, LM, nbAvailableBytes, this.force_intra, &boxed_delayedintra, force_intra, this.loss_rate, this.lfe)
+	this.delayedIntra = boxed_delayedintra.Val
+
+	tf_encode(start, end, isTransient, tf_res, LM, tf_select, enc)
+
+	if enc.tell()+4 <= total_bits {
+		if this.lfe != 0 {
+			this.tapset_decision = 0
+			this.spread_decision = Spread.SPREAD_NORMAL
+		} else if shortBlocks != 0 || this.complexity < 3 || nbAvailableBytes < 10*C || start != 0 {
+			if this.complexity == 0 {
+				this.spread_decision = Spread.SPREAD_NONE
+			} else {
+				this.spread_decision = Spread.SPREAD_NORMAL
+			}
+		} else {
+
+			boxed_tonal_average := BoxedValueInt{this.tonal_average}
+			boxed_tapset_decision := BoxedValueInt{this.tapset_decision}
+			boxed_hf_average := BoxedValueInt{this.hf_average}
+
+			this.spread_decision = spreading_decision(mode, X, &boxed_tonal_average, this.spread_decision, &boxed_hf_average, &boxed_tapset_decision, boolToInt(pf_on != 0 && shortBlocks == 0), effEnd, C, M)
+			this.tonal_average = boxed_tonal_average.Val
+			this.tapset_decision = boxed_tapset_decision.Val
+			this.hf_average = boxed_hf_average.Val
+		}
+		enc.enc_icdf(this.spread_decision, spread_icdf, 5)
+	}
+
+	offsets = make([]int, nbEBands)
+
+	boxed_tot_boost := BoxedValueInt{0}
+	maxDepth = dynalloc_analysis(bandLogE, bandLogE2, nbEBands, start, end, C, offsets, this.lsb_depth, mode.logN, isTransient, this.vbr, this.constrained_vbr, eBands, LM, effectiveBytes, &boxed_tot_boost, this.lfe, surround_dynalloc)
+	tot_boost = boxed_tot_boost.Val
+
+	if this.lfe != 0 {
+		offsets[0] = IMIN(8, effectiveBytes/3)
+	}
+	cap = make([]int, nbEBands)
+	init_caps(mode, cap, LM, C)
+
+	dynalloc_logp = 6
+	total_bits <<= BITRES
+	total_boost = 0
+	tell = int(enc.tell_frac())
+	for i = start; i < end; i++ {
+		width := C * (int(eBands[i+1]) - int(eBands[i])) << LM
+		quanta := IMIN(width<<BITRES, IMAX(6<<BITRES, width))
+		dynalloc_loop_logp := dynalloc_logp
+		boost := 0
+		var j = 0
+		for j = 0; tell+(dynalloc_loop_logp<<BITRES) < total_bits-total_boost && boost < cap[i]; j++ {
+			flag := 0
+			if j < offsets[i] {
+				flag = 1
+			}
+			enc.enc_bit_logp(flag, dynalloc_loop_logp)
+			tell = int(enc.tell_frac())
+			if flag == 0 {
+				break
+			}
+			boost += quanta
+			total_boost += quanta
+			dynalloc_loop_logp = 1
+		}
+		if j > 0 {
+			dynalloc_logp = IMAX(2, dynalloc_logp-1)
+		}
+		offsets[i] = boost
+	}
+
+	if C == 2 {
+		if LM != 0 {
+			dual_stereo = stereo_analysis(mode, X, LM)
+		}
+		this.intensity = hysteresis_decision(equiv_rate/1000, intensity_thresholds, intensity_histeresis, 21, this.intensity)
+		this.intensity = IMIN(end, IMAX(start, this.intensity))
+	}
+
+	alloc_trim = 5
+	if tell+(6<<BITRES) <= total_bits-total_boost {
+		if this.lfe != 0 {
+			alloc_trim = 5
+		} else {
+
+			boxed_stereo_saving := BoxedValueInt{this.stereo_saving}
+			alloc_trim = alloc_trim_analysis(mode, X, bandLogE, end, LM, C, &this.analysis, &boxed_stereo_saving, tf_estimate, this.intensity, surround_trim)
+			this.stereo_saving = boxed_stereo_saving.Val
+		}
+		enc.enc_icdf(alloc_trim, trim_icdf, 7)
+		tell = int(enc.tell_frac())
+	}
+
+	if vbr_rate > 0 {
+		var alpha, delta, target, base_target, min_allowed int
+		lm_diff := mode.maxLM - LM
+
+		nbCompressedBytes = IMIN(nbCompressedBytes, 1275>>(3-LM))
+		base_target = vbr_rate - ((40*C + 20) << BITRES)
+
+		if this.constrained_vbr != 0 {
+			base_target += this.vbr_offset >> lm_diff
+		}
+
+		target = compute_vbr(mode, &this.analysis, base_target, LM, equiv_rate, this.lastCodedBands, C, this.intensity, this.constrained_vbr, this.stereo_saving, tot_boost, tf_estimate, pitch_change, maxDepth, this.variable_duration, this.lfe, boolToInt(this.energy_mask != nil), surround_masking, temporal_vbr)
+
+		target = target + tell
+		min_allowed = (tell + total_boost + (1<<(BITRES+3)-1)>>(BITRES+3)) + 2 - nbFilledBytes
+
+		nbAvailableBytes = (target + (1 << (BITRES + 2))) >> (BITRES + 3)
+		nbAvailableBytes = IMAX(min_allowed, nbAvailableBytes)
+		nbAvailableBytes = IMIN(nbCompressedBytes, nbAvailableBytes+nbFilledBytes) - nbFilledBytes
+
+		delta = target - vbr_rate
+
+		target = nbAvailableBytes << (BITRES + 3)
+
+		if silence != 0 {
+			nbAvailableBytes = 2
+			target = 2 * 8 << BITRES
+			delta = 0
+		}
+
+		if this.vbr_count < 970 {
+			this.vbr_count++
+			alpha = celt_rcp(SHL32(this.vbr_count+20, 16))
+		} else {
+			alpha = int(math.Round(0.5 + 0.001*float64(1<<15)))
+		}
+		if this.constrained_vbr != 0 {
+			this.vbr_reservoir += target - vbr_rate
+		}
+		if this.constrained_vbr != 0 {
+			driftAdjust := (delta*(1<<lm_diff) - this.vbr_offset - this.vbr_drift)
+			this.vbr_drift += int(MULT16_32_Q15(int16(alpha), driftAdjust))
+			this.vbr_offset = -this.vbr_drift
+		}
+		if this.constrained_vbr != 0 && this.vbr_reservoir < 0 {
+			adjust := (-this.vbr_reservoir) / (8 << BITRES)
+			if silence == 0 {
+				nbAvailableBytes += adjust
+			}
+			this.vbr_reservoir = 0
+		}
+		nbCompressedBytes = IMIN(nbCompressedBytes, nbAvailableBytes+nbFilledBytes)
+		enc.enc_shrink(nbCompressedBytes)
+	}
+
+	fine_quant = make([]int, nbEBands)
+	pulses = make([]int, nbEBands)
+	fine_priority = make([]int, nbEBands)
+
+	bits = int(nbCompressedBytes)*8<<BITRES - int(enc.tell_frac()) - 1
+	if isTransient != 0 && LM >= 2 && bits >= ((LM+2)<<BITRES) {
+		anti_collapse_rsv = 1 << BITRES
+	}
+	bits -= anti_collapse_rsv
+	signalBandwidth = end - 1
+
+	if this.analysis.enabled && this.analysis.valid != 0 {
+		min_bandwidth := 0
+		switch {
+		case equiv_rate < 32000*C:
+			min_bandwidth = 13
+		case equiv_rate < 48000*C:
+			min_bandwidth = 16
+		case equiv_rate < 60000*C:
+			min_bandwidth = 18
+		case equiv_rate < 80000*C:
+			min_bandwidth = 19
+		default:
+			min_bandwidth = 20
+		}
+		signalBandwidth = IMAX(this.analysis.bandwidth, min_bandwidth)
+	}
+
+	if this.lfe != 0 {
+		signalBandwidth = 1
+	}
+
+	boxed_intensity := BoxedValueInt{this.intensity}
+	boxed_balance := BoxedValueInt{0}
+	boxed_dual_stereo := BoxedValueInt{dual_stereo}
+
+	codedBands = compute_allocation(mode, start, end, offsets, cap, alloc_trim, &boxed_intensity, &boxed_dual_stereo, bits, &boxed_balance, pulses, fine_quant, fine_priority, C, LM, enc, 1, this.lastCodedBands, signalBandwidth)
+	this.intensity = boxed_intensity.Val
+	balance = boxed_balance.Val
+	dual_stereo = boxed_dual_stereo.Val
+
+	if this.lastCodedBands != 0 {
+		this.lastCodedBands = IMIN(this.lastCodedBands+1, IMAX(this.lastCodedBands-1, codedBands))
+	} else {
+		this.lastCodedBands = codedBands
+	}
+
+	quant_fine_energy(mode, start, end, this.oldBandE, error, fine_quant, enc, C)
+
+	collapse_masks = make([]int16, C*nbEBands)
+
+	boxed_rng := BoxedValueInt{this.rng}
+	quant_all_bands(1, mode, start, end, X[0], boolToSlice(C == 2, X[1]), collapse_masks, bandE, pulses, shortBlocks, this.spread_decision, dual_stereo, this.intensity, tf_res, nbCompressedBytes*(8<<BITRES)-anti_collapse_rsv, balance, enc, LM, codedBands, &boxed_rng)
+	this.rng = boxed_rng.Val
+
+	if anti_collapse_rsv > 0 {
+		anti_collapse_on = 0
+		if this.consec_transient < 2 {
+			anti_collapse_on = 1
+		}
+		enc.enc_bits(int64(anti_collapse_on), 1)
+	}
+
+	quant_energy_finalise(mode, start, end, this.oldBandE, error, fine_quant, fine_priority, nbCompressedBytes*8-int(enc.tell()), enc, C)
+
+	if silence != 0 {
+		minVal := -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		for i = 0; i < nbEBands; i++ {
+			this.oldBandE[0][i] = minVal
+		}
+		if C == 2 {
+			for i = 0; i < nbEBands; i++ {
+				this.oldBandE[1][i] = minVal
+			}
+		}
+	}
+
+	this.prefilter_period = pitch_index
+	this.prefilter_gain = gain1
+	this.prefilter_tapset = prefilter_tapset
+
+	if CC == 2 && C == 1 {
+		copy(this.oldBandE[1], this.oldBandE[0][:nbEBands])
+	}
+
+	if isTransient == 0 {
+		copy(this.oldLogE2[0], this.oldLogE[0][:nbEBands])
+		copy(this.oldLogE[0], this.oldBandE[0][:nbEBands])
+		if CC == 2 {
+			copy(this.oldLogE2[1], this.oldLogE[1][:nbEBands])
+			copy(this.oldLogE[1], this.oldBandE[1][:nbEBands])
+		}
+	} else {
+		for i = 0; i < nbEBands; i++ {
+			this.oldLogE[0][i] = MIN16Int(this.oldLogE[0][i], this.oldBandE[0][i])
+		}
+		if CC == 2 {
+			for i = 0; i < nbEBands; i++ {
+				this.oldLogE[1][i] = MIN16Int(this.oldLogE[1][i], this.oldBandE[1][i])
+			}
+		}
+	}
+
+	c = 0
+	minVal := -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+	for c < CC {
+		for i = 0; i < start; i++ {
+			this.oldBandE[c][i] = 0
+			this.oldLogE[c][i] = minVal
+			this.oldLogE2[c][i] = minVal
+		}
+		for i = end; i < nbEBands; i++ {
+			this.oldBandE[c][i] = 0
+			this.oldLogE[c][i] = minVal
+			this.oldLogE2[c][i] = minVal
+		}
+		c++
+	}
+
+	if isTransient != 0 || transient_got_disabled != 0 {
+		this.consec_transient++
+	} else {
+		this.consec_transient = 0
+	}
+	this.rng = int(enc.rng)
+
+	enc.enc_done()
+
+	if enc.get_error() != 0 {
+		return OpusError.OPUS_INTERNAL_ERROR
+	} else {
+		return nbCompressedBytes
+	}
+}
+
+func boolToSlice(cond bool, slice []int) []int {
+	if cond {
+		return slice
+	}
+	return nil
 }
 
 func (this *CeltEncoder) SetComplexity(value int) {

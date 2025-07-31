@@ -31,6 +31,11 @@ type EntropyCoder struct {
 	error       int
 }
 
+func NewEntropyCoder() *EntropyCoder {
+	obj := &EntropyCoder{}
+	obj.Reset()
+	return obj
+}
 func (ec *EntropyCoder) Reset() {
 	ec.buf = nil
 	ec.buf_ptr = 0
