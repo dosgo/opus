@@ -43,8 +43,8 @@ type SilkDecoder struct {
 	prev_decode_only_middle int
 }
 
-func NewSilkDecoder() *SilkDecoder {
-	d := new(SilkDecoder)
+func NewSilkDecoder() SilkDecoder {
+	d := SilkDecoder{}
 	for c := 0; c < DECODER_NUM_CHANNELS; c++ {
 		d.channel_state[c] = &SilkChannelDecoder{}
 	}

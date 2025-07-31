@@ -82,6 +82,8 @@ func NewOpusDecoder(Fs int, channels int) (*OpusDecoder, error) {
 	if channels != 1 && channels != 2 {
 		return nil, errors.New("Number of channels must be 1 or 2")
 	}
+	this.SilkDecoder = NewSilkDecoder()
+	this.Celt_Decoder = CeltDecoder{}
 
 	ret = this.opus_decoder_init(Fs, channels)
 	if ret != OpusError.OPUS_OK {
