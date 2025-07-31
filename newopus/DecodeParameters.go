@@ -11,7 +11,7 @@ func silk_decode_parameters(
 
 	boxedLastGainIndex := BoxedValueByte{Val: psDec.LastGainIndex}
 	silk_gains_dequant(psDecCtrl.Gains_Q16, psDec.indices.GainsIndices,
-		boxedLastGainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), psDec.nb_subfr)
+		&boxedLastGainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), psDec.nb_subfr)
 	psDec.LastGainIndex = boxedLastGainIndex.Val
 
 	silk_NLSF_decode(pNLSF_Q15, psDec.indices.NLSFIndices, psDec.psNLSF_CB)

@@ -3,7 +3,7 @@ package opus
 const QC = 10
 const QS = 14
 
-func silk_autocorr(results []int, scale BoxedValueInt, inputData []int16, inputDataSize int, correlationCount int) {
+func silk_autocorr(results []int, scale *BoxedValueInt, inputData []int16, inputDataSize int, correlationCount int) {
 	corrCount := silk_min_int(inputDataSize, correlationCount)
 	scale.Val = _celt_autocorr(inputData, results, corrCount-1, inputDataSize)
 }
@@ -145,7 +145,7 @@ func _celt_autocorr_with_window(x []int, ac []int, window []int, overlap int, la
 	return shift
 }
 
-func silk_warped_autocorr(corr []int, scale BoxedValueInt, input []int16, warping_Q16 int, length int, order int) {
+func silk_warped_autocorr(corr []int, scale *BoxedValueInt, input []int16, warping_Q16 int, length int, order int) {
 	var n, i, lsh int
 	var tmp1_QS, tmp2_QS int
 	state_QS := make([]int, SilkConstants.MAX_SHAPE_LPC_ORDER+1)

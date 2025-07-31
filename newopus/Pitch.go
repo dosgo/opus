@@ -133,7 +133,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	celt_fir5(x_lp, lpc2, x_lp, halflen, mem)
 }
 
-func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pitch BoxedValueInt) {
+func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pitch *BoxedValueInt) {
 	OpusAssert(len > 0)
 	OpusAssert(max_pitch > 0)
 	lag := len + max_pitch
@@ -201,7 +201,7 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 
 var second_check = []int{0, 0, 3, 2, 3, 2, 5, 2, 3, 2, 3, 2, 5, 2, 3, 2}
 
-func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ BoxedValueInt, prev_period int, prev_gain int) int {
+func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *BoxedValueInt, prev_period int, prev_gain int) int {
 	maxperiod /= 2
 	minperiod /= 2
 	T0_.Val /= 2

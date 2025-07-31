@@ -23,7 +23,7 @@ func silk_residual_energy(
 		for j := 0; j < SilkConstants.MAX_NB_SUBFR>>1; j++ {
 			energy := &BoxedValueInt{Val: 0}
 			rshift := &BoxedValueInt{Val: 0}
-			silk_sum_sqr_shift5(*energy, *rshift, LPC_res, LPC_res_ptr, subfr_length)
+			silk_sum_sqr_shift5(energy, rshift, LPC_res, LPC_res_ptr, subfr_length)
 			idx := i*(SilkConstants.MAX_NB_SUBFR>>1) + j
 			nrgs[idx] = energy.Val
 			nrgsQ[idx] = -rshift.Val

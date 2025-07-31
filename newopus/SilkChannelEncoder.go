@@ -582,7 +582,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 	}
 }
 
-func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut BoxedValueInt, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
+func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
 	sEncCtrl := SilkEncoderControl{}
 	var iter, maxIter, found_upper, found_lower, ret int
 	var x_frame int
@@ -741,7 +741,7 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 
 		boxed_gainIndex := BoxedValueByte{int8(s.LBRRprevLastGainIndex)}
 		silk_gains_dequant(thisCtrl.Gains_Q16, psIndices_LBRR.GainsIndices,
-			boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+			&boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
 		s.LBRRprevLastGainIndex = byte(boxed_gainIndex.Val)
 		if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
 			sNSQ_LBRR.silk_NSQ_del_dec(s, psIndices_LBRR, xfw_Q3, s.pulses_LBRR[s.nFramesEncoded], thisCtrl.PredCoef_Q12[:], thisCtrl.LTPCoef_Q14[:], thisCtrl.AR2_Q13[:], thisCtrl.HarmShapeGain_Q14, thisCtrl.Tilt_Q14, thisCtrl.LF_shp_Q14, thisCtrl.Gains_Q16[:], thisCtrl.pitchL[:], thisCtrl.Lambda_Q10, thisCtrl.LTP_scale_Q14)

@@ -145,7 +145,7 @@ func surround_analysis(celt_mode *CeltMode, pcm []int16, pcm_ptr int, bandLogE [
 		boxed_preemph := BoxedValueInt{preemph_mem[c]}
 		//celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
 		//celt_preemphasis(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
-		celt_preemphasis1(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, boxed_preemph, 0)
+		celt_preemphasis1(x, input, overlap, frame_size, 1, upsample, celt_mode.preemph, &boxed_preemph, 0)
 		preemph_mem[c] = boxed_preemph.Val
 
 		clt_mdct_forward(celt_mode.mdct, input, 0, freq[0], 0, celt_mode.window, overlap, celt_mode.maxLM-LM, 1)
@@ -263,7 +263,7 @@ func (st *OpusMSEncoder) opus_multistream_encoder_init(Fs, channels, streams, co
 	return OpusError.OPUS_OK
 }
 
-func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, mapping_family int, streams, coupled_streams BoxedValueInt, mapping []int16, application OpusApplication) int {
+func (st *OpusMSEncoder) opus_multistream_surround_encoder_init(Fs, channels, mapping_family int, streams, coupled_streams *BoxedValueInt, mapping []int16, application OpusApplication) int {
 	streams.Val = 0
 	coupled_streams.Val = 0
 	if channels > 255 || channels < 1 {
@@ -322,7 +322,7 @@ func CreateOpusMSEncoder(Fs, channels, streams, coupled_streams int, mapping []i
 	return st, nil
 }
 
-func GetStreamCount(channels, mapping_family int, nb_streams, nb_coupled_streams BoxedValueInt) error {
+func GetStreamCount(channels, mapping_family int, nb_streams, nb_coupled_streams *BoxedValueInt) error {
 	if mapping_family == 0 {
 		if channels == 1 {
 			nb_streams.Val = 1
@@ -345,13 +345,13 @@ func GetStreamCount(channels, mapping_family int, nb_streams, nb_coupled_streams
 	return nil
 }
 
-func CreateSurroundOpusMSEncoder(Fs, channels, mapping_family int, streams, coupled_streams BoxedValueInt, mapping []int16, application OpusApplication) (*OpusMSEncoder, error) {
+func CreateSurroundOpusMSEncoder(Fs, channels, mapping_family int, streams, coupled_streams *BoxedValueInt, mapping []int16, application OpusApplication) (*OpusMSEncoder, error) {
 	if channels > 255 || channels < 1 || application == OPUS_APPLICATION_UNIMPLEMENTED {
 		return nil, errors.New("Invalid channel count or application")
 	}
 	nb_streams := BoxedValueInt{0}
 	nb_coupled_streams := BoxedValueInt{0}
-	err := GetStreamCount(channels, mapping_family, nb_streams, nb_coupled_streams)
+	err := GetStreamCount(channels, mapping_family, &nb_streams, &nb_coupled_streams)
 	if err != nil {
 		return nil, err
 	}

@@ -265,7 +265,7 @@ func celt_preemphasis1(
 	CC int, // int CC
 	upsample int, // int upsample
 	coef []int, // int[] coef
-	mem BoxedValueInt, // BoxedValueInt mem
+	mem *BoxedValueInt, // BoxedValueInt mem
 	clip int, // int clip
 ) {
 	var i int
@@ -314,7 +314,7 @@ func celt_preemphasis1(
 	mem.Val = m
 }
 
-func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int, CC int, upsample int, coef []int, mem BoxedValueInt, clip int) {
+func celt_preemphasis(pcmp []int16, pcmp_ptr int, inp []int, inp_ptr int, N int, CC int, upsample int, coef []int, mem *BoxedValueInt, clip int) {
 	coef0 := coef[0]
 	m := mem.Val
 
@@ -829,7 +829,7 @@ func celt_plc_pitch_search(decode_mem [][]int, C int) int {
 	pitch_index := BoxedValueInt{Val: 0}
 	lp_pitch_buf := make([]int, CeltConstants.DECODE_BUFFER_SIZE>>1)
 	pitch_downsample(decode_mem, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE, C)
-	pitch_search(lp_pitch_buf, CeltConstants.PLC_PITCH_LAG_MAX>>1, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.PLC_PITCH_LAG_MAX, CeltConstants.PLC_PITCH_LAG_MAX-CeltConstants.PLC_PITCH_LAG_MIN, pitch_index)
+	pitch_search(lp_pitch_buf, CeltConstants.PLC_PITCH_LAG_MAX>>1, lp_pitch_buf, CeltConstants.DECODE_BUFFER_SIZE-CeltConstants.PLC_PITCH_LAG_MAX, CeltConstants.PLC_PITCH_LAG_MAX-CeltConstants.PLC_PITCH_LAG_MIN, &pitch_index)
 	return CeltConstants.PLC_PITCH_LAG_MAX - pitch_index.Val
 }
 

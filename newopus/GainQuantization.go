@@ -72,7 +72,7 @@ func silk_gains_quant(ind []byte, gain_Q16 []int, prev_ind *byte, conditional in
 	}
 }
 
-func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind BoxedValueByte, conditional int, nb_subfr int) {
+func silk_gains_dequant(gain_Q16 []int, ind []byte, prev_ind *BoxedValueByte, conditional int, nb_subfr int) {
 	for k := 0; k < nb_subfr; k++ {
 		if k == 0 && conditional == 0 {
 			prev_ind.Val = int8(silk_max_int(int(ind[k]), int(prev_ind.Val)-16))

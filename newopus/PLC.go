@@ -93,7 +93,7 @@ func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
 	psPLC.nb_subfr = psDec.nb_subfr
 }
 
-func silk_PLC_energy(energy1, shift1, energy2, shift2 BoxedValueInt, exc_Q14 []int, prevGain_Q10 []int, subfr_length, nb_subfr int) {
+func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []int, prevGain_Q10 []int, subfr_length, nb_subfr int) {
 	exc_buf := make([]int16, 2*subfr_length)
 	exc_buf_ptr := 0
 
@@ -128,7 +128,7 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 	sLTP := make([]int16, psDec.ltp_mem_length)
 
 	sLTP_Q14 := make([]int, psDec.ltp_mem_length+psDec.frame_length)
-	silk_PLC_energy(energy1, shift1, energy2, shift2, psDec.exc_Q14, prevGain_Q10[:], psDec.subfr_length, psDec.nb_subfr)
+	silk_PLC_energy(&energy1, &shift1, &energy2, &shift2, psDec.exc_Q14, prevGain_Q10[:], psDec.subfr_length, psDec.nb_subfr)
 
 	rand_ptr := 0
 	if silk_RSHIFT(energy1.Val, (shift2.Val)) < silk_RSHIFT(energy2.Val, int(shift1.Val)) {
@@ -245,7 +245,7 @@ func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr, l
 	if psDec.lossCnt != 0 {
 		conc_e := BoxedValueInt{0}
 		conc_shift := BoxedValueInt{0}
-		silk_sum_sqr_shift5(conc_e, conc_shift, frame, frame_ptr, length)
+		silk_sum_sqr_shift5(&conc_e, &conc_shift, frame, frame_ptr, length)
 		psPLC.conc_energy = conc_e.Val
 		psPLC.conc_energy_shift = conc_shift.Val
 		psPLC.last_frame_lost = 1
@@ -253,7 +253,7 @@ func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr, l
 		if psPLC.last_frame_lost != 0 {
 			energy := BoxedValueInt{0}
 			energy_shift := BoxedValueInt{0}
-			silk_sum_sqr_shift5(energy, energy_shift, frame, frame_ptr, length)
+			silk_sum_sqr_shift5(&energy, &energy_shift, frame, frame_ptr, length)
 
 			if energy_shift.Val > int(psPLC.conc_energy_shift) {
 				psPLC.conc_energy = silk_RSHIFT(psPLC.conc_energy, int(energy_shift.Val)-int(psPLC.conc_energy_shift))

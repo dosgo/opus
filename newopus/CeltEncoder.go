@@ -170,7 +170,7 @@ func (this *CeltEncoder) celt_encoder_init(sampling_rate int, channels int) int 
 	return OpusError.OPUS_OK
 }
 
-func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC int, N int, prefilter_tapset int, pitch BoxedValueInt, gain BoxedValueInt, qgain BoxedValueInt, enabled int, nbAvailableBytes int) int {
+func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC int, N int, prefilter_tapset int, pitch *BoxedValueInt, gain *BoxedValueInt, qgain *BoxedValueInt, enabled int, nbAvailableBytes int) int {
 	mode := this.mode
 	overlap := mode.overlap
 	pre := make([][]int, CC)
@@ -188,9 +188,9 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		pitch_buf := make([]int, (CeltConstants.COMBFILTER_MAXPERIOD+N)>>1)
 		pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD+N, CC)
 
-		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, pitch_index)
+		pitch_search(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD>>1, pitch_buf, N, CeltConstants.COMBFILTER_MAXPERIOD-3*CeltConstants.COMBFILTER_MINPERIOD, &pitch_index)
 		pitch_index.Val = CeltConstants.COMBFILTER_MAXPERIOD - pitch_index.Val
-		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, pitch_index, this.prefilter_period, this.prefilter_gain)
+		gain1 = remove_doubling(pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD, CeltConstants.COMBFILTER_MINPERIOD, N, &pitch_index, this.prefilter_period, this.prefilter_gain)
 		if pitch_index.Val > CeltConstants.COMBFILTER_MAXPERIOD-2 {
 			pitch_index.Val = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}

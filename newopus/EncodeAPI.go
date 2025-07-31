@@ -49,7 +49,7 @@ func silk_Encode(
 	samplesIn []int16,
 	nSamplesIn int,
 	psRangeEnc *EntropyCoder,
-	nBytesOut BoxedValueInt,
+	nBytesOut *BoxedValueInt,
 	prefillFlag int) int {
 	ret := SilkError.SILK_NO_ERROR
 	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int

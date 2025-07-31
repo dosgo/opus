@@ -6,7 +6,7 @@ func silk_quant_LTP_gains(
 	B_Q14 []int16,
 	cbk_index []byte,
 	periodicity_index BoxedValueByte,
-	sum_log_gain_Q7 BoxedValueInt,
+	sum_log_gain_Q7 *BoxedValueInt,
 	W_Q18 []int,
 	mu_Q9 int,
 	lowComplexity int,
@@ -46,9 +46,9 @@ func silk_quant_LTP_gains(
 			var rate_dist_Q14_subfr = BoxedValueInt{0}
 
 			silk_VQ_WMat_EC(
-				tempIdxVal,
-				rate_dist_Q14_subfr,
-				gain_Q7,
+				&tempIdxVal,
+				&rate_dist_Q14_subfr,
+				&gain_Q7,
 				B_Q14,
 				b_Q14_ptr,
 				W_Q18,

@@ -30,7 +30,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-func silk_sum_sqr_shift5(energy BoxedValueInt, shift BoxedValueInt, x []int16, x_ptr int, len int) {
+func silk_sum_sqr_shift5(energy *BoxedValueInt, shift *BoxedValueInt, x []int16, x_ptr int, len int) {
 	var i, shft int
 	var nrg_tmp, nrg int
 
@@ -73,7 +73,7 @@ func silk_sum_sqr_shift5(energy BoxedValueInt, shift BoxedValueInt, x []int16, x
 	energy.Val = nrg
 }
 
-func silk_sum_sqr_shift4(energy BoxedValueInt, shift BoxedValueInt, x []int16, len int) {
+func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16, len int) {
 	var i, shft int
 	var nrg_tmp, nrg int
 

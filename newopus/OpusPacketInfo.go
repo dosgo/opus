@@ -125,7 +125,7 @@ func encode_size(size int, data []byte, data_ptr int) int {
 	}
 }
 
-func parse_size(data []byte, data_ptr, len int, size BoxedValueShort) int {
+func parse_size(data []byte, data_ptr, len int, size *BoxedValueShort) int {
 	if len < 1 {
 		size.Val = -1
 		return -1
@@ -177,7 +177,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len_val, self_delimited int, 
 	case 2: // 双VBR帧
 		count = 2
 		boxed_size := BoxedValueShort{sizes[sizes_ptr]}
-		bytes := parse_size(data, data_ptr, len_val, boxed_size)
+		bytes := parse_size(data, data_ptr, len_val, &boxed_size)
 		sizes[sizes_ptr] = boxed_size.Val
 		len_val -= bytes
 		if sizes[sizes_ptr] < 0 || int(sizes[sizes_ptr]) > len_val {
@@ -227,7 +227,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len_val, self_delimited int, 
 			last_size = len_val
 			for i := 0; i < count-1; i++ {
 				boxed_size := BoxedValueShort{sizes[sizes_ptr+i]}
-				bytes := parse_size(data, data_ptr, len_val, boxed_size)
+				bytes := parse_size(data, data_ptr, len_val, &boxed_size)
 				sizes[sizes_ptr+i] = boxed_size.Val
 				len_val -= bytes
 				if sizes[sizes_ptr+i] < 0 || int(sizes[sizes_ptr+i]) > len_val {
@@ -253,7 +253,7 @@ func opus_packet_parse_impl(data []byte, data_ptr, len_val, self_delimited int, 
 	// 自定界帧处理
 	if self_delimited != 0 {
 		boxed_size := BoxedValueShort{sizes[sizes_ptr+count-1]}
-		bytes := parse_size(data, data_ptr, len_val, boxed_size)
+		bytes := parse_size(data, data_ptr, len_val, &boxed_size)
 		sizes[sizes_ptr+count-1] = boxed_size.Val
 		len_val -= bytes
 		if sizes[sizes_ptr+count-1] < 0 || int(sizes[sizes_ptr+count-1]) > len_val {

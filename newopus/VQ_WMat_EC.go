@@ -2,7 +2,7 @@ package opus
 
 import "math"
 
-func silk_VQ_WMat_EC(ind BoxedValueByte, rate_dist_Q14 BoxedValueInt, gain_Q7 BoxedValueInt, in_Q14 []int16, in_Q14_ptr int, W_Q18 []int, W_Q18_ptr int, cb_Q7 [][]int8, cb_gain_Q7 []int16, cl_Q5 []int16, mu_Q9 int, max_gain_Q7 int, L int) {
+func silk_VQ_WMat_EC(ind *BoxedValueByte, rate_dist_Q14 *BoxedValueInt, gain_Q7 *BoxedValueInt, in_Q14 []int16, in_Q14_ptr int, W_Q18 []int, W_Q18_ptr int, cb_Q7 [][]int8, cb_gain_Q7 []int16, cl_Q5 []int16, mu_Q9 int, max_gain_Q7 int, L int) {
 	var k, gain_tmp_Q7 int
 	var cb_row_Q7 []int8
 	diff_Q14 := make([]int16, 5)

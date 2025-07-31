@@ -132,7 +132,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		for k = 0; k < silk_SMULBB(SUB_FRAME_LENGTH_MS, psEnc.nb_subfr)/2; k++ {
 			boxed_nrg := BoxedValueInt{0}
 			boxed_scale := BoxedValueInt{0}
-			silk_sum_sqr_shift5(boxed_nrg, boxed_scale, pitch_res, pitch_res_ptr2, nSamples)
+			silk_sum_sqr_shift5(&boxed_nrg, &boxed_scale, pitch_res, pitch_res_ptr2, nSamples)
 			nrg = boxed_nrg.Val
 			scale = boxed_scale.Val
 			nrg += int(nSamples >> scale)
@@ -183,10 +183,10 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		scale_boxed := BoxedValueInt{scale}
 		if psEnc.warping_Q16 > 0 {
 			//silk_warped_autocorr(x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
-			silk_warped_autocorr(auto_corr, scale_boxed, x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
+			silk_warped_autocorr(auto_corr, &scale_boxed, x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 		} else {
 			// silk_autocorr(x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
-			silk_autocorr(auto_corr, scale_boxed, x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
+			silk_autocorr(auto_corr, &scale_boxed, x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
 		}
 		scale = scale_boxed.Val
 		auto_corr[0] = silk_ADD32(auto_corr[0], silk_max_32(silk_SMULWB(auto_corr[0]>>4, int(TuningParameters.SHAPE_WHITE_NOISE_FRACTION)<<20), 1))

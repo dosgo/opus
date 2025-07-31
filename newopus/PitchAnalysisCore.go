@@ -74,7 +74,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 	boxed_energy := BoxedValueInt{0}
 	boxed_shift := BoxedValueInt{0}
-	silk_sum_sqr_shift4(boxed_energy, boxed_shift, frame_4kHz, frame_length_4kHz)
+	silk_sum_sqr_shift4(&boxed_energy, &boxed_shift, frame_4kHz, frame_length_4kHz)
 
 	energy, shift = boxed_energy.Val, boxed_shift.Val
 	if shift > 0 {
@@ -197,7 +197,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 	boxed_energy.Val = 0
 	boxed_shift.Val = 0
-	silk_sum_sqr_shift4(boxed_energy, boxed_shift, frame_8kHz, frame_length_8kHz)
+	silk_sum_sqr_shift4(&boxed_energy, &boxed_shift, frame_8kHz, frame_length_8kHz)
 
 	energy, shift = boxed_energy.Val, boxed_shift.Val
 	if shift > 0 {
@@ -319,7 +319,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 		boxed_energy.Val = 0
 		boxed_shift.Val = 0
-		silk_sum_sqr_shift4(boxed_energy, boxed_shift, frame, frame_length)
+		silk_sum_sqr_shift4(&boxed_energy, &boxed_shift, frame, frame_length)
 		energy = boxed_energy.Val
 		shift = boxed_shift.Val
 		if shift > 0 {

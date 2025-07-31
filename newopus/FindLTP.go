@@ -26,7 +26,7 @@ func silk_find_LTP(b_Q14 []int16, WLTP []int, LTPredCodGain_Q7 BoxedValueInt, r_
 		boxed_rr := BoxedValueInt{0}
 		boxed_rr_shift := BoxedValueInt{0}
 		//silk_sum_sqr_shift5(&rr_val, &rr_shift, r_lpc[r_ptr:], subfr_length)
-		silk_sum_sqr_shift5(boxed_rr, boxed_rr_shift, r_lpc, r_ptr, subfr_length)
+		silk_sum_sqr_shift5(&boxed_rr, &boxed_rr_shift, r_lpc, r_ptr, subfr_length)
 		rr[k] = boxed_rr.Val
 		rr_shifts = int(boxed_rr_shift.Val)
 

@@ -33,7 +33,7 @@ func silk_stereo_decode_pred(
 
 func silk_stereo_decode_mid_only(
 	psRangeDec *EntropyCoder,
-	decode_only_mid BoxedValueInt) {
+	decode_only_mid *BoxedValueInt) {
 	decode_only_mid.Val = psRangeDec.dec_icdf(SilkTables.Silk_stereo_only_code_mid_iCDF[:], 8)
 }
 
@@ -70,8 +70,8 @@ func silk_stereo_find_predictor(
 	scale2 := BoxedValueInt{0}
 	var corr, pred_Q13, pred2_Q10 int
 
-	silk_sum_sqr_shift4(nrgx, scale1, x, length)
-	silk_sum_sqr_shift4(nrgy, scale2, y, length)
+	silk_sum_sqr_shift4(&nrgx, &scale1, x, length)
+	silk_sum_sqr_shift4(&nrgy, &scale2, y, length)
 	scale = silk_max_int(scale1.Val, scale2.Val)
 	scale = scale + (scale & 1)
 	nrgy.Val = silk_RSHIFT32(nrgy.Val, scale-scale2.Val)

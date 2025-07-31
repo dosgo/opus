@@ -35,7 +35,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 
 	boxed_scale := BoxedValueInt{0}
 
-	silk_autocorr(auto_corr[:], boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
+	silk_autocorr(auto_corr[:], &boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
 	//	scale = boxed_scale.Val
 	auto_corr[0] = silk_SMLAWB(auto_corr[0], auto_corr[0], int((TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*(1<<16)+0.5)) + 1
 

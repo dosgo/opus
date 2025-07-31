@@ -448,7 +448,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	boxed_dual_stereo := BoxedValueInt{dual_stereo}
 	boxed_balance := BoxedValueInt{0}
 
-	codedBands := compute_allocation(mode, start, end, offsets, cap, alloc_trim, boxed_intensity, boxed_dual_stereo, bits, boxed_balance, pulses, fine_quant, fine_priority, CC, LM, localDec, 0, 0, 0)
+	codedBands := compute_allocation(mode, start, end, offsets, cap, alloc_trim, &boxed_intensity, &boxed_dual_stereo, bits, &boxed_balance, pulses, fine_quant, fine_priority, CC, LM, localDec, 0, 0, 0)
 	intensity = boxed_intensity.Val
 	dual_stereo = boxed_dual_stereo.Val
 	balance = boxed_balance.Val

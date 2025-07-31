@@ -425,7 +425,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	return audiosize
 }
 
-func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, pcm_out []int16, pcm_out_ptr int, frame_size int, decode_fec int, self_delimited int, packet_offset BoxedValueInt, soft_clip int) int {
+func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, pcm_out []int16, pcm_out_ptr int, frame_size int, decode_fec int, self_delimited int, packet_offset *BoxedValueInt, soft_clip int) int {
 	var i, nb_samples int
 	var count, offset int
 	var packet_frame_size, packet_stream_channels int
@@ -464,7 +464,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	boxed_offset := BoxedValueInt{0}
 	//count = opus_packet_parse_impl(data, data_ptr, len, self_delimited, &toc, nil, 0, size, 0, offset, packet_offset)
 	count = opus_packet_parse_impl(data, data_ptr, len, self_delimited, &toc, nil, 0,
-		size, 0, &boxed_offset, &packet_offset)
+		size, 0, &boxed_offset, packet_offset)
 	offset = boxed_offset.Val
 	if count < 0 {
 		return count
@@ -477,10 +477,10 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 		duration_copy := this.last_packet_duration
 		var ret int
 		if frame_size < packet_frame_size || packet_mode == MODE_CELT_ONLY || this.mode == MODE_CELT_ONLY {
-			return this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size, 0, 0, dummy, soft_clip)
+			return this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size, 0, 0, &dummy, soft_clip)
 		}
 		if frame_size-packet_frame_size != 0 {
-			ret = this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size-packet_frame_size, 0, 0, dummy, soft_clip)
+			ret = this.opus_decode_native(nil, 0, 0, pcm_out, pcm_out_ptr, frame_size-packet_frame_size, 0, 0, &dummy, soft_clip)
 			if ret < 0 {
 				this.last_packet_duration = duration_copy
 				return ret
@@ -534,7 +534,7 @@ func (this *OpusDecoder) Decode(in_data []byte, in_data_offset int, len int, out
 	if decode_fec {
 		decode_fec_int = 1
 	}
-	ret := this.opus_decode_native(in_data, in_data_offset, len, out_pcm, out_pcm_offset, frame_size, decode_fec_int, 0, dummy, 0)
+	ret := this.opus_decode_native(in_data, in_data_offset, len, out_pcm, out_pcm_offset, frame_size, decode_fec_int, 0, &dummy, 0)
 
 	if ret < 0 {
 		if ret == OpusError.OPUS_BAD_ARG {

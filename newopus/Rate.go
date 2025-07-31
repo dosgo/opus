@@ -53,7 +53,7 @@ func pulses2bits(m *CeltMode, band int, LM int, pulses int) int {
 	return int(m.cache.bits[int(m.cache.index[LM*m.nbEBands+band])+pulses] + 1)
 }
 
-func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance BoxedValueInt, skip_rsv int, intensity BoxedValueInt, intensity_rsv int, dual_stereo BoxedValueInt, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
+func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance *BoxedValueInt, skip_rsv int, intensity *BoxedValueInt, intensity_rsv int, dual_stereo *BoxedValueInt, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
 	psum := 0
 	lo := 0
 	hi := 1 << ALLOC_STEPS
@@ -256,7 +256,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	return codedBands
 }
 
-func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []int, alloc_trim int, intensity BoxedValueInt, dual_stereo BoxedValueInt, total int, balance BoxedValueInt, pulses []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
+func compute_allocation(m *CeltMode, start int, end int, offsets []int, cap []int, alloc_trim int, intensity *BoxedValueInt, dual_stereo *BoxedValueInt, total int, balance *BoxedValueInt, pulses []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
 	total = IMAX(total, 0)
 	len := m.nbEBands
 	skip_start := start
