@@ -806,46 +806,69 @@ var bit_interleave_table = []int{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
 var bit_deinterleave_table = []int{0, 3, 12, 15, 48, 51, 60, 63, 192, 195, 204, 207, 240, 243, 252, 255}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
+
+	fmt.Printf("quant_band b:%d\r\n", b)
 	N0 := N
 	N_B := N
+	var N_B0 int
 	B0 := B
 	time_divide := 0
 	recombine := 0
-	longBlocks := 0
+	var longBlocks int
+	cm := 0
+	var resynth int
+	if ctx.encode == 0 {
+		resynth = 1
+	} else {
+		resynth = 0
+	}
+	var k int
+	var encode int
+	var tf_change int
+
+	encode = ctx.encode
+	tf_change = ctx.tf_change
+
 	if B0 == 1 {
 		longBlocks = 1
 	} else {
 		longBlocks = 0
 	}
-	cm := 0
-	resynth := 0
-	if ctx.encode == 0 {
-		resynth = 1
-	}
-	encode := ctx.encode
-	tf_change := ctx.tf_change
 
 	N_B = celt_udiv(N_B, B)
+
+	if N == 1 {
+		return quant_band_n1(ctx, X, X_ptr, nil, 0, b, lowband_out, lowband_out_ptr)
+	}
 
 	if tf_change > 0 {
 		recombine = tf_change
 	}
 
-	if lowband_scratch != nil && lowband != nil && (recombine != 0 || (N_B%2 == 0 && tf_change < 0) || B0 > 1) {
+	if lowband_scratch != nil && lowband != nil && (recombine != 0 || (N_B&1 == 0 && tf_change < 0) || B0 > 1) {
 		copy(lowband_scratch[lowband_scratch_ptr:lowband_scratch_ptr+N], lowband[lowband_ptr:lowband_ptr+N])
 		lowband = lowband_scratch
 		lowband_ptr = lowband_scratch_ptr
 	}
 
-	for k := 0; k < recombine; k++ {
+	for k = 0; k < recombine; k++ {
 		if encode != 0 {
 			haar1(X, X_ptr, N>>k, 1<<k)
 		}
 		if lowband != nil {
 			haar1(lowband, lowband_ptr, N>>k, 1<<k)
 		}
+		idx1 := fill & 0xF
+		idx2 := fill >> 4
+		if idx1 < 0 {
+			fmt.Println("e")
+		}
+		if idx2 < 0 {
+			fmt.Println("e")
+		}
 		fill = bit_interleave_table[fill&0xF] | bit_interleave_table[fill>>4]<<2
 	}
+
 	B >>= recombine
 	N_B <<= recombine
 
@@ -862,8 +885,9 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 		time_divide++
 		tf_change++
 	}
+
 	B0 = B
-	N_B0 := N_B
+	N_B0 = N_B
 
 	if B0 > 1 {
 		if encode != 0 {
@@ -883,27 +907,31 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 
 		N_B = N_B0
 		B = B0
-		for k := 0; k < time_divide; k++ {
+		for k = 0; k < time_divide; k++ {
 			B >>= 1
 			N_B <<= 1
 			cm |= cm >> B
 			haar1(X, X_ptr, N_B, B)
 		}
 
-		for k := 0; k < recombine; k++ {
+		for k = 0; k < recombine; k++ {
 			cm = bit_deinterleave_table[cm]
 			haar1(X, X_ptr, N0>>k, 1<<k)
 		}
 		B <<= recombine
 
 		if lowband_out != nil {
-			n := celt_sqrt(SHL32(int(N0), 22))
-			for j := 0; j < N0; j++ {
-				lowband_out[lowband_out_ptr+j] = MULT16_16_Q15Int(int(n), X[X_ptr+j])
+			var j int
+			var n int
+			n = celt_sqrt(SHL32(N0, 22))
+			for j = 0; j < N0; j++ {
+				lowband_out[lowband_out_ptr+j] = MULT16_16_Q15Int(n, X[X_ptr+j])
 			}
 		}
-		cm &= (1 << B) - 1
+
+		cm = cm & ((1 << B) - 1)
 	}
+
 	return cm
 }
 
@@ -929,6 +957,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 	sctx := &split_ctx{}
 	compute_theta(ctx, sctx, X, X_ptr, Y, Y_ptr, N, boxed_b, B, B, LM, 1, boxed_fill)
 	b = boxed_b.Val
+	fmt.Printf("\r\n compute_theta:%+d\r\n", b)
 	fill = boxed_fill.Val
 
 	inv = sctx.inv
@@ -1028,6 +1057,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 }
 
 func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ []int, collapse_masks []int16, bandE [][]int, pulses []int, shortBlocks int, spread int, dual_stereo int, intensity int, tf_res []int, total_bits int, balance int, ec *EntropyCoder, LM int, codedBands int, seed *BoxedValueInt) {
+	fmt.Printf("dual_stereo:%d\r\n", dual_stereo)
 	eBands := m.eBands
 	M := 1 << LM
 	B := 1

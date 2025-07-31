@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type CeltEncoder struct {
 	mode              *CeltMode
@@ -576,7 +579,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 			bandE[0][i] = MAX32(bandE[0][i], CeltConstants.EPSILON)
 		}
 	}
-
+	fmt.Printf("amp2Log2bandE:%+v\r\n", bandE)
 	amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
 
 	surround_dynalloc = make([]int, C*nbEBands)
@@ -935,6 +938,8 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	collapse_masks = make([]int16, C*nbEBands)
 
 	boxed_rng := BoxedValueInt{this.rng}
+
+	fmt.Printf("bandE:%+v\r\n", bandE)
 	quant_all_bands(1, mode, start, end, X[0], boolToSlice(C == 2, X[1]), collapse_masks, bandE, pulses, shortBlocks, this.spread_decision, dual_stereo, this.intensity, tf_res, nbCompressedBytes*(8<<BITRES)-anti_collapse_rsv, balance, enc, LM, codedBands, &boxed_rng)
 
 	this.rng = boxed_rng.Val
