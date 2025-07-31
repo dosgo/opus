@@ -1,6 +1,6 @@
 package opus
 
-func silk_HP_variable_cutoff(state_Fxx []SilkChannelEncoder) {
+func silk_HP_variable_cutoff(state_Fxx []*SilkChannelEncoder) {
 	var quality_Q15 int
 	var pitch_freq_Hz_Q16, pitch_freq_log_Q7, delta_freq_Q7 int
 	psEncC1 := state_Fxx[0]

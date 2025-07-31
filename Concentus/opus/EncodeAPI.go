@@ -6,7 +6,7 @@ func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
 	ret := SilkError.SILK_NO_ERROR
 	encState.Reset()
 	for n := 0; n < ENCODER_NUM_CHANNELS; n++ {
-		ret += silk_init_encoder(&encState.state_Fxx[n])
+		ret += silk_init_encoder(encState.state_Fxx[n])
 		OpusAssert(ret == SilkError.SILK_NO_ERROR)
 	}
 	encState.nChannelsAPI = 1
@@ -78,7 +78,7 @@ func silk_Encode(
 	encControl.switchReady = 0
 
 	if encControl.nChannelsInternal > psEnc.nChannelsInternal {
-		ret += silk_init_encoder(&psEnc.state_Fxx[1])
+		ret += silk_init_encoder(psEnc.state_Fxx[1])
 		for i := range psEnc.sStereo.pred_prev_Q13 {
 			psEnc.sStereo.pred_prev_Q13[i] = 0
 		}
@@ -306,7 +306,7 @@ func silk_Encode(
 								condCoding = CODE_CONDITIONALLY
 							}
 
-							silk_encode_indices(&psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
+							silk_encode_indices(psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
 							silk_encode_pulses(*psRangeEnc, int(psEnc.state_Fxx[n].indices_LBRR[i].signalType), int(psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType),
 								psEnc.state_Fxx[n].pulses_LBRR[i], psEnc.state_Fxx[n].frame_length)
 						}
