@@ -1255,11 +1255,11 @@ func silk_SMULWT(a32, b32 int) int {
 }
 
 func silk_SMULBT(a32, b32 int) int {
-	return int(int16(a32)) * (b32 >> 16)
+	return int(int(a32)) * (b32 >> 16)
 }
 
 func silk_SMLABT(a32, b32, c32 int) int {
-	return a32 + int(int16(b32))*(c32>>16)
+	return a32 + int(int(b32))*(c32>>16)
 }
 
 func silk_SMLAL(a64 int64, b32, c32 int) int64 {
