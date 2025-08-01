@@ -1,13 +1,10 @@
 package opus
 
-import "os"
-
 var CELT_PVQ_U_ROW = [...]int{
 	0, 176, 351, 525, 698, 870, 1041, 1131, 1178, 1207, 1226, 1240, 1248, 1254, 1257,
 }
 
 func CELT_PVQ_U(_n, _k int) int64 {
-	os.Exit(0)
 	return CELT_PVQ_U_DATA[CELT_PVQ_U_ROW[IMIN(_n, _k)]+IMAX(_n, _k)]
 }
 

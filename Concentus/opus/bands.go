@@ -48,13 +48,24 @@ func celt_lcg_rand(seed int) int {
 	return 1664525*seed + 1013904223
 }
 
-func bitexact_cos(x int) int {
+func bitexact_cosb(x int) int {
 	tmp := (4096 + x*x) >> 13
 	OpusAssert(tmp <= 32767)
 	x2 := tmp
 	x2 = (32767 - x2) + FRAC_MUL16(x2, (-7651+FRAC_MUL16(x2, (8277+FRAC_MUL16(-626, x2)))))
 	OpusAssert(x2 <= 32766)
 	return 1 + x2
+}
+
+func bitexact_cos(x int) int {
+	var tmp = 0
+	var x2 = 0
+	tmp = (4096 + (x * x)) >> 13
+	OpusAssert(tmp <= 32767)
+	x2 = (tmp)
+	x2 = ((32767 - x2) + FRAC_MUL16(x2, (-7651+FRAC_MUL16(x2, (8277+FRAC_MUL16(-626, x2))))))
+	OpusAssert(x2 <= 32766)
+	return (1 + x2)
 }
 
 func bitexact_log2tan(isin int, icos int) int {
@@ -503,7 +514,6 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 	}
 
 	tell := int(ec.tell_frac())
-	fmt.Printf("srctell:%d\r\n", tell)
 	if qn != 1 {
 		if encode != 0 {
 			itheta = (itheta*qn + 8192) >> 14
@@ -601,26 +611,28 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 		itheta = 0
 	}
 	qalloc := int(ec.tell_frac()) - tell
-	fmt.Printf("qalloc:%d tell:%d\r\n", qalloc, tell)
 	b.Val -= qalloc
 
-	imid := 32767
-	iside := 0
-	delta := -16384
-	fill_mask := (1 << B) - 1
-	if itheta == 16384 {
+	var imid = 0
+	var iside = 0
+	var delta = 0
+	if itheta == 0 {
+		imid = 32767
+		iside = 0
+		fill.Val &= (1 << B) - 1
+		delta = -16384
+	} else if itheta == 16384 {
 		imid = 0
 		iside = 32767
-		fill.Val &= fill_mask << B
+		fill.Val &= ((1 << B) - 1) << B
 		delta = 16384
-	} else if itheta != 0 {
-		imid = bitexact_cos(itheta)
-		iside = bitexact_cos(16384 - itheta)
-		delta = FRAC_MUL16((N-1)<<7, bitexact_log2tan(iside, imid))
-		fill_mask = (1<<B - 1) | (1<<B-1)<<B
-		fill.Val &= fill_mask
 	} else {
-		fill.Val &= fill_mask
+		imid = bitexact_cos(itheta)
+		iside = bitexact_cos((16384 - itheta))
+		/* This is the mid vs side allocation that minimizes squared error
+		   in that band. */
+		//System.out.println("compute_theta-1 delta:"+ delta);
+		delta = FRAC_MUL16((N-1)<<7, bitexact_log2tan(iside, imid))
 	}
 
 	sctx.inv = inv
@@ -722,7 +734,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 			boxed_b := BoxedValueInt{Val: b}
 			boxed_fill := BoxedValueInt{Val: fill}
 			compute_theta(ctx, &sctx, X, X_ptr, X, Y, N, &boxed_b, B, B0, LM, 0, &boxed_fill)
-			fmt.Printf("compute_theta b:%d\r\n", boxed_b.Val)
+
 			b = boxed_b.Val
 			fill = boxed_fill.Val
 
@@ -733,7 +745,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 			qalloc = sctx.qalloc
 			mid = imid
 			side = iside
-
 			if B0 > 1 && (itheta&0x3fff) != 0 {
 				if itheta > 8192 {
 					delta -= delta >> (4 - LM)
@@ -742,6 +753,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 				}
 			}
 			mbits = IMAX(0, IMIN(b, (b-delta)/2))
+
 			sbits = b - mbits
 			ctx.remaining_bits -= qalloc
 
@@ -770,7 +782,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	}
 
 	q = bits2pulses(m, i, LM, b)
-	fmt.Printf("bits2pulses i:%d LM:%d b:%d\r\n", i, LM, b)
 	curr_bits = pulses2bits(m, i, LM, q)
 	ctx.remaining_bits -= curr_bits
 
@@ -783,7 +794,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 
 	if q != 0 {
 		K := get_pulses(q)
-		fmt.Printf("k:%d q:%d", K, q)
 		if encode != 0 {
 			cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
 		} else {
@@ -827,8 +837,6 @@ var bit_interleave_table = []int{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
 var bit_deinterleave_table = []int{0, 3, 12, 15, 48, 51, 60, 63, 192, 195, 204, 207, 240, 243, 252, 255}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
-
-	fmt.Printf("quant_band b:%d\r\n", b)
 	N0 := N
 	N_B := N
 	var N_B0 int
@@ -918,9 +926,6 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 			deinterleave_hadamard(lowband, lowband_ptr, N_B>>recombine, B0<<recombine, longBlocks)
 		}
 	}
-	fmt.Printf("X_ptr:%d N:%d b:%+v B:%+v lowband_ptr:%d LM:%d gain:%+v fill:%+v\r\n", X_ptr, N, b, B, lowband_ptr, LM, gain, fill)
-	//b=
-	b = 324
 	cm = quant_partition(ctx, X, X_ptr, N, b, B, lowband, lowband_ptr, LM, gain, fill)
 
 	if resynth != 0 {
@@ -980,7 +985,6 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 	sctx := &split_ctx{}
 	compute_theta(ctx, sctx, X, X_ptr, Y, Y_ptr, N, boxed_b, B, B, LM, 1, boxed_fill)
 	b = boxed_b.Val
-	fmt.Printf("\r\n compute_theta:%+d\r\n", b)
 	fill = boxed_fill.Val
 
 	inv = sctx.inv
@@ -1080,7 +1084,6 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 }
 
 func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ []int, collapse_masks []int16, bandE [][]int, pulses []int, shortBlocks int, spread int, dual_stereo int, intensity int, tf_res []int, total_bits int, balance int, ec *EntropyCoder, LM int, codedBands int, seed *BoxedValueInt) {
-	fmt.Printf("dual_stereo:%d\r\n", dual_stereo)
 	eBands := m.eBands
 	M := 1 << LM
 	B := 1

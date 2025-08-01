@@ -52,24 +52,30 @@ func pulses2bits(m *CeltMode, band int, LM int, pulses int) int {
 	}
 	return int(m.cache.bits[int(m.cache.index[LM*m.nbEBands+band])+pulses] + 1)
 }
-
 func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 []int, bits2 []int, thresh []int, cap []int, total int, _balance *BoxedValueInt, skip_rsv int, intensity *BoxedValueInt, intensity_rsv int, dual_stereo *BoxedValueInt, dual_stereo_rsv int, bits []int, ebits []int, fine_priority []int, C int, LM int, ec *EntropyCoder, encode int, prev int, signalBandwidth int) int {
-	psum := 0
-	lo := 0
-	hi := 1 << ALLOC_STEPS
+	var psum int
+	var lo, hi int
 	var i, j int
-	logM := LM << BITRES
-	stereo := 0
+	var logM int
+	var stereo int
+	codedBands := -1
+	var alloc_floor int
+	var left, percoeff int
+	var done int
+	var balance int
+	alloc_floor = C << BITRES
+	stereo = 0
 	if C > 1 {
 		stereo = 1
 	}
-	codedBands := -1
-	alloc_floor := C << BITRES
 
+	logM = LM << BITRES
+	lo = 0
+	hi = 1 << ALLOC_STEPS
 	for i = 0; i < ALLOC_STEPS; i++ {
 		mid := (lo + hi) >> 1
 		psum = 0
-		done := 0
+		done = 0
 		for j = end - 1; j >= start; j-- {
 			tmp := bits1[j] + (mid * bits2[j] >> ALLOC_STEPS)
 			if tmp >= thresh[j] || done != 0 {
@@ -86,7 +92,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		}
 	}
 	psum = 0
-	done := 0
+	done = 0
 	for j = end - 1; j >= start; j-- {
 		tmp := bits1[j] + (lo * bits2[j] >> ALLOC_STEPS)
 		if tmp < thresh[j] && done == 0 {
@@ -103,25 +109,31 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		psum += tmp
 	}
 
-	for codedBands = end; ; codedBands-- {
-		if codedBands <= skip_start {
+	codedBands = end
+	for {
+		var band_width int
+		var band_bits int
+		var rem int
+		j = codedBands - 1
+		if j <= skip_start {
 			total += skip_rsv
 			break
 		}
-		j := codedBands - 1
-		left := total - psum
-		percoeff := celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
+
+		left = total - psum
+		percoeff = celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
 		left -= int(m.eBands[codedBands]-m.eBands[start]) * percoeff
-		rem := IMAX(left-int(m.eBands[j]-m.eBands[start]), 0)
-		band_width := int(m.eBands[codedBands] - m.eBands[j])
-		band_bits := bits[j] + percoeff*band_width + rem
+		rem = IMAX(left-int(m.eBands[j]-m.eBands[start]), 0)
+		band_width = int(m.eBands[codedBands] - m.eBands[j])
+		band_bits = bits[j] + percoeff*band_width + rem
 		if band_bits >= IMAX(thresh[j], alloc_floor+(1<<BITRES)) {
 			if encode != 0 {
-				leftBit := 9
-				if j < prev {
-					leftBit = 7
-				}
-				if codedBands <= start+2 || (band_bits > ((leftBit)*band_width<<LM<<BITRES)>>4 && j <= signalBandwidth) {
+				if codedBands <= start+2 || (band_bits > ((func() int {
+					if j < prev {
+						return 7
+					}
+					return 9
+				}())*band_width<<LM<<BITRES)>>4 && j <= signalBandwidth) {
 					ec.enc_bit_logp(1, 1)
 					break
 				}
@@ -143,6 +155,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		} else {
 			bits[j] = 0
 		}
+		codedBands--
 	}
 
 	OpusAssert(codedBands > start)
@@ -165,7 +178,12 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 	}
 	if dual_stereo_rsv > 0 {
 		if encode != 0 {
-			ec.enc_bit_logp(dual_stereo.Val, 1)
+			ec.enc_bit_logp(func() int {
+				if dual_stereo.Val != 0 {
+					return 1
+				}
+				return 0
+			}(), 1)
 		} else {
 			dual_stereo.Val = ec.dec_bit_logp(1)
 		}
@@ -173,8 +191,8 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		dual_stereo.Val = 0
 	}
 
-	left := total - psum
-	percoeff := celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
+	left = total - psum
+	percoeff = celt_udiv(left, int(m.eBands[codedBands]-m.eBands[start]))
 	left -= int(m.eBands[codedBands]-m.eBands[start]) * percoeff
 	for j = start; j < codedBands; j++ {
 		bits[j] += percoeff * int(m.eBands[j+1]-m.eBands[j])
@@ -185,46 +203,65 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		left -= tmp
 	}
 
-	balance := 0
+	balance = 0
 	for j = start; j < codedBands; j++ {
-		OpusAssert(bits[j] >= 0)
-		N0 := m.eBands[j+1] - m.eBands[j]
-		N := N0 << LM
-		bit := bits[j] + balance
-		var excess = 0
-		if N > 1 {
-			excess = int(MAX32(bit-cap[j], 0))
-			bits[j] = bit - excess
-			den := (C*int(N) + (boolToInt(C == 2 && N > 2 && (dual_stereo.Val == 0) && j < intensity.Val)))
+		var N0, N, den int
+		var offset int
+		var NClogN int
+		var excess, bit int
 
-			NClogN := den * (int(m.logN[j]) + logM)
-			offset := (NClogN >> 1) - den*CeltConstants.FINE_OFFSET
+		OpusAssert(bits[j] >= 0)
+		N0 = int(m.eBands[j+1] - m.eBands[j])
+		N = N0 << LM
+		bit = bits[j] + balance
+
+		if N > 1 {
+			excess = MAX32(bit-cap[j], 0)
+			bits[j] = bit - excess
+
+			den = C * N
+			if C == 2 && N > 2 && dual_stereo.Val == 0 && j < intensity.Val {
+				den++
+			}
+
+			NClogN = den * (int(m.logN[j]) + logM)
+
+			offset = (NClogN >> 1) - den*CeltConstants.FINE_OFFSET
+
 			if N == 2 {
 				offset += den << BITRES >> 2
 			}
+
 			if bits[j]+offset < den*2<<BITRES {
 				offset += NClogN >> 2
 			} else if bits[j]+offset < den*3<<BITRES {
 				offset += NClogN >> 3
 			}
-			ebits[j] = IMAX(0, (bits[j] + offset + (den << (BITRES - 1))))
+
+			ebits[j] = IMAX(0, bits[j]+offset+(den<<(BITRES-1)))
 			ebits[j] = celt_udiv(ebits[j], den) >> BITRES
+
 			if C*ebits[j] > (bits[j] >> BITRES) {
 				ebits[j] = bits[j] >> stereo >> BITRES
 			}
+
 			ebits[j] = IMIN(ebits[j], CeltConstants.MAX_FINE_BITS)
+
 			if ebits[j]*(den<<BITRES) >= bits[j]+offset {
 				fine_priority[j] = 1
 			} else {
 				fine_priority[j] = 0
 			}
+
 			bits[j] -= C * ebits[j] << BITRES
+
 		} else {
-			excess = MAX32(bit-(C<<BITRES), 0)
+			excess = MAX32(0, bit-(C<<BITRES))
 			bits[j] = bit - excess
 			ebits[j] = 0
 			fine_priority[j] = 1
 		}
+
 		if excess > 0 {
 			extra_fine := IMIN(excess>>(stereo+BITRES), CeltConstants.MAX_FINE_BITS-ebits[j])
 			ebits[j] += extra_fine
@@ -237,6 +274,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 			excess -= extra_bits
 		}
 		balance = excess
+
 		OpusAssert(bits[j] >= 0)
 		OpusAssert(ebits[j] >= 0)
 	}

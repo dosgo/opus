@@ -843,12 +843,11 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 		target = compute_vbr(mode, &this.analysis, base_target, LM, equiv_rate, this.lastCodedBands, C, this.intensity, this.constrained_vbr, this.stereo_saving, tot_boost, tf_estimate, pitch_change, maxDepth, this.variable_duration, this.lfe, boolToInt(this.energy_mask != nil), surround_masking, temporal_vbr)
 
 		target = target + tell
-		min_allowed = (tell + total_boost + (1<<(BITRES+3)-1)>>(BITRES+3)) + 2 - nbFilledBytes
+		min_allowed = ((tell + total_boost + (1 << (BITRES + 3)) - 1) >> (BITRES + 3)) + 2 - nbFilledBytes
 
 		nbAvailableBytes = (target + (1 << (BITRES + 2))) >> (BITRES + 3)
 		nbAvailableBytes = IMAX(min_allowed, nbAvailableBytes)
 		nbAvailableBytes = IMIN(nbCompressedBytes, nbAvailableBytes+nbFilledBytes) - nbFilledBytes
-
 		delta = target - vbr_rate
 
 		target = nbAvailableBytes << (BITRES + 3)
@@ -888,10 +887,11 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	pulses = make([]int, nbEBands)
 	fine_priority = make([]int, nbEBands)
 
-	bits = int(nbCompressedBytes)*8<<BITRES - int(enc.tell_frac()) - 1
+	bits = int(nbCompressedBytes*8)<<BITRES - int(enc.tell_frac()) - 1
 	if isTransient != 0 && LM >= 2 && bits >= ((LM+2)<<BITRES) {
 		anti_collapse_rsv = 1 << BITRES
 	}
+
 	bits -= anti_collapse_rsv
 	signalBandwidth = end - 1
 

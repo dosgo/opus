@@ -553,7 +553,7 @@ func celt_maxabs32Short(x []int16, x_ptr, len int) int16 {
 }
 
 func FRAC_MUL16(a, b int) int {
-	return (16384 + int(int16(a)*int16(b))) >> 15
+	return (16384 + int(int32(a)*int32(b))) >> 15
 }
 
 func isqrt32(_val int64) int {

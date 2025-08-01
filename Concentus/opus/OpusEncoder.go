@@ -842,7 +842,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
-			fmt.Printf("retretretretret:%d\r\n", ret)
+			fmt.Printf("retretretretret:%d frame_size:%d\r\n", ret, frame_size)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}

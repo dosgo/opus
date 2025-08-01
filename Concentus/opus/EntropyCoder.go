@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 const (
 	EC_WINDOW_SIZE = 32
 	EC_UINT_BITS   = 8
@@ -115,7 +113,6 @@ func (ec *EntropyCoder) write_byte_at_end(_value uint) int {
 }
 
 func (ec *EntropyCoder) dec_normalize() {
-	_ddd := ec.rng
 	for ec.rng <= EC_CODE_BOT {
 		ec.nbits_total += EC_SYM_BITS
 		ec.rng <<= EC_SYM_BITS
@@ -125,7 +122,6 @@ func (ec *EntropyCoder) dec_normalize() {
 		sym >>= (EC_SYM_BITS - EC_CODE_EXTRA)
 		ec.val = ((ec.val << EC_SYM_BITS) + (EC_SYM_MAX & ^int64(sym))) & (EC_CODE_TOP - 1)
 	}
-	fmt.Printf("\r\nsrc rng:%d new:%d\r\n", _ddd, ec.rng)
 }
 
 func (ec *EntropyCoder) dec_init(_buf []byte, _buf_ptr int, _storage int) {
@@ -317,7 +313,6 @@ func (ec *EntropyCoder) encode(_fl int64, _fh int64, _ft int64) {
 	} else {
 		ec.rng -= r * (_ft - _fh)
 	}
-	fmt.Printf("set rng :%d\r\n", ec.rng)
 	ec.enc_normalize()
 }
 
@@ -445,7 +440,6 @@ func (ec *EntropyCoder) tell_frac() int {
 	// long b;
 	nbits := ec.nbits_total << BITRES
 	l := EC_ILOG(ec.rng)
-	fmt.Printf("ec.rng:%d\r\n", ec.rng)
 	r := int(ec.rng >> (l - 16))
 	b := int((r >> 12) - 8)
 	b1 := 0
