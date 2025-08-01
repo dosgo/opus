@@ -8,7 +8,7 @@ func silk_VQ_WMat_EC(ind *BoxedValueByte, rate_dist_Q14 *BoxedValueInt, gain_Q7 
 	diff_Q14 := make([]int16, 5)
 	var sum1_Q14, sum2_Q16 int
 
-	rate_dist_Q14.Val = math.MaxInt
+	rate_dist_Q14.Val = math.MaxInt32
 	for k = 0; k < L; k++ {
 		cb_row_Q7 = cb_Q7[k]
 		gain_tmp_Q7 = int(cb_gain_Q7[k])
