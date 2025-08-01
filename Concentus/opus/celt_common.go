@@ -48,18 +48,18 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 		var max_frac int
 		coded_stereo_bands = IMIN(intensity, coded_bands)
 		coded_stereo_dof = int(eBands[coded_stereo_bands])<<LM - coded_stereo_bands
-		max_frac = DIV32_16Int(MULT16_16(int(math.Round(0.5+(0.8)*((1)<<(15)))), coded_stereo_dof), coded_bins)
+		max_frac = DIV32_16Int(MULT16_16(int(math.Floor(0.5+(0.8)*((1)<<(15)))), coded_stereo_dof), coded_bins)
 
 		//stereo_saving_val := MIN16(int16(stereo_saving), int16(0.5+1.0*float32(1<<8)))
-		stereo_saving = MIN16Int(stereo_saving, int(math.Round(0.5+(1.0)*((1)<<(8)))))
-		target -= int(MIN32(MULT16_32_Q15Int(max_frac, int(target)), SHR32(MULT16_16(int(stereo_saving)-int(math.Round(0.5+0.1*float64(1<<8))), int(coded_stereo_dof<<BITRES)), 8)))
+		stereo_saving = MIN16Int(stereo_saving, int(math.Floor(0.5+(1.0)*((1)<<(8)))))
+		target -= int(MIN32(MULT16_32_Q15Int(max_frac, int(target)), SHR32(MULT16_16(int(stereo_saving)-int(math.Floor(0.5+0.1*float64(1<<8))), int(coded_stereo_dof<<BITRES)), 8)))
 	}
 
 	target += tot_boost - (16 << LM)
 	if variable_duration == OPUS_FRAMESIZE_VARIABLE {
-		tf_calibration = int(math.Round(0.5 + 0.02*float64(1<<14)))
+		tf_calibration = int(math.Floor(0.5 + 0.02*float64(1<<14)))
 	} else {
-		tf_calibration = int(math.Round(0.5 + 0.04*float64(1<<14)))
+		tf_calibration = int(math.Floor(0.5 + 0.04*float64(1<<14)))
 	}
 	target += int(SHL32(MULT16_32_Q15(int16(tf_estimate)-int16(tf_calibration), int(target)), 1))
 
@@ -98,13 +98,13 @@ func compute_vbr(mode *CeltMode, analysis *AnalysisInfo, base_target int, LM int
 	if (has_surround_mask == 0 || lfe != 0) && (constrained_vbr != 0 || bitrate < 64000) {
 		rate_factor := MAX16Int(0, int(bitrate-32000))
 		if constrained_vbr != 0 {
-			rate_factor = MIN16Int(rate_factor, int(math.Round(0.5+0.67*float64(1<<15))))
+			rate_factor = MIN16Int(rate_factor, int(math.Floor(0.5+0.67*float64(1<<15))))
 		}
 		target = base_target + int(MULT16_32_Q15Int(rate_factor, int(target-base_target)))
 	}
 
-	if has_surround_mask == 0 && tf_estimate < int(math.Round(0.5+0.2*float64(1<<14))) {
-		amount := MULT16_16_Q15Int(int(math.Round(0.5+0.0000031*float64(1<<30))), int(IMAX(0, IMIN(32000, 96000-bitrate))))
+	if has_surround_mask == 0 && tf_estimate < int(math.Floor(0.5+0.2*float64(1<<14))) {
+		amount := MULT16_16_Q15Int(int(math.Floor(0.5+0.0000031*float64(1<<30))), int(IMAX(0, IMIN(32000, 96000-bitrate))))
 		tvbr_factor := int(SHR32(MULT16_16(int(temporal_vbr), amount), CeltConstants.DB_SHIFT))
 		target += int(MULT16_32_Q15Int(int(tvbr_factor), int(target)))
 	}
@@ -184,7 +184,7 @@ func transient_analysis(input [][]int, len int, C int, tf_estimate *BoxedValueIn
 
 	tf_max := MAX16Int(0, (celt_sqrt(27*mask_metric) - 42))
 
-	tf_estimate.Val = (celt_sqrt(MAX32(0, SHL32(MULT16_16(int(math.Round(0.5+(0.0069)*((1)<<(14)))), MAX16Int(163, tf_max)), 14)-int(math.Round(0.5+(0.139)*((1)<<(28)))))))
+	tf_estimate.Val = (celt_sqrt(MAX32(0, SHL32(MULT16_16(int(math.Floor(0.5+(0.0069)*((1)<<(14)))), MAX16Int(163, tf_max)), 14)-int(math.Floor(0.5+(0.139)*((1)<<(28)))))))
 	return is_transient
 }
 
@@ -372,7 +372,7 @@ func tf_analysis(m *CeltMode, len int, isTransient int, tf_res []int, lambda int
 	tf_select := 0
 	bias := 0
 
-	bias = int(MULT16_16_Q14(int16(math.Round(0.5+0.04*(1<<15))), MAX16(int16(0)-int16(math.Round(0.5+0.25*(1<<14))), int16(math.Round(0.5+0.5*(1<<14)))-int16(tf_estimate))))
+	bias = int(MULT16_16_Q14(int16(math.Floor(0.5+0.04*(1<<15))), MAX16(int16(0)-int16(math.Floor(0.5+0.25*(1<<14))), int16(math.Floor(0.5+0.5*(1<<14)))-int16(tf_estimate))))
 
 	tmp := make([]int, (m.eBands[len]-m.eBands[len-1])<<LM)
 	tmp_1 := make([]int, (m.eBands[len]-m.eBands[len-1])<<LM)
@@ -614,7 +614,7 @@ func stereo_analysis(m *CeltMode, X [][]int, LM int) int {
 			sumMS = ADD32(sumMS, ADD32(ABS32(M), ABS32(S)))
 		}
 	}
-	sumMS = MULT16_32_Q15Int(int(math.Round(0.707107*32767.5)), sumMS)
+	sumMS = MULT16_32_Q15Int(int(math.Floor(0.707107*32767.5)), sumMS)
 	thetas = 13
 	if LM <= 1 {
 		thetas -= 8
@@ -1010,9 +1010,9 @@ var gains [][]int16
 
 func init() {
 	gains = [][]int16{
-		{int16(math.Round(0.5 + (0.3066406250)*((1)<<(15)))), int16(math.Round(0.5 + (0.2170410156)*((1)<<(15)))), int16(math.Round(0.5 + (0.1296386719)*((1)<<(15))))},
-		{int16(math.Round(0.5 + (0.4638671875)*((1)<<(15)))), int16(math.Round(0.5 + (0.2680664062)*((1)<<(15)))), int16(math.Round(0.5 + (0.0)*((1)<<(15))))},
-		{int16(math.Round(0.5 + (0.7998046875)*((1)<<(15)))), int16(math.Round(0.5 + (0.1000976562)*((1)<<(15)))), int16(math.Round(0.5 + (0.0)*((1)<<(15))))},
+		{int16(math.Floor(0.5 + (0.3066406250)*((1)<<(15)))), int16(math.Floor(0.5 + (0.2170410156)*((1)<<(15)))), int16(math.Floor(0.5 + (0.1296386719)*((1)<<(15))))},
+		{int16(math.Floor(0.5 + (0.4638671875)*((1)<<(15)))), int16(math.Floor(0.5 + (0.2680664062)*((1)<<(15)))), int16(math.Floor(0.5 + (0.0)*((1)<<(15))))},
+		{int16(math.Floor(0.5 + (0.7998046875)*((1)<<(15)))), int16(math.Floor(0.5 + (0.1000976562)*((1)<<(15)))), int16(math.Floor(0.5 + (0.0)*((1)<<(15))))},
 	}
 }
 

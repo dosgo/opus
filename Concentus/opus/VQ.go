@@ -120,11 +120,11 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 		}
 
 		if sum <= K {
-			X[X_ptr] = int(math.Round(0.5 + (1.0)*(1<<14)))
+			X[X_ptr] = int(math.Floor(0.5 + (1.0)*(1<<14)))
 			for j := X_ptr + 1; j < X_ptr+N; j++ {
 				X[j] = 0
 			}
-			sum = int(math.Round(0.5 + (1.0)*(1<<14)))
+			sum = int(math.Floor(0.5 + (1.0)*(1<<14)))
 		}
 
 		rcp := EXTRACT16(MULT16_32_Q16Int(K-1, celt_rcp(sum)))
@@ -221,6 +221,6 @@ func stereo_itheta(X []int, X_ptr int, Y []int, Y_ptr int, stereo int, N int) in
 	}
 	mid := celt_sqrt(Emid)
 	side := celt_sqrt(Eside)
-	itheta := MULT16_16_Q15Int(int(math.Round(0.5+(0.63662)*(1<<15))), celt_atan2p(side, mid))
+	itheta := MULT16_16_Q15Int(int(math.Floor(0.5+(0.63662)*(1<<15))), celt_atan2p(side, mid))
 	return itheta
 }

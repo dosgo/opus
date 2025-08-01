@@ -115,7 +115,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7, int(TuningParameters.HARM_SNR_INCR_dB)<<8, psEnc.LTPCorr_Q15)
 	} else {
 		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7,
-			silk_SMLAWB(6<<9, -int(math.Round(0.4*float64(1<<18))), psEnc.SNR_dB_Q7),
+			silk_SMLAWB(6<<9, -int(math.Floor(0.4*float64(1<<18))), psEnc.SNR_dB_Q7),
 			(1<<14)-psEncCtrl.input_quality_Q14)
 	}
 
@@ -143,7 +143,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			log_energy_prev_Q7 = log_energy_Q7
 			pitch_res_ptr2 += nSamples
 		}
-		psEncCtrl.sparseness_Q8 = silk_sigm_Q15(silk_SMULWB(energy_variation_Q7-(5<<7), int(math.Round(0.1*float64(1<<16))))) >> 7
+		psEncCtrl.sparseness_Q8 = silk_sigm_Q15(silk_SMULWB(energy_variation_Q7-(5<<7), int(math.Floor(0.1*float64(1<<16))))) >> 7
 		if psEncCtrl.sparseness_Q8 > int(TuningParameters.SPARSENESS_THRESHOLD_QNT_OFFSET)<<8 {
 			psEnc.indices.quantOffsetType = 0
 		} else {
@@ -155,9 +155,9 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)<<16)
 
 	BWExp1_Q16 = silk_DIV32_varQ(int((TuningParameters.BANDWIDTH_EXPANSION)*(1<<(16))+0.5),
-		silk_SMLAWW(int(math.Round(1.0*(1<<(16))+0.5)), strength_Q16, strength_Q16), 16)
+		silk_SMLAWW(int(math.Floor(1.0*(1<<(16))+0.5)), strength_Q16, strength_Q16), 16)
 	BWExp2_Q16 = BWExp1_Q16
-	delta_Q16 = silk_SMULWB(int(math.Round((1.0)*(1<<(16))+0.5))-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
+	delta_Q16 = silk_SMULWB(int(math.Floor((1.0)*(1<<(16))+0.5))-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
 		int((TuningParameters.LOW_RATE_BANDWIDTH_EXPANSION_DELTA)*(1<<(16))+0.5))
 
 	BWExp1_Q16 -= delta_Q16
@@ -165,7 +165,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	BWExp1_Q16 = silk_DIV32_16(BWExp1_Q16<<14, BWExp2_Q16>>2)
 
 	if psEnc.warping_Q16 > 0 {
-		warping_Q16 = silk_SMLAWB(psEnc.warping_Q16, int(psEncCtrl.coding_quality_Q14), int(math.Round(0.01*float64(1<<18))))
+		warping_Q16 = silk_SMLAWB(psEnc.warping_Q16, int(psEncCtrl.coding_quality_Q14), int(math.Floor(0.01*float64(1<<18))))
 	} else {
 		warping_Q16 = 0
 	}
@@ -218,17 +218,17 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		silk_bwexpander_32(AR1_Q24, psEnc.shapingLPCOrder, BWExp1_Q16)
 		pre_nrg_Q30 = silk_LPC_inverse_pred_gain_Q24(AR2_Q24, psEnc.shapingLPCOrder)
 		nrg = silk_LPC_inverse_pred_gain_Q24(AR1_Q24, psEnc.shapingLPCOrder)
-		pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Round(0.7*float64(1<<15)))) << 1
-		psEncCtrl.GainsPre_Q14[k] = int(math.Round(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
-		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Round(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
+		pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Floor(0.7*float64(1<<15)))) << 1
+		psEncCtrl.GainsPre_Q14[k] = int(math.Floor(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
 		for i = 0; i < psEnc.shapingLPCOrder; i++ {
 			psEncCtrl.AR1_Q13[k*MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(AR1_Q24[i] >> 11))
 			psEncCtrl.AR2_Q13[k*MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(AR2_Q24[i] >> 11))
 		}
 	}
 
-	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Round(0.16*float64(1<<16)))))
-	gain_add_Q16 = silk_log2lin(silk_SMLAWB(16<<7, int(MIN_QGAIN_DB<<7), int(math.Round(0.16*float64(1<<16)))))
+	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Floor(0.16*float64(1<<16)))))
+	gain_add_Q16 = silk_log2lin(silk_SMLAWB(16<<7, int(MIN_QGAIN_DB<<7), int(math.Floor(0.16*float64(1<<16)))))
 	OpusAssert(gain_mult_Q16 > 0)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.Gains_Q16[k] = silk_SMULWW(psEncCtrl.Gains_Q16[k], gain_mult_Q16)
@@ -243,7 +243,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	strength_Q16 = silk_MUL(int(TuningParameters.LOW_FREQ_SHAPING)<<4, silk_SMLAWB(1<<12, int(TuningParameters.LOW_QUALITY_LOW_FREQ_SHAPING_DECR)<<13, psEnc.input_quality_bands_Q15[0]-(1<<15)))
 	strength_Q16 = (strength_Q16 * psEnc.speech_activity_Q8) >> 8
 	if psEnc.indices.signalType == TYPE_VOICED {
-		fs_kHz_inv := silk_DIV32_16(int(math.Round(0.2*float64(1<<14))), int(psEnc.fs_kHz))
+		fs_kHz_inv := silk_DIV32_16(int(math.Floor(0.2*float64(1<<14))), int(psEnc.fs_kHz))
 		for k = 0; k < psEnc.nb_subfr; k++ {
 			b_Q14 = fs_kHz_inv + silk_DIV32_16(int(3.0*float64(1<<14)), int(psEncCtrl.pitchL[k]))
 			psEncCtrl.LF_shp_Q14[k] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, b_Q14)) << 16
@@ -254,7 +254,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			silk_SMULWB(int(TuningParameters.HARM_HP_NOISE_COEF)<<24, psEnc.speech_activity_Q8))
 	} else {
 		b_Q14 = silk_DIV32_16(21299, int(psEnc.fs_kHz))
-		psEncCtrl.LF_shp_Q14[0] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, silk_SMULWB(int(math.Round(0.6*float64(1<<16))), b_Q14))) << 16
+		psEncCtrl.LF_shp_Q14[0] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, silk_SMULWB(int(math.Floor(0.6*float64(1<<16))), b_Q14))) << 16
 		psEncCtrl.LF_shp_Q14[0] |= (b_Q14 - (1 << 14)) & 0xFFFF
 		for k = 1; k < psEnc.nb_subfr; k++ {
 			psEncCtrl.LF_shp_Q14[k] = psEncCtrl.LF_shp_Q14[0]
@@ -266,7 +266,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	HarmBoost_Q16 = silk_SMLAWB(HarmBoost_Q16, (1<<16)-int(psEncCtrl.input_quality_Q14<<2), int(TuningParameters.LOW_INPUT_QUALITY_HARMONIC_BOOST)<<16)
 	if USE_HARM_SHAPING != 0 && psEnc.indices.signalType == TYPE_VOICED {
 		HarmShapeGain_Q16 = silk_SMLAWB(int((TuningParameters.HARMONIC_SHAPING)*(1<<(16))+0.5),
-			int(math.Round((1.0)*(1<<(16))+0.5))-silk_SMULWB(int(math.Round((1.0)*(1<<(18))+0.5))-silk_LSHIFT(psEncCtrl.coding_quality_Q14, 4),
+			int(math.Floor((1.0)*(1<<(16))+0.5))-silk_SMULWB(int(math.Floor((1.0)*(1<<(18))+0.5))-silk_LSHIFT(psEncCtrl.coding_quality_Q14, 4),
 				psEncCtrl.input_quality_Q14), int((TuningParameters.HIGH_RATE_OR_LOW_QUALITY_HARMONIC_SHAPING)*(1<<(16))+0.5))
 
 		/* Less harmonic noise shaping for less periodic signals */

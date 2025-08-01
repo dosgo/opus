@@ -482,8 +482,8 @@ func silk_Encode(
 				}
 
 				speech_act_thr_for_switch_Q8 = silk_SMLAWB(
-					int(math.Round(float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES)*256.0+0.5)),
-					int(math.Round(
+					int(math.Floor(float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES)*256.0+0.5)),
+					int(math.Floor(
 						((1.0-float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES))/
 							float64(TuningParameters.MAX_BANDWIDTH_SWITCH_DELAY_MS))*
 							16777216.0+0.5,

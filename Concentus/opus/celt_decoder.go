@@ -183,7 +183,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 			pitch_index = this.last_pitch_index
 		} else {
 			pitch_index = this.last_pitch_index
-			fade = int(math.Round(0.5 + (8)*((1)<<(15))))
+			fade = int(math.Floor(0.5 + (8)*((1)<<(15))))
 		}
 
 		etmp := make([]int, overlap)
@@ -369,7 +369,7 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 				postfilter_tapset = int(localDec.dec_icdf(tapset_icdf[:], 2))
 			}
 
-			postfilter_gain = int(math.Round(0.5+(.09375)*((1)<<(15)))) * (qg + 1)
+			postfilter_gain = int(math.Floor(0.5+(.09375)*((1)<<(15)))) * (qg + 1)
 		}
 		tell = localDec.tell()
 	}

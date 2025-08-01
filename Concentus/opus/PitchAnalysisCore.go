@@ -138,7 +138,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	silk_insertion_sort_decreasing_int16(C, d_srch, CSTRIDE_4KHZ, length_d_srch)
 
 	Cmax = int(C[0])
-	if Cmax < int(math.Round(0.2*float64(1<<14)+0.5)) {
+	if Cmax < int(math.Floor(0.2*float64(1<<14)+0.5)) {
 		for i := range pitch_out {
 			pitch_out[i] = 0
 		}
@@ -289,8 +289,8 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		if prevLag > 0 {
 			delta_lag_log2_sqr_Q7 := lag_log2_Q7 - prevLag_log2_Q7
 			delta_lag_log2_sqr_Q7 = silk_RSHIFT(silk_SMULBB(delta_lag_log2_sqr_Q7, delta_lag_log2_sqr_Q7), 7)
-			prev_lag_bias_Q13 = silk_RSHIFT(silk_SMULBB(nb_subfr*int(math.Round(0.2*float64(1<<13)+0.5)), int(LTPCorr_Q15.Val)), 15)
-			prev_lag_bias_Q13 = silk_DIV32(silk_MUL(prev_lag_bias_Q13, delta_lag_log2_sqr_Q7), delta_lag_log2_sqr_Q7+int(math.Round(0.5*float64(1<<7)+0.5)))
+			prev_lag_bias_Q13 = silk_RSHIFT(silk_SMULBB(nb_subfr*int(math.Floor(0.2*float64(1<<13)+0.5)), int(LTPCorr_Q15.Val)), 15)
+			prev_lag_bias_Q13 = silk_DIV32(silk_MUL(prev_lag_bias_Q13, delta_lag_log2_sqr_Q7), delta_lag_log2_sqr_Q7+int(math.Floor(0.5*float64(1<<7)+0.5)))
 			CCmax_new_b -= prev_lag_bias_Q13
 		}
 

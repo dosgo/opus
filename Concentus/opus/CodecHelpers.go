@@ -35,18 +35,18 @@ func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 	var A_Q28 = make([]int, 2)
 	var Fc_Q19, r_Q28, r_Q22 int
 
-	OpusAssert(cutoff_Hz <= int(math.MaxInt32)/int(math.Round((1.5*3.14159/1000)*(1<<(19))+0.5)))
-	Fc_Q19 = silk_DIV32_16(silk_SMULBB(int(math.Round((1.5*3.14159/1000)*(1<<(19))+0.5)), cutoff_Hz), Fs/1000)
+	OpusAssert(cutoff_Hz <= int(math.MaxInt32)/int(math.Floor((1.5*3.14159/1000)*(1<<(19))+0.5)))
+	Fc_Q19 = silk_DIV32_16(silk_SMULBB(int(math.Floor((1.5*3.14159/1000)*(1<<(19))+0.5)), cutoff_Hz), Fs/1000)
 	OpusAssert(Fc_Q19 > 0 && Fc_Q19 < 32768)
 
-	r_Q28 = int(math.Round((1.0)*(1<<(28))+0.5)) - silk_MUL(int(math.Round((0.92)*(1<<(9))+0.5)), Fc_Q19)
+	r_Q28 = int(math.Floor((1.0)*(1<<(28))+0.5)) - silk_MUL(int(math.Floor((0.92)*(1<<(9))+0.5)), Fc_Q19)
 
 	B_Q28[0] = r_Q28
 	B_Q28[1] = silk_LSHIFT(-r_Q28, 1)
 	B_Q28[2] = r_Q28
 
 	r_Q22 = silk_RSHIFT(r_Q28, 6)
-	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-int(math.Round((2.0)*(1<<22)+0.5)))
+	A_Q28[0] = silk_SMULWW(r_Q22, silk_SMULWW(Fc_Q19, Fc_Q19)-int(math.Floor((2.0)*(1<<22)+0.5)))
 	A_Q28[1] = silk_SMULWW(r_Q22, r_Q22)
 
 	silk_biquad_alt_ptr(input, input_ptr, B_Q28, A_Q28, hp_mem, 0, output, output_ptr, len, channels)
@@ -345,7 +345,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 	mem.XX = MAX32(0, mem.XX)
 	mem.XY = MAX32(0, mem.XY)
 	mem.YY = MAX32(0, mem.YY)
-	if MAX32(mem.XX, mem.YY) > int(math.Round(0.5+(8e-4)*(1<<18))) {
+	if MAX32(mem.XX, mem.YY) > int(math.Floor(0.5+(8e-4)*(1<<18))) {
 		sqrt_xx := celt_sqrt(mem.XX)
 		sqrt_yy := celt_sqrt(mem.YY)
 		qrrt_xx := celt_sqrt(sqrt_xx)
@@ -355,7 +355,7 @@ func compute_stereo_width(pcm []int16, pcm_ptr int, frame_size int, Fs int, mem 
 		ldiff := CeltConstants.Q15ONE * ABS16(qrrt_xx-qrrt_yy) / (CeltConstants.EPSILON + qrrt_xx + qrrt_yy)
 		width := MULT16_16_Q15Int(celt_sqrt(1<<30-MULT16_16(corr, corr)), ldiff)
 		mem.smoothed_width += (width - mem.smoothed_width) / int(frame_rate)
-		mem.max_follower = MAX16Int(mem.max_follower-int(math.Round(0.5+(0.02)*(1<<15)))/int(frame_rate), mem.smoothed_width)
+		mem.max_follower = MAX16Int(mem.max_follower-int(math.Floor(0.5+(0.02)*(1<<15)))/int(frame_rate), mem.smoothed_width)
 	} else {
 		mem.smoothed_width = 0
 		mem.max_follower = 0

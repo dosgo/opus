@@ -372,7 +372,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int) int {
 	if Complexity < 2 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MIN_COMPLEX
 		//s.pitchEstimationThreshold_Q16 = Silk_SMULWB(0.8, 1<<16)
-		s.pitchEstimationThreshold_Q16 = int(math.Round(0.8*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.8f, 16)*/
+		s.pitchEstimationThreshold_Q16 = int(math.Floor(0.8*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.8f, 16)*/
 
 		s.pitchEstimationLPCOrder = 6
 		s.shapingLPCOrder = 8
@@ -385,7 +385,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int) int {
 	} else if Complexity < 4 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MID_COMPLEX
 		//s.pitchEstimationThreshold_Q16 = silk_SMULWB(0.76, 1<<16)
-		s.pitchEstimationThreshold_Q16 = int(math.Round(0.76*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.76f, 16)*/
+		s.pitchEstimationThreshold_Q16 = int(math.Floor(0.76*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.76f, 16)*/
 
 		s.pitchEstimationLPCOrder = 8
 		s.shapingLPCOrder = 10
@@ -398,7 +398,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int) int {
 	} else if Complexity < 6 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MID_COMPLEX
 		//s.pitchEstimationThreshold_Q16 = silk_SMULWB(0.74, 1<<16)
-		s.pitchEstimationThreshold_Q16 = int(math.Round(0.74*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.74f, 16)*/
+		s.pitchEstimationThreshold_Q16 = int(math.Floor(0.74*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.74f, 16)*/
 
 		s.pitchEstimationLPCOrder = 10
 		s.shapingLPCOrder = 12
@@ -412,7 +412,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int) int {
 	} else if Complexity < 8 {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MID_COMPLEX
 		//s.pitchEstimationThreshold_Q16 = silk_SMULWB(0.72, 1<<16)
-		s.pitchEstimationThreshold_Q16 = int(math.Round((0.72)*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.72f, 16)*/
+		s.pitchEstimationThreshold_Q16 = int(math.Floor((0.72)*(1<<(16)) + 0.5)) /*Inlines.SILK_CONST(0.72f, 16)*/
 		s.pitchEstimationLPCOrder = 12
 		s.shapingLPCOrder = 14
 		s.la_shape = 5 * s.fs_kHz
@@ -425,7 +425,7 @@ func (s *SilkChannelEncoder) silk_setup_complexity(Complexity int) int {
 	} else {
 		s.pitchEstimationComplexity = SilkConstants.SILK_PE_MAX_COMPLEX
 		//s.pitchEstimationThreshold_Q16 = silk_SMULWB(0.7, 1<<16)
-		s.pitchEstimationThreshold_Q16 = int(math.Round(0.7*(1<<(16)) + 0.5))
+		s.pitchEstimationThreshold_Q16 = int(math.Floor(0.7*(1<<(16)) + 0.5))
 
 		s.pitchEstimationLPCOrder = 16
 		s.shapingLPCOrder = 16
@@ -465,13 +465,13 @@ func (s *SilkChannelEncoder) silk_setup_LBRR(TargetRate_bps int) int {
 		}
 		//	LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), silk_SMULWB(0.01, 1<<16))
 
-		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), int(math.Round(0.01*(1<<(16))+0.5)))
+		LBRR_rate_thres_bps = silk_SMULWB(silk_MUL(LBRR_rate_thres_bps, 125-silk_min(s.PacketLoss_perc, 25)), int(math.Floor(0.01*(1<<(16))+0.5)))
 
 		if TargetRate_bps > LBRR_rate_thres_bps {
 			if LBRR_in_previous_packet == 0 {
 				s.LBRR_GainIncreases = 7
 			} else {
-				s.LBRR_GainIncreases = silk_max_int(7-silk_SMULWB(s.PacketLoss_perc, int(math.Round((0.4)*(1<<(16))+0.5))), 2)
+				s.LBRR_GainIncreases = silk_max_int(7-silk_SMULWB(s.PacketLoss_perc, int(math.Floor((0.4)*(1<<(16))+0.5))), 2)
 
 			}
 			s.LBRR_enabled = 1
@@ -701,10 +701,10 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 			}
 			if (found_lower & found_upper) == 0 {
 
-				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + int(math.Round(16)*(1<<(7))+0.5))
-				gain_factor_Q16 = silk_min_32(gain_factor_Q16, int(math.Round((2)*(1<<(16))+0.5)))
+				gain_factor_Q16 := silk_log2lin(silk_LSHIFT(nBits-maxBits, 7)/s.frame_length + int(math.Floor(16)*(1<<(7))+0.5))
+				gain_factor_Q16 = silk_min_32(gain_factor_Q16, int(math.Floor((2)*(1<<(16))+0.5)))
 				if nBits > maxBits {
-					gain_factor_Q16 = silk_max_32(gain_factor_Q16, int(math.Round(1.3)*(1<<(16))+0.5))
+					gain_factor_Q16 = silk_max_32(gain_factor_Q16, int(math.Floor(1.3)*(1<<(16))+0.5))
 				}
 				gainMult_Q8 = int16(silk_SMULWB(gain_factor_Q16, int(gainMult_Q8)))
 			} else {

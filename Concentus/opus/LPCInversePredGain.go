@@ -33,7 +33,7 @@ package opus
 import "math"
 
 func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
-	A_LIMIT := int(math.Round(0.99975*float64(int(1)<<QA) + 0.5))
+	A_LIMIT := int(math.Floor(0.99975*float64(int(1)<<QA) + 0.5))
 
 	var k, n, mult2Q int
 	var invGain_Q30, rc_Q31, rc_mult1_Q30, rc_mult2, tmp_QA int

@@ -80,7 +80,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 	lpc := make([]int, 4)
 	mem := []int{0, 0, 0, 0, 0}
 	lpc2 := make([]int, 5)
-	c1 := int(math.Round(0.5 + (0.8)*((1)<<(15))))
+	c1 := int(math.Floor(0.5 + (0.8)*((1)<<(15))))
 
 	maxabs := celt_maxabs32(x[0], 0, len)
 	if C == 2 {
@@ -120,7 +120,7 @@ func pitch_downsample(x [][]int, x_lp []int, len int, C int) {
 
 	celt_lpc(lpc, ac, 4)
 	for i := 0; i < 4; i++ {
-		tmp = MULT16_16_Q15Int(int(math.Round(0.5+0.9*float64(1<<15))), tmp)
+		tmp = MULT16_16_Q15Int(int(math.Floor(0.5+0.9*float64(1<<15))), tmp)
 		lpc[i] = MULT16_16_Q15Int(lpc[i], tmp)
 	}
 
@@ -190,9 +190,9 @@ func pitch_search(x_lp []int, x_lp_ptr int, y []int, len int, max_pitch int, pit
 		a := xcorr[best_pitch[0]-1]
 		b := xcorr[best_pitch[0]]
 		c := xcorr[best_pitch[0]+1]
-		if (c - a) > MULT16_32_Q15Int(int(math.Round(0.5+0.7*float64(1<<15))), b-a) {
+		if (c - a) > MULT16_32_Q15Int(int(math.Floor(0.5+0.7*float64(1<<15))), b-a) {
 			offset = 1
-		} else if (a - c) > MULT16_32_Q15Int(int(math.Round(0.5+0.7*float64(1<<15))), b-c) {
+		} else if (a - c) > MULT16_32_Q15Int(int(math.Floor(0.5+0.7*float64(1<<15))), b-c) {
 			offset = -1
 		}
 	}
@@ -273,11 +273,11 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *BoxedVal
 			cont = HALF16Int(prev_gain)
 		}
 
-		thresh := MAX16Int(int(math.Round(0.5+0.3*float64(1<<15))), MULT16_16_Q15Int(int(math.Round(0.5+0.7*float64(1<<15))), g0)-cont)
+		thresh := MAX16Int(int(math.Floor(0.5+0.3*float64(1<<15))), MULT16_16_Q15Int(int(math.Floor(0.5+0.7*float64(1<<15))), g0)-cont)
 		if T1 < 3*minperiod {
-			thresh = MAX16Int(int(math.Round(0.5+0.4*float64(1<<15))), MULT16_16_Q15Int(int(math.Round(0.5+0.85*float64(1<<15))), g0)-cont)
+			thresh = MAX16Int(int(math.Floor(0.5+0.4*float64(1<<15))), MULT16_16_Q15Int(int(math.Floor(0.5+0.85*float64(1<<15))), g0)-cont)
 		} else if T1 < 2*minperiod {
-			thresh = MAX16Int(int(math.Round(0.5+0.5*float64(1<<15))), MULT16_16_Q15Int(int(math.Round(0.5+0.9*float64(1<<15))), g0)-cont)
+			thresh = MAX16Int(int(math.Floor(0.5+0.5*float64(1<<15))), MULT16_16_Q15Int(int(math.Floor(0.5+0.9*float64(1<<15))), g0)-cont)
 		}
 		if g1 > thresh {
 			best_xy = xy
@@ -299,9 +299,9 @@ func remove_doubling(x []int, maxperiod int, minperiod int, N int, T0_ *BoxedVal
 	}
 
 	offset := 0
-	if (xcorr[2] - xcorr[0]) > MULT16_32_Q15Int(int(math.Round(0.5+0.7*float64(1<<15))), xcorr[1]-xcorr[0]) {
+	if (xcorr[2] - xcorr[0]) > MULT16_32_Q15Int(int(math.Floor(0.5+0.7*float64(1<<15))), xcorr[1]-xcorr[0]) {
 		offset = 1
-	} else if (xcorr[0] - xcorr[2]) > MULT16_32_Q15Int(int(math.Round(0.5+0.7*float64(1<<15))), xcorr[1]-xcorr[2]) {
+	} else if (xcorr[0] - xcorr[2]) > MULT16_32_Q15Int(int(math.Floor(0.5+0.7*float64(1<<15))), xcorr[1]-xcorr[2]) {
 		offset = -1
 	}
 

@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -119,13 +120,13 @@ func (this *CeltEncoder) ResetState() {
 	this.oldLogE2 = InitTwoDimensionalArrayInt(this.channels, this.mode.nbEBands)
 
 	for i := 0; i < this.mode.nbEBands; i++ {
-		val := -int(math.Round(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
+		val := -int(math.Floor(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
 		this.oldLogE[0][i] = val
 		this.oldLogE2[0][i] = val
 	}
 	if this.channels == 2 {
 		for i := 0; i < this.mode.nbEBands; i++ {
-			val := -int(math.Round(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
+			val := -int(math.Floor(0.5 + 28.0 + float64(int(1<<CeltConstants.DB_SHIFT))))
 			this.oldLogE[1][i] = val
 			this.oldLogE2[1][i] = val
 		}
@@ -197,7 +198,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		if pitch_index.Val > CeltConstants.COMBFILTER_MAXPERIOD-2 {
 			pitch_index.Val = CeltConstants.COMBFILTER_MAXPERIOD - 2
 		}
-		gain1 = int(MULT16_16_Q15(int16(math.Round(0.5+0.7*float64(int(1<<15)))), int16(gain1)))
+		gain1 = int(MULT16_16_Q15(int16(math.Floor(0.5+0.7*float64(int(1<<15)))), int16(gain1)))
 		if this.loss_rate > 2 {
 			gain1 = HALF32(gain1)
 		}
@@ -213,30 +214,30 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		pitch.Val = pitch_index
 	}
 
-	pf_threshold := int16(math.Round(0.5 + 0.2*(1<<15)))
+	pf_threshold := int16(math.Floor(0.5 + 0.2*(1<<15)))
 	if abs(pitch.Val-this.prefilter_period)*10 > pitch.Val {
-		pf_threshold += int16(math.Round(0.5 + 0.2*(1<<15)))
+		pf_threshold += int16(math.Floor(0.5 + 0.2*(1<<15)))
 	}
 	if nbAvailableBytes < 25 {
-		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
+		pf_threshold += int16(math.Floor(0.5 + 0.1*(1<<15)))
 	}
 	if nbAvailableBytes < 35 {
-		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
+		pf_threshold += int16(math.Floor(0.5 + 0.1*(1<<15)))
 	}
-	if this.prefilter_gain > int(math.Round(0.5+0.4*(1<<15))) {
-		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
+	if this.prefilter_gain > int(math.Floor(0.5+0.4*(1<<15))) {
+		pf_threshold += int16(math.Floor(0.5 + 0.1*(1<<15)))
 	}
-	if this.prefilter_gain > int(math.Round(0.5+0.55*(1<<15))) {
-		pf_threshold += int16(math.Round(0.5 + 0.1*(1<<15)))
+	if this.prefilter_gain > int(math.Floor(0.5+0.55*(1<<15))) {
+		pf_threshold += int16(math.Floor(0.5 + 0.1*(1<<15)))
 	}
-	pf_threshold = MAX16(pf_threshold, int16(math.Round(0.5+0.2*(1<<15))))
+	pf_threshold = MAX16(pf_threshold, int16(math.Floor(0.5+0.2*(1<<15))))
 
 	pf_on := 0
 	qg := 0
 	if gain1 < int(pf_threshold) {
 		gain1 = 0
 	} else {
-		if ABS32(gain1-this.prefilter_gain) < int(math.Round(0.5+0.1*float64(1<<15))) {
+		if ABS32(gain1-this.prefilter_gain) < int(math.Floor(0.5+0.1*float64(1<<15))) {
 			gain1 = this.prefilter_gain
 		}
 		qg = ((gain1 + 1536) >> 10) / 3
@@ -245,7 +246,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 		} else if qg > 7 {
 			qg = 7
 		}
-		gain1 = int(math.Round(0.5 + 0.09375*(1<<15)*float64(qg+1)))
+		gain1 = int(math.Floor(0.5 + 0.09375*(1<<15)*float64(qg+1)))
 		pf_on = 1
 	}
 
@@ -488,7 +489,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 		gain1 = boxed_gain1.Val
 		qg = boxed_qg.Val
 
-		if gain1 > int(math.Round(0.5+(.4)*float64(1<<15))) || this.prefilter_gain > int(math.Round(0.5+(.4)*float64(1<<15))) {
+		if gain1 > int(math.Floor(0.5+(.4)*float64(1<<15))) || this.prefilter_gain > int(math.Floor(0.5+(.4)*float64(1<<15))) {
 			if (this.analysis.valid == 0 || this.analysis.tonality > .3) &&
 				(float64(pitch_index) > 1.26*float64(this.prefilter_period) || float64(pitch_index) < .79*float64(this.prefilter_period)) {
 				pitch_change = 1
@@ -571,16 +572,19 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	if CC == 2 && C == 1 {
 		tf_chan = 0
 	}
+
 	compute_band_energies(mode, freq, bandE, effEnd, C, LM)
 
 	if this.lfe != 0 {
-		minVal := MULT16_32_Q15Int(int(math.Round(0.5+1e-4*float64(1<<15))), bandE[0][0])
+
+		minVal := MULT16_32_Q15Int(int(math.Floor(0.5+1e-4*float64(1<<15))), bandE[0][0])
 		for i = 2; i < end; i++ {
 			bandE[0][i] = IMIN(bandE[0][i], minVal)
 			bandE[0][i] = MAX32(bandE[0][i], CeltConstants.EPSILON)
 		}
 	}
-
+	json1, _ := json.Marshal(bandE)
+	fmt.Printf("\r\n\r\n 111bandE:%+v\r\n\r\n", string(json1))
 	amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
 
 	surround_dynalloc = make([]int, C*nbEBands)
@@ -663,7 +667,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 		frame_avg /= (end - start)
 		temporal_vbr = int(int(frame_avg) - this.spec_avg)
 		temporal_vbr = MIN16Int(int(0.5+3.0*float64(int(1)<<CeltConstants.DB_SHIFT)), MAX16Int(-int(0.5+1.5*float64(int(1)<<CeltConstants.DB_SHIFT)), temporal_vbr))
-		this.spec_avg += int(MULT16_16_Q15Int(int(math.Round(0.5+0.02*float64(1<<15))), int(temporal_vbr)))
+		this.spec_avg += int(MULT16_16_Q15Int(int(math.Floor(0.5+0.02*float64(1<<15))), int(temporal_vbr)))
 	}
 	if secondMdct == 0 {
 		copy(bandLogE2[0], bandLogE[0][:nbEBands])
@@ -687,7 +691,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 					bandLogE2[1][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
 				}
 			}
-			tf_estimate = int(math.Round(0.5 + 0.2*float64(1<<14)))
+			tf_estimate = int(math.Floor(0.5 + 0.2*float64(1<<14)))
 		}
 	}
 
@@ -699,7 +703,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	for i := range X {
 		X[i] = make([]int, N)
 	}
-
+	fmt.Printf("bandE0:%+v\r\n", bandE)
 	normalise_bands(mode, freq, X, bandE, effEnd, C, M)
 
 	tf_res = make([]int, nbEBands)
@@ -864,7 +868,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 			this.vbr_count++
 			alpha = celt_rcp(SHL32(this.vbr_count+20, 16))
 		} else {
-			alpha = int(math.Round(0.5 + 0.001*float64(1<<15)))
+			alpha = int(math.Floor(0.5 + 0.001*float64(1<<15)))
 		}
 		if this.constrained_vbr != 0 {
 			this.vbr_reservoir += target - vbr_rate

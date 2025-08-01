@@ -516,7 +516,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 
 		if maxabs > math.MaxInt16 {
 			maxabs = silk_min_int(maxabs, 163838)
-			sc_Q16 := int(math.Round(0.999*65536.0+0.5)) - silk_DIV32(int(maxabs-math.MaxInt16)<<14, silk_RSHIFT32(silk_MUL(maxabs, int(idx+1)), 2))
+			sc_Q16 := int(math.Floor(0.999*65536.0+0.5)) - silk_DIV32(int(maxabs-math.MaxInt16)<<14, silk_RSHIFT32(silk_MUL(maxabs, int(idx+1)), 2))
 			silk_bwexpander_32(a32_QA1, d, sc_Q16)
 		} else {
 			break

@@ -169,7 +169,7 @@ func silk_stereo_LR_to_MS(
 	pred_Q13[1] = silk_stereo_find_predictor(HP_ratio_Q14, HP_mid, HP_side, state.mid_side_amp_Q0[:], 2, frame_length, smooth_coef_Q16)
 
 	frac_Q16 = silk_SMLABB(*HP_ratio_Q14, *LP_ratio_Q14, 3)
-	frac_Q16 = silk_min(frac_Q16, int(math.Round(1*float64(1<<16)+0.5)))
+	frac_Q16 = silk_min(frac_Q16, int(math.Floor(1*float64(1<<16)+0.5)))
 
 	total_rate_bps -= map[bool]int{true: 1200, false: 600}[is10msFrame != 0]
 	if total_rate_bps < 1 {
@@ -179,7 +179,7 @@ func silk_stereo_LR_to_MS(
 	OpusAssert(min_mid_rate_bps < 32767)
 	frac_3_Q16 = silk_MUL(3, frac_Q16)
 	//	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(13*float64(1<<16)+0.5+frac_3_Q16), 16+3)
-	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(math.Round((8+5)*(1<<(16))+0.5))+frac_3_Q16, 16+3)
+	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(math.Floor((8+5)*(1<<(16))+0.5))+frac_3_Q16, 16+3)
 
 	if mid_side_rates_bps[0] < min_mid_rate_bps {
 		mid_side_rates_bps[0] = min_mid_rate_bps
@@ -188,12 +188,12 @@ func silk_stereo_LR_to_MS(
 		//	silk_SMULWB(int(1*float64(1<<16)+0.5+frac_3_Q16, min_mid_rate_bps), 14+2))
 
 		width_Q14 = silk_DIV32_varQ(silk_LSHIFT(mid_side_rates_bps[1], 1)-min_mid_rate_bps,
-			silk_SMULWB(int(math.Round((1)*(1<<(16))+0.5))+frac_3_Q16, min_mid_rate_bps), 14+2)
+			silk_SMULWB(int(math.Floor((1)*(1<<(16))+0.5))+frac_3_Q16, min_mid_rate_bps), 14+2)
 
-		width_Q14 = silk_LIMIT(width_Q14, 0, int(math.Round(1*float64(1<<14)+0.5)))
+		width_Q14 = silk_LIMIT(width_Q14, 0, int(math.Floor(1*float64(1<<14)+0.5)))
 	} else {
 		mid_side_rates_bps[1] = total_rate_bps - mid_side_rates_bps[0]
-		width_Q14 = int(math.Round((1)*(1<<(14)) + 0.5))
+		width_Q14 = int(math.Floor((1)*(1<<(14)) + 0.5))
 	}
 
 	state.smth_width_Q14 = int16(silk_SMLAWB(int(state.smth_width_Q14), width_Q14-int(state.smth_width_Q14), smooth_coef_Q16))
@@ -205,7 +205,7 @@ func silk_stereo_LR_to_MS(
 		pred_Q13[1] = 0
 		silk_stereo_quant_pred(pred_Q13, ix)
 	} else if state.width_prev_Q14 == 0 &&
-		(8*total_rate_bps < 13*min_mid_rate_bps || silk_SMULWB(frac_Q16, int(state.smth_width_Q14)) < int(math.Round(0.05*float64(1<<14)+0.5))) {
+		(8*total_rate_bps < 13*min_mid_rate_bps || silk_SMULWB(frac_Q16, int(state.smth_width_Q14)) < int(math.Floor(0.05*float64(1<<14)+0.5))) {
 		pred_Q13[0] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[0]), 14)
 		pred_Q13[1] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[1]), 14)
 		silk_stereo_quant_pred(pred_Q13, ix)
@@ -216,16 +216,16 @@ func silk_stereo_LR_to_MS(
 		mid_side_rates_bps[1] = 0
 		*mid_only_flag = 1
 	} else if state.width_prev_Q14 != 0 &&
-		(8*total_rate_bps < 11*min_mid_rate_bps || silk_SMULWB(frac_Q16, int(state.smth_width_Q14)) < int(math.Round(0.02*float64(1<<14)+0.5))) {
+		(8*total_rate_bps < 11*min_mid_rate_bps || silk_SMULWB(frac_Q16, int(state.smth_width_Q14)) < int(math.Floor(0.02*float64(1<<14)+0.5))) {
 		pred_Q13[0] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[0]), 14)
 		pred_Q13[1] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[1]), 14)
 		silk_stereo_quant_pred(pred_Q13, ix)
 		width_Q14 = 0
 		pred_Q13[0] = 0
 		pred_Q13[1] = 0
-	} else if int(state.smth_width_Q14) > int(math.Round(0.95*float64(1<<14)+0.5)) {
+	} else if int(state.smth_width_Q14) > int(math.Floor(0.95*float64(1<<14)+0.5)) {
 		silk_stereo_quant_pred(pred_Q13, ix)
-		width_Q14 = int(math.Round(1*float64(1<<14) + 0.5))
+		width_Q14 = int(math.Floor(1*float64(1<<14) + 0.5))
 	} else {
 		pred_Q13[0] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[0]), 14)
 		pred_Q13[1] = silk_RSHIFT(silk_SMULBB(int(state.smth_width_Q14), pred_Q13[1]), 14)

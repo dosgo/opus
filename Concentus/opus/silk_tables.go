@@ -632,8 +632,8 @@ func init() {
 		ec_Rates_Q5:  silk_NLSF_CB2_BITS_NB_MB_Q5,
 		deltaMin_Q15: silk_NLSF_DELTA_MIN_NB_MB_Q15,
 	}
-	silk_NLSF_CB_NB_MB.quantStepSize_Q16 = int16(math.Round(0.15 * (1<<(16) + 0.5)))
-	silk_NLSF_CB_NB_MB.invQuantStepSize_Q6 = int16(math.Round(1.0/0.18*64 + 0.5))
+	silk_NLSF_CB_NB_MB.quantStepSize_Q16 = int16(math.Floor(0.15 * (1<<(16) + 0.5)))
+	silk_NLSF_CB_NB_MB.invQuantStepSize_Q6 = int16(math.Floor(1.0/0.18*64 + 0.5))
 
 	silk_NLSF_CB_WB = &NLSFCodebook{
 		nVectors: 32,
@@ -648,8 +648,8 @@ func init() {
 		ec_Rates_Q5:  silk_NLSF_CB2_BITS_WB_Q5,
 		deltaMin_Q15: silk_NLSF_DELTA_MIN_WB_Q15,
 	}
-	silk_NLSF_CB_WB.quantStepSize_Q16 = int16(math.Round(0.15*65536 + 0.5))
-	silk_NLSF_CB_WB.invQuantStepSize_Q6 = int16(math.Round(1.0/0.15*64 + 0.5))
+	silk_NLSF_CB_WB.quantStepSize_Q16 = int16(math.Floor(0.15*65536 + 0.5))
+	silk_NLSF_CB_WB.invQuantStepSize_Q6 = int16(math.Floor(1.0/0.15*64 + 0.5))
 }
 
 var SilkTables = struct {

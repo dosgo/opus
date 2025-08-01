@@ -1047,7 +1047,7 @@ func silk_maxFloat(a, b float32) float32 {
 }
 
 func SILK_CONST(number float32, scale int) int {
-	return int(math.Round(float64(int(number*float32(1))<<(scale)) + 0.5))
+	return int(math.Floor(float64(int(number*float32(1))<<(scale)) + 0.5))
 }
 
 func silk_min_int(a, b int) int {

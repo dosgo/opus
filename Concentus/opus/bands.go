@@ -192,7 +192,7 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 		depth := celt_udiv(1+pulses[i], N0) >> LM
 		thresh32 := SHR32(celt_exp2(-SHL16Int(depth, 10-BITRES)), 1)
 		//thresh := MULT16_32_Q15(QCONST16(0.5, 15), IMIN32(32767, thresh32))
-		thresh := (MULT16_32_Q15(int16(math.Round(0.5+(0.5)*float64(1<<15))), MIN32(32767, thresh32)))
+		thresh := (MULT16_32_Q15(int16(math.Floor(0.5+(0.5)*float64(1<<15))), MIN32(32767, thresh32)))
 
 		t := N0 << LM
 		shift := celt_ilog2(t) >> 1
@@ -260,8 +260,8 @@ func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE
 
 func stereo_split(X []int, X_ptr int, Y []int, Y_ptr int, N int) {
 	for j := 0; j < N; j++ {
-		l := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[X_ptr+j])
-		r := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), Y[Y_ptr+j])
+		l := MULT16_16(int(math.Floor(0.5+(.70710678)*((1)<<(15)))), X[X_ptr+j])
+		r := MULT16_16(int(math.Floor(0.5+(.70710678)*((1)<<(15)))), Y[Y_ptr+j])
 		X[X_ptr+j] = int(EXTRACT16(SHR32(ADD32(l, r), 15)))
 		Y[Y_ptr+j] = int(EXTRACT16(SHR32(SUB32(r, l), 15)))
 	}
@@ -445,8 +445,8 @@ func haar1(X []int, X_ptr int, N0 int, stride int) {
 	for i := 0; i < stride; i++ {
 		for j := 0; j < N0; j++ {
 			tmpidx := X_ptr + i + stride*2*j
-			tmp1 := MULT16_16(int(math.Round(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx])
-			tmp2 := MULT16_16(int(math.Round(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx+stride])
+			tmp1 := MULT16_16(int(math.Floor(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx])
+			tmp2 := MULT16_16(int(math.Floor(0.5+(0.70710678)*((1)<<(15)))), X[tmpidx+stride])
 
 			X[tmpidx] = int(EXTRACT16(PSHR32(ADD32(tmp1, tmp2), 15)))
 			X[tmpidx+stride] = int(EXTRACT16(PSHR32(SUB32(tmp1, tmp2), 15)))
@@ -461,8 +461,8 @@ func haar1ZeroOffset(X []int, N0 int, stride int) {
 		for j = 0; j < N0; j++ {
 			tmpidx := i + (stride * 2 * j)
 
-			tmp1 := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[tmpidx])
-			tmp2 := MULT16_16(int(math.Round(0.5+(.70710678)*((1)<<(15)))), X[tmpidx+stride])
+			tmp1 := MULT16_16(int(math.Floor(0.5+(.70710678)*((1)<<(15)))), X[tmpidx])
+			tmp2 := MULT16_16(int(math.Floor(0.5+(.70710678)*((1)<<(15)))), X[tmpidx+stride])
 			X[tmpidx] = int(EXTRACT16(PSHR32(ADD32(tmp1, tmp2), 15)))
 			X[tmpidx+stride] = int(EXTRACT16(PSHR32(SUB32(tmp1, tmp2), 15)))
 		}
@@ -818,7 +818,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 					for j := 0; j < N; j++ {
 						var tmp int
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						tmp = int(math.Round(0.5 + (1.0/256)*(1<<10)))
+						tmp = int(math.Floor(0.5 + (1.0/256)*(1<<10)))
 						if (ctx.seed & 0x8000) != 0 {
 							tmp = -tmp
 						}

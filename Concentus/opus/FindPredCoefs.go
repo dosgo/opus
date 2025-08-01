@@ -84,10 +84,10 @@ func silk_find_pred_coefs(
 	if psEnc.first_frame_after_reset != 0 {
 		minInvGain_Q30 = int(((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN_AFTER_RESET)*(1<<(30)) + 0.5))
 	} else {
-		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int(psEncCtrl.LTPredCodGain_Q7), int(math.Round(1.0/3.0)*(1<<16)+0.5)))
+		minInvGain_Q30 = silk_log2lin(silk_SMLAWB(16<<7, int(psEncCtrl.LTPredCodGain_Q7), int(math.Floor(1.0/3.0)*(1<<16)+0.5)))
 		minInvGain_Q30 = silk_DIV32_varQ(minInvGain_Q30,
 			silk_SMULWW(((int)((SilkConstants.MAX_PREDICTION_POWER_GAIN)*(1<<(0))+0.5)),
-				silk_SMLAWB(int(math.Round((0.25)*(1<<(18))+0.5)), int(math.Round(0.75)*(1<<(18))+0.5), psEncCtrl.coding_quality_Q14)), 14)
+				silk_SMLAWB(int(math.Floor((0.25)*(1<<(18))+0.5)), int(math.Floor(0.75)*(1<<(18))+0.5), psEncCtrl.coding_quality_Q14)), 14)
 
 	}
 
