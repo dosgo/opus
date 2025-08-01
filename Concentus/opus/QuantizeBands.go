@@ -21,9 +21,11 @@ func loss_distortion(eBands [][]int, oldEBands [][]int, start int, end int, len 
 }
 
 func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int, oldEBands [][]int, budget int, tell int, prob_model []int16, error [][]int, enc *EntropyCoder, C int, LM int, intra int, max_decay int, lfe int) int {
+	var i, c int
 	badness := 0
 	prev := [2]int{0, 0}
-	var coef, beta int
+	var coef int
+	var beta int
 
 	if tell+3 <= budget {
 		enc.enc_bit_logp(intra, 3)
@@ -37,90 +39,70 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int, o
 		coef = pred_coef[LM]
 	}
 
-	for i := start; i < end; i++ {
-		for c := 0; c < C; c++ {
-			x := eBands[c][i]
-			oldE := oldEBands[c][i]
-			if oldE < -((9 << CeltConstants.DB_SHIFT) - 1) {
-				oldE = -((9 << CeltConstants.DB_SHIFT) - 1)
-			}
-			f := (int(x) << 7) - ((coef * int(oldE)) >> 8) - prev[c]
-			qi := (f + (1 << (CeltConstants.DB_SHIFT + 6))) >> (CeltConstants.DB_SHIFT + 7)
-			decay_bound := oldE - int(max_decay)
-			if decay_bound < -(28 << CeltConstants.DB_SHIFT) {
-				decay_bound = -(28 << CeltConstants.DB_SHIFT)
-			}
-			if qi < 0 && int(x) < int(decay_bound) {
-				qi += int((decay_bound - int(x)) >> CeltConstants.DB_SHIFT)
+	for i = start; i < end; i++ {
+		c = 0
+		for c < C {
+			var bits_left int
+			var qi, qi0 int
+			var q int
+			var x int
+			var f, tmp int
+			var oldE int
+			var decay_bound int
+			x = eBands[c][i]
+			oldE = MAX16Int(-int(0.5+9.0*float32(int(1)<<CeltConstants.DB_SHIFT)), oldEBands[c][i])
+
+			f = SHL32(EXTEND32Int(x), 7) - PSHR32(MULT16_16(coef, oldE), 8) - prev[c]
+			qi = (f + (int)(0.5+0.5*float32(int(1)<<(CeltConstants.DB_SHIFT+7)))) >> (CeltConstants.DB_SHIFT + 7)
+			decay_bound = int(EXTRACT16(MAX32(-((int)(0.5 + 28.0*float32(int(1)<<CeltConstants.DB_SHIFT))), SUB32(oldEBands[c][i], max_decay))))
+			if qi < 0 && x < decay_bound {
+				qi += int(SHR16Int(SUB16Int(decay_bound, x), CeltConstants.DB_SHIFT))
 				if qi > 0 {
 					qi = 0
 				}
 			}
-			qi0 := qi
+			qi0 = qi
 			tell = enc.tell()
-			bits_left := budget - tell - 3*C*(end-i)
+			bits_left = budget - tell - 3*C*(end-i)
 			if i != start && bits_left < 30 {
 				if bits_left < 24 {
-					if qi > 1 {
-						qi = 1
-					} else if qi < -1 {
-						qi = -1
-					}
+					qi = IMIN(1, qi)
 				}
 				if bits_left < 16 {
-					if qi > 0 {
-						qi = 0
-					} else if qi < -1 {
-						qi = -1
-					}
+					qi = IMAX(-1, qi)
 				}
 			}
 			if lfe != 0 && i >= 2 {
-				if qi > 0 {
-					qi = 0
-				}
+				qi = IMIN(qi, 0)
 			}
 			if budget-tell >= 15 {
-				pi := 2 * i
-				if pi > 40 {
-					pi = 40
-				}
+				pi := 2 * IMIN(i, 20)
+
 				boxed_qi := BoxedValueInt{qi}
-				Laplace.ec_laplace_encode(*enc, &boxed_qi, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				Laplace.ec_laplace_encode(enc, &boxed_qi, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 				qi = boxed_qi.Val
 			} else if budget-tell >= 2 {
-				if qi < -1 {
-					qi = -1
-				} else if qi > 1 {
-					qi = 1
-				}
-				val := 2 * qi
+				qi = IMAX(-1, IMIN(qi, 1))
+				sign := 0
 				if qi < 0 {
-					val = -val
+					sign = 1
 				}
-				enc.enc_icdf(val, small_energy_icdf, 2)
+				enc.enc_icdf((2*qi)^(-sign), small_energy_icdf, 2)
 			} else if budget-tell >= 1 {
-				if qi > 0 {
-					qi = 0
-				}
-				if qi < 0 {
-					enc.enc_bit_logp(1, 1)
-
-				} else {
-					enc.enc_bit_logp(0, 1)
-				}
+				qi = IMIN(0, qi)
+				enc.enc_bit_logp(-qi, 1)
 			} else {
 				qi = -1
 			}
-			error[c][i] = (f >> 7) - (qi << CeltConstants.DB_SHIFT)
-			badness += int(abs(int(qi0 - qi)))
-			q := qi << CeltConstants.DB_SHIFT
-			tmp := ((coef * int(oldE)) >> 8) + prev[c] + (q << 7)
-			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {
-				tmp = -(28 << (CeltConstants.DB_SHIFT + 7))
-			}
-			oldEBands[c][i] = int(tmp >> 7)
-			prev[c] = prev[c] + (q << 7) - (beta * (q >> 8))
+			error[c][i] = PSHR32(f, 7) - SHL16Int(qi, CeltConstants.DB_SHIFT)
+			badness += abs(qi0 - qi)
+			q = SHL32(qi, CeltConstants.DB_SHIFT)
+
+			tmp = PSHR32(MULT16_16(coef, oldE), 8) + prev[c] + SHL32(q, 7)
+			tmp = MAX32(-int(0.5+28.0*float32(int(1)<<(CeltConstants.DB_SHIFT+7))), tmp)
+			oldEBands[c][i] = PSHR32(tmp, 7)
+			prev[c] = prev[c] + SHL32(q, 7) - MULT16_16(beta, PSHR32(q, 8))
+			c++
 		}
 	}
 	if lfe != 0 {
@@ -128,7 +110,6 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int, o
 	}
 	return badness
 }
-
 func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][]int, oldEBands [][]int, budget int, error [][]int, enc *EntropyCoder, C int, LM int, nbAvailableBytes int, force_intra int, delayedIntra *BoxedValueInt, two_pass int, loss_rate int, lfe int) {
 	intra := 0
 	if force_intra != 0 || (two_pass == 0 && delayedIntra.Val > 2*C*(end-start) && nbAvailableBytes > (end-start)*C) {

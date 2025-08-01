@@ -503,7 +503,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 	}
 
 	tell := int(ec.tell_frac())
-
+	fmt.Printf("srctell:%d\r\n", tell)
 	if qn != 1 {
 		if encode != 0 {
 			itheta = (itheta*qn + 8192) >> 14
@@ -601,6 +601,7 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 		itheta = 0
 	}
 	qalloc := int(ec.tell_frac()) - tell
+	fmt.Printf("qalloc:%d tell:%d\r\n", qalloc, tell)
 	b.Val -= qalloc
 
 	imid := 32767
@@ -677,98 +678,119 @@ func quant_band_n1(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, b int,
 }
 
 func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, gain int, fill int) int {
+	var cache_ptr int
+	var q int
+	var curr_bits int
+	imid := 0
+	iside := 0
+	B0 := B
+	mid := 0
+	side := 0
+	cm := 0
 	resynth := 0
 	if ctx.encode == 0 {
 		resynth = 1
 	}
+	Y := 0
 	encode := ctx.encode
 	m := ctx.m
 	i := ctx.i
 	spread := ctx.spread
 	ec := ctx.ec
 	cache := m.cache.bits
-	cache_ptr := m.cache.index[(LM+1)*m.nbEBands+i]
+	cache_ptr = int(m.cache.index[(LM+1)*m.nbEBands+i])
+	if LM != -1 {
+		offset := int(cache[cache_ptr])
+		nextIndex := cache_ptr + offset
+		if b > int(cache[nextIndex])+12 && N > 2 {
+			var mbits, sbits, delta int
+			var itheta int
+			var qalloc int
+			sctx := split_ctx{}
+			next_lowband2 := 0
+			var rebalance int
 
-	cm := 0
-	if LM != -1 && b > int(cache[cache_ptr])+12 && N > 2 {
-		B0 := B
-		//N0 := N
-		Y := X_ptr + N
-		LM -= 1
-		if B == 1 {
-			fill = (fill & 1) | (fill << 1)
-		}
-		B = (B + 1) >> 1
+			N >>= 1
+			Y = X_ptr + N
+			LM -= 1
+			if B == 1 {
+				fill = (fill & 1) | (fill << 1)
+			}
 
-		boxed_b := &BoxedValueInt{Val: b}
-		boxed_fill := &BoxedValueInt{Val: fill}
-		sctx := &split_ctx{}
-		compute_theta(ctx, sctx, X, X_ptr, X, Y, N, boxed_b, B, B0, LM, 0, boxed_fill)
-		b = boxed_b.Val
-		fill = boxed_fill.Val
+			B = (B + 1) >> 1
 
-		imid := sctx.imid
-		iside := sctx.iside
-		delta := sctx.delta
-		itheta := sctx.itheta
-		qalloc := sctx.qalloc
-		mid := imid
-		side := iside
+			boxed_b := BoxedValueInt{Val: b}
+			boxed_fill := BoxedValueInt{Val: fill}
+			compute_theta(ctx, &sctx, X, X_ptr, X, Y, N, &boxed_b, B, B0, LM, 0, &boxed_fill)
+			fmt.Printf("compute_theta b:%d\r\n", boxed_b.Val)
+			b = boxed_b.Val
+			fill = boxed_fill.Val
 
-		if B0 > 1 && itheta != 0 {
-			if itheta > 8192 {
-				delta -= delta >> (4 - LM)
+			imid = sctx.imid
+			iside = sctx.iside
+			delta = sctx.delta
+			itheta = sctx.itheta
+			qalloc = sctx.qalloc
+			mid = imid
+			side = iside
+
+			if B0 > 1 && (itheta&0x3fff) != 0 {
+				if itheta > 8192 {
+					delta -= delta >> (4 - LM)
+				} else {
+					delta = IMIN(0, delta+(N<<BITRES>>(5-LM)))
+				}
+			}
+			mbits = IMAX(0, IMIN(b, (b-delta)/2))
+			sbits = b - mbits
+			ctx.remaining_bits -= qalloc
+
+			if lowband != nil {
+				next_lowband2 = lowband_ptr + N
+			}
+
+			rebalance = ctx.remaining_bits
+			if mbits >= sbits {
+				cm = quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
+				rebalance = mbits - (rebalance - ctx.remaining_bits)
+				if rebalance > 3<<BITRES && itheta != 0 {
+					sbits += rebalance - (3 << BITRES)
+				}
+				cm |= quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
 			} else {
-				delta = IMIN(0, delta+(N<<BITRES>>(5-LM)))
+				cm = quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
+				rebalance = sbits - (rebalance - ctx.remaining_bits)
+				if rebalance > 3<<BITRES && itheta != 16384 {
+					mbits += rebalance - (3 << BITRES)
+				}
+				cm |= quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
 			}
+			return cm
 		}
-		mbits := IMAX(0, IMIN(b, (b-delta)/2))
-		sbits := b - mbits
-		ctx.remaining_bits -= qalloc
+	}
 
-		next_lowband2 := 0
-		if lowband != nil {
-			next_lowband2 = lowband_ptr + N
-		}
+	q = bits2pulses(m, i, LM, b)
+	fmt.Printf("bits2pulses i:%d LM:%d b:%d\r\n", i, LM, b)
+	curr_bits = pulses2bits(m, i, LM, q)
+	ctx.remaining_bits -= curr_bits
 
-		rebalance := ctx.remaining_bits
-		if mbits >= sbits {
-			cm = quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
-			rebalance = mbits - (rebalance - ctx.remaining_bits)
-			if rebalance > 3<<BITRES && itheta != 0 {
-				sbits += rebalance - (3 << BITRES)
-			}
-			cm |= quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
+	for ctx.remaining_bits < 0 && q > 0 {
+		ctx.remaining_bits += curr_bits
+		q--
+		curr_bits = pulses2bits(m, i, LM, q)
+		ctx.remaining_bits -= curr_bits
+	}
+
+	if q != 0 {
+		K := get_pulses(q)
+		fmt.Printf("k:%d q:%d", K, q)
+		if encode != 0 {
+			cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
 		} else {
-			cm = quant_partition(ctx, X, Y, N, sbits, B, lowband, next_lowband2, LM, MULT16_16_P15Int(gain, side), fill>>B) << (B0 >> 1)
-			rebalance = sbits - (rebalance - ctx.remaining_bits)
-			if rebalance > 3<<BITRES && itheta != 16384 {
-				mbits += rebalance - (3 << BITRES)
-			}
-			cm |= quant_partition(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, MULT16_16_P15Int(gain, mid), fill)
+			cm = alg_unquant(X, X_ptr, N, K, spread, B, *ec, gain)
 		}
 	} else {
-		q := bits2pulses(m, i, LM, b)
-		fmt.Printf("bits2pulses:%d-%d-%d-%d\r\n", m, i, LM, b)
-		curr_bits := pulses2bits(m, i, LM, q)
-		ctx.remaining_bits -= curr_bits
-		fmt.Printf("qqqqqq:%d\r\n", q)
-		for ctx.remaining_bits < 0 && q > 0 {
-			ctx.remaining_bits += curr_bits
-			q--
-			curr_bits = pulses2bits(m, i, LM, q)
-			ctx.remaining_bits -= curr_bits
-		}
-
-		if q != 0 {
-			K := get_pulses(q)
-			fmt.Printf("k:%d q:%d\r\n", K, q)
-			if encode != 0 {
-				cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
-			} else {
-				cm = alg_unquant(X, X_ptr, N, K, spread, B, *ec, gain)
-			}
-		} else if resynth != 0 {
+		if resynth != 0 {
 			cm_mask := (1 << B) - 1
 			fill &= cm_mask
 			if fill == 0 {
@@ -779,17 +801,16 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 				if lowband == nil {
 					for j := 0; j < N; j++ {
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						X[X_ptr+j] = int(ctx.seed) >> 20
+						X[X_ptr+j] = int(ctx.seed >> 20)
 					}
 					cm = cm_mask
 				} else {
 					for j := 0; j < N; j++ {
+						var tmp int
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						tmp := 0
-						if ctx.seed&0x8000 != 0 {
-							tmp = int(QCONST16(1.0/256, 10))
-						} else {
-							tmp = -int(QCONST16(1.0/256, 10))
+						tmp = int(math.Round(0.5 + (1.0/256)*(1<<10)))
+						if (ctx.seed & 0x8000) != 0 {
+							tmp = -tmp
 						}
 						X[X_ptr+j] = lowband[lowband_ptr+j] + tmp
 					}
@@ -873,7 +894,9 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 			deinterleave_hadamard(lowband, lowband_ptr, N_B>>recombine, B0<<recombine, longBlocks)
 		}
 	}
-
+	fmt.Printf("X_ptr:%d N:%d b:%+v B:%+v lowband_ptr:%d LM:%d gain:%+v fill:%+v\r\n", X_ptr, N, b, B, lowband_ptr, LM, gain, fill)
+	//b=
+	b = 324
 	cm = quant_partition(ctx, X, X_ptr, N, b, B, lowband, lowband_ptr, LM, gain, fill)
 
 	if resynth != 0 {

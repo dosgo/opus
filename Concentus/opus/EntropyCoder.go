@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 const (
 	EC_WINDOW_SIZE = 32
 	EC_UINT_BITS   = 8
@@ -113,6 +115,7 @@ func (ec *EntropyCoder) write_byte_at_end(_value uint) int {
 }
 
 func (ec *EntropyCoder) dec_normalize() {
+	_ddd := ec.rng
 	for ec.rng <= EC_CODE_BOT {
 		ec.nbits_total += EC_SYM_BITS
 		ec.rng <<= EC_SYM_BITS
@@ -122,6 +125,7 @@ func (ec *EntropyCoder) dec_normalize() {
 		sym >>= (EC_SYM_BITS - EC_CODE_EXTRA)
 		ec.val = ((ec.val << EC_SYM_BITS) + (EC_SYM_MAX & ^int64(sym))) & (EC_CODE_TOP - 1)
 	}
+	fmt.Printf("\r\nsrc rng:%d new:%d\r\n", _ddd, ec.rng)
 }
 
 func (ec *EntropyCoder) dec_init(_buf []byte, _buf_ptr int, _storage int) {
@@ -313,6 +317,7 @@ func (ec *EntropyCoder) encode(_fl int64, _fh int64, _ft int64) {
 	} else {
 		ec.rng -= r * (_ft - _fh)
 	}
+	fmt.Printf("set rng :%d\r\n", ec.rng)
 	ec.enc_normalize()
 }
 
@@ -347,7 +352,7 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	r := ec.rng >> _ftb
 	if _s > 0 {
 		ec.val += ec.rng - r*int64(_icdf[_s-1])
-		ec.rng = r*int64(_icdf[_s-1]) - int64(_icdf[_s])
+		ec.rng = r * (int64(_icdf[_s-1]) - int64(_icdf[_s]))
 	} else {
 		ec.rng -= r * int64(_icdf[_s])
 	}
@@ -355,14 +360,14 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 }
 
 func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ftb int) {
-	sub := _icdf[icdf_ptr:]
+	r := (ec.rng >> _ftb)
 	if _s > 0 {
-		ec.enc_icdf(_s, sub, _ftb)
+		ec.val = ec.val + (ec.rng - (r * int64(_icdf[icdf_ptr+_s-1])))
+		ec.rng = (r * int64(_icdf[icdf_ptr+_s-1]-_icdf[icdf_ptr+_s]))
 	} else {
-		r := ec.rng >> _ftb
-		ec.rng -= r * int64(sub[_s])
-		ec.enc_normalize()
+		ec.rng = int64(ec.rng - (r * int64(_icdf[icdf_ptr+_s])))
 	}
+	ec.enc_normalize()
 }
 
 func (ec *EntropyCoder) enc_uint(_fl int64, _ft int64) {
@@ -434,24 +439,21 @@ func (ec *EntropyCoder) tell() int {
 }
 
 func (ec *EntropyCoder) tell_frac() int {
+	// int nbits;
+	//  int r;
+	// int l;
+	// long b;
 	nbits := ec.nbits_total << BITRES
-	l := EC_ILOG(int64(ec.rng))
-	var r int
-	if l < 16 {
-		r = int(ec.rng << int64(16-l))
-	} else {
-		r = int(ec.rng >> int64(l-16))
-	}
-	b := (r >> 12) - 8
-	if b < 0 {
-		b = 0
-	} else if b > 7 {
-		b = 7
-	}
+	l := EC_ILOG(ec.rng)
+	fmt.Printf("ec.rng:%d\r\n", ec.rng)
+	r := int(ec.rng >> (l - 16))
+	b := int((r >> 12) - 8)
+	b1 := 0
 	if r > correction[b] {
-		b++
+		b1 = 1
 	}
-	l = (l << 3) + int(b)
+	b = int(b + b1)
+	l = ((l << 3) + b)
 	return nbits - l
 }
 

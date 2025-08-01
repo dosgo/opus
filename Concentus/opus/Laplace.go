@@ -50,7 +50,7 @@ func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
 	return (ft * (16384 - int64(decay))) >> 15
 }
 
-func (l *laplace) ec_laplace_encode(enc EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
+func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
 	var fl int64
 	val := value.Val
 	fl = 0

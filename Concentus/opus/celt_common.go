@@ -538,73 +538,60 @@ func tf_encode(start int, end int, isTransient int, tf_res []int, LM int, tf_sel
 }
 
 func alloc_trim_analysis(m *CeltMode, X [][]int, bandLogE [][]int, end int, LM int, C int, analysis *AnalysisInfo, stereo_saving *BoxedValueInt, tf_estimate int, intensity int, surround_trim int) int {
+	var i int
 	diff := 0
-	trim := int(math.Round(0.5 + (5.0)*float64((int(1))<<(8))))
-	logXC := 0
-	logXC2 := 0
-
+	var c int
+	var trim_index int
+	trim := 1280
+	var logXC, logXC2 int
 	if C == 2 {
 		sum := 0
-		minXC := 0
-		for i := 0; i < 8; i++ {
-			partial := celt_inner_prod_int(X[0], int(m.eBands[i])<<LM, X[1], int(m.eBands[i])<<LM, int(m.eBands[i+1]-m.eBands[i])<<LM)
+		var minXC int
+		for i = 0; i < 8; i++ {
+			partial := celt_inner_prod_int(X[0], int(m.eBands[i]<<LM), X[1], int(m.eBands[i]<<LM), int(m.eBands[i+1]-m.eBands[i])<<LM)
 			sum = ADD16Int(sum, int(EXTRACT16(SHR32(partial, 18))))
 		}
-		sum = MULT16_16_Q15Int(int(math.Round(1.0/8*32767.5)), (sum))
-		if sum > 1024 {
-			sum = 1024
-		} else if sum < -1024 {
-			sum = -1024
-		}
+		sum = MULT16_16_Q15Int(4096, sum)
+		sum = MIN16Int(1024, ABS32(sum))
 		minXC = sum
-		for i := 8; i < intensity; i++ {
-			partial := celt_inner_prod_int(X[0], int(m.eBands[i])<<LM, X[1], int(m.eBands[i])<<LM, int(m.eBands[i+1]-m.eBands[i])<<LM)
-			absPartial := ABS16(int(EXTRACT16(SHR32(partial, 18))))
-			if absPartial < minXC {
-				minXC = absPartial
-			}
+		for i = 8; i < intensity; i++ {
+			partial := celt_inner_prod_int(X[0], int(m.eBands[i]<<LM), X[1], int(m.eBands[i]<<LM), int(m.eBands[i+1]-m.eBands[i])<<LM)
+			minXC = MIN16Int(minXC, ABS16(int(EXTRACT16(SHR32(partial, 18)))))
 		}
-		logXC = celt_log2(int(math.Round(0.5+(1.001)*((1)<<(20)))) - MULT16_16(sum, sum))
-		logXC2 = MAX16Int(HALF16Int(logXC), celt_log2(int(math.Round(0.5+(1.001)*((1)<<(20))))-MULT16_16(minXC, minXC)))
-		logXC = (logXC - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
-		logXC2 = (logXC2 - int(6.0*float32(int(1)<<CeltConstants.DB_SHIFT))) >> (CeltConstants.DB_SHIFT - 8)
-		trim += MAX16Int(-1024, MULT16_16_Q15Int(int(math.Round(0.75*32767.5)), int(logXC)))
-		if stereo_saving.Val+64 < -logXC2/2 {
-			stereo_saving.Val = -logXC2/2 - 64
-		} else {
-			stereo_saving.Val += 64
-		}
+		minXC = MIN16Int(1024, ABS32(minXC))
+		logXC = celt_log2(1049625 - int(MULT16_16(int(sum), int(sum))))
+		logXC2 = MAX16Int(HALF16Int(logXC), celt_log2(1049625-int(MULT16_16(int(minXC), int(minXC)))))
+		q6 := int(int16(6 * (1 << CeltConstants.DB_SHIFT)))
+		logXC = PSHR32(logXC-q6, CeltConstants.DB_SHIFT-8)
+		logXC2 = PSHR32(logXC2-q6, CeltConstants.DB_SHIFT-8)
+		trim += MAX16Int(-1024, MULT16_16_Q15Int(24576, logXC))
+		stereo_saving.Val = MIN16Int(int(stereo_saving.Val)+64, -HALF16Int(logXC2))
 	}
-
-	for c := 0; c < C; c++ {
-		for i := 0; i < end-1; i++ {
+	c = 0
+	for c < C {
+		for i = 0; i < end-1; i++ {
 			diff += bandLogE[c][i] * (2 + 2*i - end)
 		}
+		c++
 	}
 	diff /= C * (end - 1)
-	trim -= MAX16Int(-512, MIN16Int(512, (diff+int(1.0*float64(int(1)<<CeltConstants.DB_SHIFT)))/(6*(1<<(CeltConstants.DB_SHIFT-8)))))
-	trim -= surround_trim >> (CeltConstants.DB_SHIFT - 8)
-	trim -= 2 * (tf_estimate >> (14 - 8))
-
+	q1 := int(int16(1 << CeltConstants.DB_SHIFT))
+	temp := SHR16Int(diff+q1, CeltConstants.DB_SHIFT-8) / 6
+	temp = MIN16Int(512, temp)
+	temp = MAX16Int(-512, temp)
+	trim -= temp
+	trim -= SHR16Int(surround_trim, CeltConstants.DB_SHIFT-8)
+	trim = trim - 2*SHR16Int(tf_estimate, 14-8)
 	if analysis.enabled && analysis.valid != 0 {
-		adjust := int(2.0 * 256.5 * (analysis.tonality_slope + 0.05))
-		if adjust < -512 {
-			adjust = -512
-		} else if adjust > 512 {
-			adjust = 512
-		}
-		trim -= adjust
+		temp2 := int(512 * (analysis.tonality_slope + 0.05))
+		temp2 = MIN16Int(512, temp2)
+		temp2 = MAX16Int(-512, temp2)
+		trim -= temp2
 	}
-
-	trim_index := trim >> 8
-	if trim_index < 0 {
-		trim_index = 0
-	} else if trim_index > 10 {
-		trim_index = 10
-	}
+	trim_index = PSHR32(trim, 8)
+	trim_index = IMAX(0, IMIN(10, trim_index))
 	return trim_index
 }
-
 func stereo_analysis(m *CeltMode, X [][]int, LM int) int {
 	thetas := 0
 	sumLR := CeltConstants.EPSILON

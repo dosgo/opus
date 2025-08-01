@@ -1,6 +1,8 @@
 package opus
 
-import "math"
+import (
+	"math"
+)
 
 type CeltEncoder struct {
 	mode              *CeltMode
@@ -819,7 +821,6 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 		if this.lfe != 0 {
 			alloc_trim = 5
 		} else {
-
 			boxed_stereo_saving := BoxedValueInt{this.stereo_saving}
 			alloc_trim = alloc_trim_analysis(mode, X, bandLogE, end, LM, C, &this.analysis, &boxed_stereo_saving, tf_estimate, this.intensity, surround_trim)
 			this.stereo_saving = boxed_stereo_saving.Val

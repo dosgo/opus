@@ -36,12 +36,16 @@ func main() {
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 		//System.out.println(bytesEncoded + " bytes encoded");
 		fmt.Printf("bytesEncoded:%d data_packet:%+v\r\n", bytesEncoded, data_packet)
+		if bytesEncoded > 0 {
+			break
+		}
 
 		samplesDecoded, err := decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
 		fmt.Printf("samplesDecoded:%d samplesDecoded:%+v\r\n", samplesDecoded, samplesDecoded)
 		//System.out.println(samplesDecoded + " samples decoded");
 		// bytesOut = ShortsToBytes(pcm);
 		// fileOut.write(bytesOut, 0, bytesOut.length);
+
 	}
 
 }
