@@ -570,6 +570,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			repacketize_len = imin(3*st.bitrate_bps/(3*8*50/nb_frames), out_data_bytes)
 		}
 		ret = rp.opus_repacketizer_out_range_impl(0, nb_frames, data, data_ptr, repacketize_len, 0, boolToInt(st.use_vbr == 0))
+		fmt.Printf("opus_repacketizer_out_range_impl:%+v\r\n", data)
 		if ret < 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
 		}
@@ -842,7 +843,6 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
-			fmt.Printf("retretretretret:%d frame_size:%d\r\n", ret, frame_size)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}

@@ -23,7 +23,7 @@ func CapToUintLong(val int64) int64 {
 }
 
 func MULT16_16SU(a, b int) int {
-	return int(int16(a)) * int(uint16(b))
+	return int(a) * int(b)
 }
 
 func MULT16_32_Q16(a int16, b int) int {
@@ -208,7 +208,7 @@ func SUB32(a, b int) int {
 }
 
 func MULT16_16_16(a, b int16) int16 {
-	return int16(a) * int16(b)
+	return int16(int(a) * int(b))
 }
 
 func MULT16_16_16Int(a, b int) int {
@@ -216,7 +216,7 @@ func MULT16_16_16Int(a, b int) int {
 }
 
 func MULT16_16(a, b int) int {
-	return int(int16(a)) * int(int16(b))
+	return int(a) * int(b)
 }
 
 func MULT16_16Short(a, b int16) int {
@@ -296,7 +296,7 @@ func MULT16_16_P13(a, b int16) int16 {
 }
 
 func MULT16_16_P13Int(a, b int) int {
-	return SHR(ADD32(4096, MULT16_16Short(int16(a), int16(b))), 13)
+	return SHR(ADD32(4096, MULT16_16(int(a), int(b))), 13)
 }
 
 func MULT16_16_P14(a, b int16) int16 {
@@ -593,12 +593,12 @@ func celt_rcp(x int) int {
 	OpusAssertMsg(x > 0, "celt_rcp() only defined for positive values")
 	i := celt_ilog2(x)
 	n := VSHR32(x, i-15) - 32768
-	r := ADD16(30840, MULT16_16_Q15(-15420, int16(n)))
-	r = SUB16(r, MULT16_16_Q15(r,
-		ADD16(MULT16_16_Q15(r, int16(n)), ADD16(r, -32768))))
-	r = SUB16(r, ADD16(1, MULT16_16_Q15(r,
-		ADD16(MULT16_16_Q15(r, int16(n)), ADD16(r, -32768)))))
-	return VSHR32(EXTEND32(r), i-16)
+	r := ADD16Int(30840, MULT16_16_Q15Int(-15420, int(n)))
+	r = SUB16Int(r, MULT16_16_Q15Int(r,
+		ADD16Int(MULT16_16_Q15Int(r, int(n)), ADD16Int(r, -32768))))
+	r = SUB16Int(r, ADD16Int(1, MULT16_16_Q15Int(r,
+		ADD16Int(MULT16_16_Q15Int(r, int(n)), ADD16Int(r, -32768)))))
+	return VSHR32(EXTEND32Int(r), i-16)
 }
 
 func celt_rsqrt_norm(x int) int {
@@ -760,19 +760,19 @@ func silk_MLA_ovflw(a32, b32, c32 int) int {
 }
 
 func silk_SMLABB_ovflw(a32, b32, c32 int) int {
-	return silk_ADD32_ovflw(a32, int(int16(b32))*int(int16(c32)))
+	return silk_ADD32_ovflw(a32, int(b32)*int(c32))
 }
 
 func silk_SMULBB(a32, b32 int) int {
-	return int(int16(a32)) * int(int16(b32))
+	return int(int(a32)) * int(int(b32))
 }
 
 func silk_SMULWB(a32, b32 int) int {
-	return int((int64(a32) * int64(int16(b32))) >> 16)
+	return int((int64(a32) * int64(b32)) >> 16)
 }
 
 func silk_SMLABB(a32, b32, c32 int) int {
-	return a32 + int(int16(b32))*int(int16(c32))
+	return a32 + int(b32)*int(c32)
 }
 
 func silk_DIV32_16(a32, b32 int) int {

@@ -275,6 +275,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 }
 
 func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
+
 	var i, c, N, bits int
 	var input [][]int
 	var freq [][]int
