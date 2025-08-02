@@ -570,7 +570,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			repacketize_len = imin(3*st.bitrate_bps/(3*8*50/nb_frames), out_data_bytes)
 		}
 		ret = rp.opus_repacketizer_out_range_impl(0, nb_frames, data, data_ptr, repacketize_len, 0, boolToInt(st.use_vbr == 0))
-		fmt.Printf("opus_repacketizer_out_range_impl:%+v\r\n", data)
+		//json1, _ := json.Marshal(bandE)
 		if ret < 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
 		}
@@ -814,6 +814,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		redundancy_bytes = 0
 		st.silk_bw_switch = 0
 	}
+	fmt.Printf(" st.mode:%d\r\n", st.mode)
 	if st.mode == MODE_SILK_ONLY {
 		ret = (enc.tell() + 7) >> 3
 		enc.enc_done()

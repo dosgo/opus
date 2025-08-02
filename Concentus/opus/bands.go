@@ -795,9 +795,9 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	if q != 0 {
 		K := get_pulses(q)
 		if encode != 0 {
-			cm = alg_quant(X, X_ptr, N, K, spread, B, *ec)
+			cm = alg_quant(X, X_ptr, N, K, spread, B, ec)
 		} else {
-			cm = alg_unquant(X, X_ptr, N, K, spread, B, *ec, gain)
+			cm = alg_unquant(X, X_ptr, N, K, spread, B, ec, gain)
 		}
 	} else {
 		if resynth != 0 {

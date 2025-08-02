@@ -52,48 +52,45 @@ func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
 
 func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
 	var fl int64
-	val := value.Val
+	val := int64(value.Val)
 	fl = 0
 	if val != 0 {
-		var s int
-		var i int
+		var s int64
+		var i int64
 		s = 0
 		if val < 0 {
-			s = 1
+			s = -1
 		}
-		s = -s
 		val = (val + s) ^ s
 		fl = fs
 		fs = l.ec_laplace_get_freq1(fs, decay)
 
+		/* Search the decaying part of the PDF.*/
 		for i = 1; fs > 0 && i < val; i++ {
 			fs *= 2
 			fl = (fl + fs + 2*LAPLACE_MINP)
-			fs = ((fs * int64(decay)) >> 15)
+			fs = fs * int64(decay) >> 15
 		}
 
+		/* Everything beyond that has probability LAPLACE_MINP. */
 		if fs == 0 {
-			var di int
-			var ndi_max int
-			ndi_max = int(32768-fl+LAPLACE_MINP-1) >> LAPLACE_LOG_MINP
+			var di int64
+			var ndi_max int64
+			ndi_max = int64(32768-fl+LAPLACE_MINP-1) >> LAPLACE_LOG_MINP
 			ndi_max = (ndi_max - s) >> 1
-			di = IMIN(val-i, ndi_max-1)
+			di = IMINLong((val)-i, ndi_max-1)
 			fl = (fl + int64(2*di+1+s)*LAPLACE_MINP)
-			fs = IMINLong(LAPLACE_MINP, (32768 - fl))
-			value.Val = (i + di + s) ^ s
+			fs = IMINLong(LAPLACE_MINP, 32768-fl)
+			value.Val = int((i + di + s) ^ s)
 		} else {
 			fs += LAPLACE_MINP
-			if s == 0 {
-				fl = fl + fs
-			} else {
-				fl = fl + (fs &^ 1)
-			}
+			fl = fl + (fs &^ int64(s))
 		}
 		OpusAssert(fl+fs <= 32768)
 		OpusAssert(fs > 0)
 	}
 
-	enc.encode_bin(int64(fl), int64(fl+fs), 15)
+	enc.encode_bin(fl, (fl + fs), 15)
 }
 
 func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {

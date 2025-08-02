@@ -88,7 +88,7 @@ func extract_collapse_mask(iy []int, N int, B int) int {
 	return collapse_mask
 }
 
-func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyCoder) int {
+func alg_quantOld(X []int, X_ptr int, N int, K int, spread int, B int, enc *EntropyCoder) int {
 	y := make([]int, N)
 	iy := make([]int, N)
 	signx := make([]int, N)
@@ -182,7 +182,117 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc EntropyC
 	return collapse_mask
 }
 
-func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec EntropyCoder, gain int) int {
+func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *EntropyCoder) int {
+	y := make([]int, N)
+	iy := make([]int, N)
+	signx := make([]int, N)
+	var i, j int
+	var s int
+	var pulsesLeft int
+	var sum int
+	var xy int
+	var yy int
+	var collapse_mask int
+
+	OpusAssertMsg(K > 0, "alg_quant() needs at least one pulse")
+	OpusAssertMsg(N > 1, "alg_quant() needs at least two dimensions")
+
+	exp_rotation(X, X_ptr, N, 1, B, K, spread)
+
+	sum = 0
+	for j = 0; j < N; j++ {
+		if X[X_ptr+j] > 0 {
+			signx[j] = 1
+		} else {
+			signx[j] = -1
+			X[X_ptr+j] = -X[X_ptr+j]
+		}
+		iy[j] = 0
+		y[j] = 0
+	}
+
+	xy = 0
+	yy = 0
+
+	pulsesLeft = K
+
+	if K > (N >> 1) {
+		var rcp int
+		sum = 0
+		for j = 0; j < N; j++ {
+			sum += X[X_ptr+j]
+		}
+
+		if sum <= K {
+			X[X_ptr] = 16384
+			for j = X_ptr + 1; j < X_ptr+N; j++ {
+				X[j] = 0
+			}
+			sum = 16384
+		}
+
+		rcp = int(EXTRACT16(MULT16_32_Q16(int16(K-1), celt_rcp(sum))))
+		for j = 0; j < N; j++ {
+			iy[j] = MULT16_16_Q15Int(int(X[X_ptr+j]), rcp)
+			y[j] = int(iy[j])
+			yy = MAC16_16Int(yy, int16(y[j]), int16(y[j]))
+			xy = MAC16_16Int(xy, int16(X[X_ptr+j]), int16(y[j]))
+			y[j] *= 2
+			pulsesLeft -= iy[j]
+		}
+	}
+
+	OpusAssertMsg(pulsesLeft >= 1, "Allocated too many pulses in the quick pass")
+
+	if pulsesLeft > N+3 {
+		tmp := int(pulsesLeft)
+		yy = MAC16_16Int(yy, int16(tmp), int16(tmp))
+		yy = MAC16_16Int(yy, int16(tmp), int16(y[0]))
+		iy[0] += pulsesLeft
+		pulsesLeft = 0
+	}
+
+	s = 1
+	for i = 0; i < pulsesLeft; i++ {
+		best_id := 0
+		best_num := -CeltConstants.VERY_LARGE16
+		best_den := 0
+		rshift := 1 + celt_ilog2(K-pulsesLeft+i+1)
+		yy = ADD16Int(yy, 1)
+		for j = 0; j < N; j++ {
+			Rxy := EXTRACT16(SHR32(ADD32(int(xy), int(X[X_ptr+j])), rshift))
+			Ryy := ADD16Int(yy, int(y[j]))
+
+			Rxy = MULT16_16_Q15(int16(Rxy), int16(Rxy))
+			if MULT16_16(int(best_den), int(Rxy)) > MULT16_16(int(Ryy), int(best_num)) {
+				best_den = int(Ryy)
+				best_num = int16(Rxy)
+				best_id = j
+			}
+		}
+
+		xy = ADD32(xy, int(X[X_ptr+best_id]))
+		yy = ADD16Int(yy, int(y[best_id]))
+
+		y[best_id] += 2 * s
+		iy[best_id]++
+	}
+
+	for j = 0; j < N; j++ {
+		X[X_ptr+j] = MULT16_16(int(signx[j]), int(X[X_ptr+j]))
+		if signx[j] < 0 {
+			iy[j] = -iy[j]
+		}
+	}
+
+	encode_pulses(iy, N, K, enc)
+
+	collapse_mask = extract_collapse_mask(iy, N, B)
+
+	return collapse_mask
+}
+
+func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec *EntropyCoder, gain int) int {
 	OpusAssertMsg(K > 0, "alg_unquant() needs at least one pulse")
 	OpusAssertMsg(N > 1, "alg_unquant() needs at least two dimensions")
 	iy := make([]int, N)

@@ -12,7 +12,7 @@ func CELT_PVQ_V(_n, _k int) int64 {
 	return CELT_PVQ_U(_n, _k) + CELT_PVQ_U(_n, _k+1)
 }
 
-func icwrs(_n int, _y []int) int64 {
+func icwrsBak(_n int, _y []int) int64 {
 	var i int64
 	OpusAssert(_n >= 2)
 	j := _n - 1
@@ -35,8 +35,28 @@ func icwrs(_n int, _y []int) int64 {
 	}
 	return i
 }
+func icwrs(_n int, _y []int) int64 {
+	var i int64
 
-func encode_pulses(_y []int, _n, _k int, _enc EntropyCoder) {
+	OpusAssert(_n >= 2)
+	j := _n - 1
+	i = 0
+	if _y[j] < 0 {
+		i = 1
+	}
+	k := abs(_y[j])
+	for j > 0 {
+		j--
+		i += CELT_PVQ_U(_n-j, k)
+		k += abs(_y[j])
+		if _y[j] < 0 {
+			i += CELT_PVQ_U(_n-j, k+1)
+		}
+	}
+	return i
+}
+
+func encode_pulses(_y []int, _n, _k int, _enc *EntropyCoder) {
 	OpusAssert(_k > 0)
 	_enc.enc_uint(icwrs(_n, _y), CELT_PVQ_V(_n, _k))
 }
@@ -146,6 +166,6 @@ func cwrsi(_n, _k int, _i int64, _y []int) int {
 	return yy
 }
 
-func decode_pulses(_y []int, _n, _k int, _dec EntropyCoder) int {
+func decode_pulses(_y []int, _n, _k int, _dec *EntropyCoder) int {
 	return cwrsi(_n, _k, _dec.dec_uint(CELT_PVQ_V(_n, _k)), _y)
 }

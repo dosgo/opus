@@ -1,8 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
-	"fmt"
 	"math"
 )
 
@@ -583,8 +581,6 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 			bandE[0][i] = MAX32(bandE[0][i], CeltConstants.EPSILON)
 		}
 	}
-	json1, _ := json.Marshal(bandE)
-	fmt.Printf("\r\n\r\n 111bandE:%+v\r\n\r\n", string(json1))
 	amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
 
 	surround_dynalloc = make([]int, C*nbEBands)
@@ -703,7 +699,6 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	for i := range X {
 		X[i] = make([]int, N)
 	}
-	fmt.Printf("bandE0:%+v\r\n", bandE)
 	normalise_bands(mode, freq, X, bandE, effEnd, C, M)
 
 	tf_res = make([]int, nbEBands)
@@ -943,7 +938,6 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 
 	boxed_rng := BoxedValueInt{this.rng}
 	quant_all_bands(1, mode, start, end, X[0], boolToSlice(C == 2, X[1]), collapse_masks, bandE, pulses, shortBlocks, this.spread_decision, dual_stereo, this.intensity, tf_res, nbCompressedBytes*(8<<BITRES)-anti_collapse_rsv, balance, enc, LM, codedBands, &boxed_rng)
-	fmt.Printf("bandE:%+v\r\n", bandE)
 	this.rng = boxed_rng.Val
 
 	if anti_collapse_rsv > 0 {
