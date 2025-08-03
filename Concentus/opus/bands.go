@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -795,6 +796,11 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	if q != 0 {
 		K := get_pulses(q)
 		if encode != 0 {
+			//fmt.Printf("alg_quant\r\n")
+
+			json1, _ := json.Marshal(X)
+			fmt.Printf("alg_quant x:%s\r\n", string(json1))
+			//	panic("alg_quant")
 			cm = alg_quant(X, X_ptr, N, K, spread, B, ec)
 		} else {
 			cm = alg_unquant(X, X_ptr, N, K, spread, B, ec, gain)
@@ -1048,6 +1054,7 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 			tmp = X[X_ptr+1]
 			X[X_ptr+1] = tmp - Y[Y_ptr+1]
 			Y[Y_ptr+1] = tmp + Y[Y_ptr+1]
+			fmt.Printf("ddddd\r\n")
 		}
 	} else {
 		mbits := IMAX(0, IMIN(b, (b-delta)/2))
@@ -1056,6 +1063,8 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 
 		rebalance := ctx.remaining_bits
 		if mbits >= sbits {
+			json1, _ := json.Marshal(X)
+			fmt.Printf("quant_band99999999 x:%s\r\n", string(json1))
 			cm = quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
 			rebalance = mbits - (rebalance - ctx.remaining_bits)
 			if rebalance > 3<<BITRES && itheta != 0 {
@@ -1218,6 +1227,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			}
 
 			if Y != nil {
+
 				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N,
 					b,
 					B,

@@ -350,7 +350,7 @@ func (ec *EntropyCoder) encode(_fl int64, _fh int64, _ft int64) {
 
 	fmt.Printf("encode ec.rng:%d _fl:%d _fh:%d _ft:%d\r\n", ec.rng, _fl, _fh, _ft)
 	if ec.rng == 143798 {
-		panic("eeee")
+		//panic("eeee")
 	}
 	ec.enc_normalize()
 }
