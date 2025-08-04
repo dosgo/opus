@@ -244,7 +244,7 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 	}
 }
 
-func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE [][]int, bandID int, N int) {
+func intensity_stereoOld(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE [][]int, bandID int, N int) {
 	i := bandID
 	shift := celt_zlog2(MAX32(bandE[0][i], bandE[1][i])) - 13
 	left := VSHR32(bandE[0][i], shift)
@@ -256,6 +256,28 @@ func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE
 		l := X[X_ptr+j]
 		r := Y[Y_ptr+j]
 		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16IntAll(MULT16_16(a1, l), a2, r), 14)))
+	}
+}
+
+func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE [][]int, bandID int, N int) {
+	var i = bandID
+	var j = 0
+	var a1, a2 int
+	var left, right int
+	var norm int = 0
+	var shift = celt_zlog2(MAX32(bandE[0][i], bandE[1][i])) - 13
+	left = VSHR32(bandE[0][i], shift)
+	right = VSHR32(bandE[1][i], shift)
+	norm = CeltConstants.EPSILON + celt_sqrt(CeltConstants.EPSILON+MULT16_16(left, left)+MULT16_16(right, right))
+	a1 = DIV32_16Int(SHL32(left, 14), norm)
+	a2 = DIV32_16Int(SHL32(right, 14), norm)
+	for j = 0; j < N; j++ {
+		//   System.out.println("eeeeee\r\n");
+		var r, l int
+		l = X[X_ptr+j]
+		r = Y[Y_ptr+j]
+		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16IntAll(MULT16_16(a1, l), a2, r), 14)))
+		/* Side is not encoded, no need to calculate */
 	}
 }
 
@@ -489,7 +511,7 @@ func compute_qn(N int, b int, offset int, pulse_cap int, stereo int) int {
 	return qn
 }
 
-func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b *BoxedValueInt, B int, B0 int, LM int, stereo int, fill *BoxedValueInt) {
+func compute_theta1(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b *BoxedValueInt, B int, B0 int, LM int, stereo int, fill *BoxedValueInt) {
 	encode := ctx.encode
 	m := ctx.m
 	i := ctx.i
@@ -585,6 +607,8 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 		if encode != 0 && stereo != 0 {
 			if itheta == 0 {
 				intensity_stereo(m, X, X_ptr, Y, Y_ptr, bandE, i, N)
+				json2, _ := json.Marshal(X)
+				fmt.Printf("compute_theta1111 x:%s\r\n", string(json2))
 			} else {
 				stereo_split(X, X_ptr, Y, Y_ptr, N)
 			}
@@ -633,6 +657,176 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 		/* This is the mid vs side allocation that minimizes squared error
 		   in that band. */
 		//System.out.println("compute_theta-1 delta:"+ delta);
+		delta = FRAC_MUL16((N-1)<<7, bitexact_log2tan(iside, imid))
+	}
+
+	sctx.inv = inv
+	sctx.imid = imid
+	sctx.iside = iside
+	sctx.delta = delta
+	sctx.itheta = itheta
+	sctx.qalloc = qalloc
+}
+
+func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b *BoxedValueInt, B int, B0 int, LM int, stereo int, fill *BoxedValueInt) {
+	fmt.Printf(" compute_theta stereo:%d\r\n", stereo)
+	var qn int
+	itheta := 0
+	var delta int
+	var imid, iside int
+	var qalloc int
+	var pulse_cap int
+	var offset int
+	var tell int
+	inv := 0
+	encode := ctx.encode
+	m := ctx.m
+	i := ctx.i
+	intensity := ctx.intensity
+	ec := ctx.ec
+	bandE := ctx.bandE
+
+	pulse_cap = int(m.logN[i]) + LM*(1<<BITRES)
+	if stereo != 0 && N == 2 {
+		offset = (pulse_cap >> 1) - CeltConstants.QTHETA_OFFSET_TWOPHASE
+	} else {
+		offset = (pulse_cap >> 1) - CeltConstants.QTHETA_OFFSET
+	}
+	qn = compute_qn(N, b.Val, offset, pulse_cap, stereo)
+	if stereo != 0 && i >= intensity {
+		qn = 1
+	}
+
+	if encode != 0 {
+		itheta = stereo_itheta(X, X_ptr, Y, Y_ptr, stereo, N)
+	}
+
+	tell = int(ec.tell_frac())
+
+	if qn != 1 {
+		if encode != 0 {
+			itheta = (itheta*qn + 8192) >> 14
+		}
+
+		if stereo != 0 && N > 2 {
+			p0 := 3
+			x := itheta
+			x0 := qn / 2
+			ft := int64(p0*(x0+1) + x0)
+			if encode != 0 {
+				var low, high int
+				if x <= x0 {
+					low = p0 * x
+					high = p0 * (x + 1)
+				} else {
+					low = (x - 1 - x0) + (x0+1)*p0
+					high = (x - x0) + (x0+1)*p0
+				}
+				ec.encode(int64(low), int64(high), ft)
+			} else {
+				fs := ec.decode(ft)
+				if fs < int64((x0+1)*p0) {
+					x = int(fs) / p0
+				} else {
+					x = x0 + 1 + (int(fs) - (x0+1)*p0)
+				}
+				var low, high int
+				if x <= x0 {
+					low = p0 * x
+					high = p0 * (x + 1)
+				} else {
+					low = (x - 1 - x0) + (x0+1)*p0
+					high = (x - x0) + (x0+1)*p0
+				}
+				ec.dec_update(int64(low), int64(high), ft)
+				itheta = x
+			}
+		} else if B0 > 1 || stereo != 0 {
+			if encode != 0 {
+				ec.enc_uint(int64(itheta), int64(qn+1))
+			} else {
+				itheta = int(ec.dec_uint(int64(qn + 1)))
+			}
+		} else {
+			fs := 1
+			ft := ((qn >> 1) + 1) * ((qn >> 1) + 1)
+			if encode != 0 {
+				var fl int
+				if itheta <= (qn >> 1) {
+					fs = itheta + 1
+					fl = itheta * (itheta + 1) >> 1
+				} else {
+					fs = qn + 1 - itheta
+					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
+				}
+				ec.encode(int64(fl), int64(fl+fs), int64(ft))
+			} else {
+				fl := 0
+				fm := ec.decode(int64(ft))
+				if fm < int64(((qn >> 1) * ((qn >> 1) + 1) >> 1)) {
+					itheta = (isqrt32(8*int64(fm)+1) - 1) >> 1
+					fs = itheta + 1
+					fl = itheta * (itheta + 1) >> 1
+				} else {
+					itheta = (2*(qn+1) - (isqrt32(8*(int64(ft)-int64(fm)-1)+1))>>1)
+					fs = qn + 1 - itheta
+					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
+				}
+				ec.dec_update(int64(fl), int64(fl+fs), int64(ft))
+			}
+		}
+		if itheta < 0 {
+			panic("assert itheta >= 0")
+		}
+		itheta = (itheta * 16384) / qn
+		if encode != 0 && stereo != 0 {
+			if itheta == 0 {
+				intensity_stereo(m, X, X_ptr, Y, Y_ptr, bandE, i, N)
+			} else {
+				stereo_split(X, X_ptr, Y, Y_ptr, N)
+			}
+		}
+	} else if stereo != 0 {
+		if encode != 0 {
+			if itheta > 8192 {
+				inv = 1
+			} else {
+				inv = 0
+			}
+			if inv != 0 {
+				for j := 0; j < N; j++ {
+					Y[Y_ptr+j] = -Y[Y_ptr+j]
+				}
+			}
+			intensity_stereo(m, X, X_ptr, Y, Y_ptr, bandE, i, N)
+		}
+		if b.Val > 2<<BITRES && ctx.remaining_bits > 2<<BITRES {
+			if encode != 0 {
+				ec.enc_bit_logp(inv, 2)
+			} else {
+				inv = ec.dec_bit_logp(2)
+			}
+		} else {
+			inv = 0
+		}
+		itheta = 0
+	}
+	qalloc = int(ec.tell_frac()) - tell
+	b.Val -= qalloc
+
+	if itheta == 0 {
+		imid = 32767
+		iside = 0
+		fill.Val &= (1 << B) - 1
+		delta = -16384
+	} else if itheta == 16384 {
+		imid = 0
+		iside = 32767
+		fill.Val &= ((1 << B) - 1) << B
+		delta = 16384
+	} else {
+		imid = bitexact_cos(int(itheta))
+		iside = bitexact_cos(int(16384 - itheta))
 		delta = FRAC_MUL16((N-1)<<7, bitexact_log2tan(iside, imid))
 	}
 
@@ -834,6 +1028,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 				}
 				renormalise_vector(X, X_ptr, N, gain)
 			}
+			fmt.Printf("\r\n \r\n \r\n \r\n \r\n edit X\r\n \r\n \r\n \r\n")
 		}
 	}
 	return cm
@@ -970,6 +1165,8 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 }
 
 func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
+	json1, _ := json.Marshal(X)
+	fmt.Printf("quant_band_stereo99999999 x:%s\r\n", string(json1))
 	imid := 0
 	iside := 0
 	inv := 0
@@ -985,14 +1182,16 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 	if N == 1 {
 		return quant_band_n1(ctx, X, X_ptr, Y, Y_ptr, b, lowband_out, lowband_out_ptr)
 	}
-
+	json3, _ := json.Marshal(X)
+	fmt.Printf("quant_band_stereo9999-1-1 x:%s\r\n", string(json3))
 	boxed_b := &BoxedValueInt{Val: b}
 	boxed_fill := &BoxedValueInt{Val: fill}
 	sctx := &split_ctx{}
 	compute_theta(ctx, sctx, X, X_ptr, Y, Y_ptr, N, boxed_b, B, B, LM, 1, boxed_fill)
 	b = boxed_b.Val
 	fill = boxed_fill.Val
-
+	json2, _ := json.Marshal(X)
+	fmt.Printf("quant_band_stereo9999-2-2 x:%s\r\n", string(json2))
 	inv = sctx.inv
 	imid = sctx.imid
 	iside = sctx.iside
@@ -1054,7 +1253,6 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 			tmp = X[X_ptr+1]
 			X[X_ptr+1] = tmp - Y[Y_ptr+1]
 			Y[Y_ptr+1] = tmp + Y[Y_ptr+1]
-			fmt.Printf("ddddd\r\n")
 		}
 	} else {
 		mbits := IMAX(0, IMIN(b, (b-delta)/2))
