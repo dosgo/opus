@@ -1,8 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
-	"fmt"
 	"math"
 )
 
@@ -224,8 +222,6 @@ func renormalise_vector(X []int, X_ptr int, N int, gain int) {
 	xptr := X_ptr
 	E := CeltConstants.EPSILON + celt_inner_prod_int(X, X_ptr, X, X_ptr, N)
 
-	Xstr, _ := json.Marshal(X)
-	fmt.Printf("renormalise_vector E:%d N:%d X_ptr:%d Xlen:%d X:%s\r\n", E, N, X_ptr, len(X), Xstr)
 	k := celt_ilog2(E) >> 1
 	t := VSHR32(E, 2*(k-7))
 	g := MULT16_16_P15Int(celt_rsqrt_norm(t), gain)

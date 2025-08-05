@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 var pred_coef = []int{29440, 26112, 21248, 16384}
 var beta_coef = []int{30147, 22282, 12124, 6554}
 var beta_intra = 4915
@@ -244,7 +242,6 @@ func unquant_coarse_energyold(m *CeltMode, start int, end int, oldEBands []int, 
 	prev := [2]int{0, 0}
 	var coef, beta int
 	budget := dec.storage * 8
-	fmt.Printf("unquant_coarse_energy\r\n")
 	if intra != 0 {
 		coef = 0
 		beta = beta_intra

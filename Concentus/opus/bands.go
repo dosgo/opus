@@ -1010,7 +1010,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 					/* Noise */
 					for j = 0; j < N; j++ {
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						fmt.Printf("ctx.seed:%d\r\n", ctx.seed)
+
 						X[X_ptr+j] = (ctx.seed) >> 20
 					}
 					cm = cm_mask
@@ -1026,7 +1026,7 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 						} else {
 							tmp = 0 - tmp
 						}
-						fmt.Printf("eeee9999e\r\n")
+
 						X[X_ptr+j] = (lowband[lowband_ptr+j] + tmp)
 					}
 					cm = fill
@@ -1044,7 +1044,7 @@ var bit_interleave_table = []int{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
 var bit_deinterleave_table = []int{0, 3, 12, 15, 48, 51, 60, 63, 192, 195, 204, 207, 240, 243, 252, 255}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
-	fmt.Printf("lowband:%+v\r\n", lowband)
+
 	N0 := N
 	N_B := N
 	var N_B0 int
@@ -1172,7 +1172,6 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 }
 
 func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
-	fmt.Printf("quant_band_stereo lowband:%+v\r\n", lowband)
 
 	imid := 0
 	iside := 0
@@ -1431,21 +1430,19 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 				lowband_out = norm
 			}
 			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, lowband, effective_lowband, LM, lowband_out, M*int(eBands[i])-norm_offset, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
-			fmt.Printf("norm2+effective_lowband:%d\r\n", norm2+effective_lowband)
+
 			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, lowband, norm2+effective_lowband, LM, lowband_out, norm2+(M*int(eBands[i])-norm_offset), CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
 
 		} else {
 			var lowband []int
 			var lowband_out []int
 			if effective_lowband != -1 {
-				//fmt.Printf("effective_lowband:%d norm:%+v\r\n", effective_lowband, norm)
-				fmt.Printf("effective_lowband:%d \r\n", effective_lowband)
+
 				lowband = norm
 			}
 			if last == 0 {
 				lowband_out = norm
 			}
-			fmt.Printf("effective_lowband:%d \r\n", effective_lowband)
 			if Y != nil {
 
 				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N,

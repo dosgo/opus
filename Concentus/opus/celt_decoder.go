@@ -90,7 +90,6 @@ func (this *CeltDecoder) ResetState() {
 }
 
 func (this *CeltDecoder) celt_decoder_init(sampling_rate int, channels int) int {
-	fmt.Printf("celt_decoder_init\r\n\r\n\r\n\r\n")
 	ret := this.opus_custom_decoder_init(mode48000_960_120, channels)
 	if ret != OpusError.OPUS_OK {
 		return ret
@@ -117,7 +116,6 @@ func (this *CeltDecoder) opus_custom_decoder_init(mode *CeltMode, channels int) 
 	this.downsample = 1
 	this.start = 0
 	this.end = this.mode.effEBands
-	fmt.Printf("opus_custom_decoder_init this.end:%d\r\n", this.end)
 	this.signalling = 1
 	this.loss_count = 0
 	this.ResetState()
@@ -467,7 +465,6 @@ func (this *CeltDecoder) celt_decode_with_ecOld(data []byte, data_ptr int, len i
 	}
 
 	boxed_rng := BoxedValueInt{this.rng}
-	fmt.Printf("quant_all_bands this.rng:%d\r\n", this.rng)
 	var Y_ []int
 	if C == 2 {
 		Y_ = X[1]
@@ -614,7 +611,6 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 				break
 			}
 		}
-		fmt.Println("celt_decode_with_ec-9 LM:", LM, " maxlen:", mode.maxLM, "frame_size:", frame_size)
 		if LM > mode.maxLM {
 			return OpusError.OPUS_BAD_ARG
 		}
@@ -709,7 +705,7 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	if tell+3 <= total_bits {
 		intra_ener = dec.dec_bit_logp(3)
 	}
-	fmt.Printf("unquant_coarse_energy start:%d end:%d oldBandE:%+v intra_ener:%+v c:%d Lm:%d\r\n", start, end, oldBandE, intra_ener, C, LM)
+
 	unquant_coarse_energy(mode, start, end, oldBandE, intra_ener, dec, C, LM)
 
 	tf_res = make([]int, nbEBands)
@@ -906,7 +902,6 @@ func (this *CeltDecoder) SetEndBand(value int) {
 	if value < 1 || value > this.mode.nbEBands {
 		panic("End band above max number of ebands (or less than 1)")
 	}
-	fmt.Printf("SetEndBand value:%d\r\n", value)
 	this.end = value
 }
 

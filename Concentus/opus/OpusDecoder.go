@@ -2,7 +2,6 @@ package opus
 
 import (
 	"errors"
-	"fmt"
 )
 
 type OpusDecoder struct {
@@ -347,7 +346,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			decode_data = nil
 		}
 		celt_ret = this.Celt_Decoder.celt_decode_with_ec(decode_data, data_ptr, len, pcm, pcm_ptr, celt_frame_size, &dec, celt_accum)
-		fmt.Printf("celt_ret:%+v\r\n", celt_ret)
 	} else {
 		if celt_accum == 0 {
 			for i = pcm_ptr; i < pcm_ptr+(frame_size*this.channels); i++ {
@@ -365,7 +363,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			pcm[pcm_ptr+i] = SAT16(int(pcm[pcm_ptr+i]) + int(pcm_silk[i]))
 		}
 	}
-	fmt.Printf("88888\r\n")
 	window := this.Celt_Decoder.GetMode().window
 	var redundant_rng = 0
 	if redundancy != 0 && celt_to_silk == 0 {
@@ -410,7 +407,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			pcm[i] = int16(SATURATE(x, 32767))
 		}
 	}
-	fmt.Printf("99999999\r\n")
 	if len <= 1 {
 		this.rangeFinal = 0
 	} else {
@@ -462,7 +458,6 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 
 	packet_mode = GetEncoderMode(data, data_ptr)
 	packet_bandwidth = GetBandwidth(data, data_ptr)
-	fmt.Printf("packet_bandwidth:%d\r\n", packet_bandwidth)
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
 
 	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
@@ -514,7 +509,6 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 
 	this.mode = packet_mode
 	this.bandwidth = packet_bandwidth
-	fmt.Printf("packet_bandwidth:%d\r\n", packet_bandwidth)
 	this.frame_size = packet_frame_size
 	this.stream_channels = packet_stream_channels
 
