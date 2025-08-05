@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func main() {
@@ -35,7 +37,8 @@ func main() {
 		fmt.Printf("pcm %+v\r\n", len(pcm))
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 		//System.out.println(bytesEncoded + " bytes encoded");
-		fmt.Printf("bytesEncoded:%d data_packet:%+v\r\n", bytesEncoded, data_packet)
+
+		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, bytesToCSV(data_packet))
 		if bytesEncoded > 0 {
 			break
 		}
@@ -49,7 +52,21 @@ func main() {
 	}
 
 }
+func bytesToCSV(data []byte) string {
+	if len(data) == 0 {
+		return ""
+	}
 
+	var sb strings.Builder
+	sb.WriteString(strconv.Itoa(int(data[0])))
+
+	for i := 1; i < len(data); i++ {
+		sb.WriteString(",")
+		sb.WriteString(strconv.Itoa(int(data[i])))
+	}
+
+	return sb.String()
+}
 func BytesToShorts(input []byte, offset, length int) ([]int16, error) {
 	// 1. 输入验证
 	totalBytes := offset + length

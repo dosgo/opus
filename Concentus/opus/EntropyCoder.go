@@ -3,7 +3,6 @@ package opus
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 )
 
 const (
@@ -268,11 +267,12 @@ func (ec *EntropyCoder) dec_bits(_bits int) int {
 	ec.end_window = window
 	ec.nend_bits = available
 	ec.nbits_total += _bits
+
 	return ret
 }
 
 func (ec *EntropyCoder) enc_carry_out(_c int) {
-	fmt.Printf("\r\nenc_carry_out c:%d\r\n", _c)
+
 	if _c != EC_SYM_MAX {
 		carry := _c >> EC_SYM_BITS
 		if ec.rem >= 0 {
@@ -295,18 +295,12 @@ var i = 0
 
 func (ec *EntropyCoder) enc_normalize() {
 	/*If the range is too small, output some bits and rescale it.*/
-	fmt.Printf(" enc_normalize ec.rng:%d ec.val:%d\r\n", ec.rng, ec.val)
-	i++
-	if i > 100 {
-		os.Exit(0)
-	}
 	for ec.rng <= EC_CODE_BOT {
 		ec.enc_carry_out(int(ec.val >> EC_CODE_SHIFT))
 		/*Move the next-to-high-order symbol into the high-order position.*/
 		ec.val = int64((ec.val << EC_SYM_BITS) & (EC_CODE_TOP - 1))
 		ec.rng = int64(ec.rng << EC_SYM_BITS)
 		ec.nbits_total += EC_SYM_BITS
-		fmt.Printf("enc_normalize end ec.rng:%d\r\n", ec.rng)
 	}
 
 }
@@ -327,17 +321,6 @@ func (ec *EntropyCoder) enc_init(_buf []byte, buf_ptr int, _size int) {
 	ec.error = 0
 }
 
-func (ec *EntropyCoder) encodeOld(_fl int64, _fh int64, _ft int64) {
-	r := ec.rng / _ft
-	if _fl > 0 {
-		ec.val += ec.rng - r*(_ft-_fl)
-		ec.rng = r * (_fh - _fl)
-	} else {
-		ec.rng -= r * (_ft - _fh)
-	}
-	fmt.Printf("encode\r\n")
-	ec.enc_normalize()
-}
 func (ec *EntropyCoder) encode(_fl int64, _fh int64, _ft int64) {
 	r := ec.rng / _ft
 	if _fl > 0 {
@@ -348,7 +331,7 @@ func (ec *EntropyCoder) encode(_fl int64, _fh int64, _ft int64) {
 	}
 	//panic("eeee")
 
-	fmt.Printf("encode ec.rng:%d _fl:%d _fh:%d _ft:%d\r\n", ec.rng, _fl, _fh, _ft)
+	//fmt.Printf("encode ec.rng:%d _fl:%d _fh:%d _ft:%d\r\n", ec.rng, _fl, _fh, _ft)
 	if ec.rng == 143798 {
 		//panic("eeee")
 	}
@@ -363,7 +346,6 @@ func (ec *EntropyCoder) encode_bin(_fl int64, _fh int64, _bits int) {
 	} else {
 		ec.rng -= r * ((1 << _bits) - _fh)
 	}
-	fmt.Printf("encode_bin\r\n")
 	ec.enc_normalize()
 }
 
@@ -380,7 +362,6 @@ func (ec *EntropyCoder) enc_bit_logp(_val int, _logp int) {
 	} else {
 		ec.rng = r
 	}
-	fmt.Printf("enc_bit_logp\r\n")
 	ec.enc_normalize()
 }
 
@@ -408,22 +389,6 @@ func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ft
 	ec.enc_normalize()
 }
 
-func (ec *EntropyCoder) enc_uintOld(_fl int64, _ft int64) {
-	if _ft <= 1 {
-		panic("ft must be >1")
-	}
-	ft := _ft - 1
-	ftb := EC_ILOG(int64(ft))
-	if ftb > EC_UINT_BITS {
-		ftb -= EC_UINT_BITS
-		ft1 := (ft >> ftb) + 1
-		fl := _fl >> ftb
-		ec.encode(fl, fl+1, ft1)
-		ec.enc_bits(_fl&((1<<ftb)-1), ftb)
-	} else {
-		ec.encode(_fl, _fl+1, ft+1)
-	}
-}
 func (ec *EntropyCoder) enc_uint(_fl int64, _ft int64) {
 
 	var ft int64
@@ -433,6 +398,7 @@ func (ec *EntropyCoder) enc_uint(_fl int64, _ft int64) {
 	OpusAssert(_ft > 1)
 	_ft--
 	ftb = EC_ILOG(_ft)
+
 	if ftb > EC_UINT_BITS {
 		ftb -= EC_UINT_BITS
 		ft = ((_ft >> ftb) + 1)
@@ -497,25 +463,27 @@ func (ec *EntropyCoder) tell() int {
 }
 
 func (ec *EntropyCoder) tell_frac() int {
-	// int nbits;
-	//  int r;
-	// int l;
-	// long b;
-	nbits := ec.nbits_total << BITRES
-	l := EC_ILOG(ec.rng)
-	r := int(ec.rng >> (l - 16))
-	b := int((r >> 12) - 8)
-	b1 := 0
+	var nbits int
+	var r int
+	var l int
+	var b int64
+	nbits = ec.nbits_total << BITRES
+	fmt.Printf("ec.nbits_total:%d\r\n", ec.nbits_total)
+	l = EC_ILOG(ec.rng)
+	r = int(ec.rng >> (l - 16))
+	b = int64((r >> 12) - 8)
+
+	var b1 int64 = 0
 	if r > correction[b] {
 		b1 = 1
 	}
-	b = int(b + b1)
-	l = ((l << 3) + b)
+
+	b = int64(b + b1)
+	l = int(int64(l<<3) + b)
 	return nbits - l
 }
 
 func (ec *EntropyCoder) enc_done() {
-	fmt.Printf("\r\n\r\n\r\n\r\n\r\nenc_done\r\n\r\n\r\n")
 	l := EC_CODE_BITS - EC_ILOG(int64(ec.rng))
 	msk := (EC_CODE_TOP - 1) >> l
 	end := (ec.val + int64(msk)) & ^int64(msk)

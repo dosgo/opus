@@ -1,6 +1,6 @@
 package opus
 
-var CELT_PVQ_U_ROW = [...]int{
+var CELT_PVQ_U_ROW = []int{
 	0, 176, 351, 525, 698, 870, 1041, 1131, 1178, 1207, 1226, 1240, 1248, 1254, 1257,
 }
 
@@ -12,29 +12,6 @@ func CELT_PVQ_V(_n, _k int) int64 {
 	return CELT_PVQ_U(_n, _k) + CELT_PVQ_U(_n, _k+1)
 }
 
-func icwrsBak(_n int, _y []int) int64 {
-	var i int64
-	OpusAssert(_n >= 2)
-	j := _n - 1
-	if _y[j] < 0 {
-		i = 1
-	} else {
-		i = 0
-	}
-	k := abs(_y[j])
-	for {
-		j--
-		i += CELT_PVQ_U(_n-j, k)
-		k += abs(_y[j])
-		if _y[j] < 0 {
-			i += CELT_PVQ_U(_n-j, k+1)
-		}
-		if j <= 0 {
-			break
-		}
-	}
-	return i
-}
 func icwrs(_n int, _y []int) int64 {
 	var i int64
 

@@ -88,100 +88,6 @@ func extract_collapse_mask(iy []int, N int, B int) int {
 	return collapse_mask
 }
 
-func alg_quantOld(X []int, X_ptr int, N int, K int, spread int, B int, enc *EntropyCoder) int {
-	y := make([]int, N)
-	iy := make([]int, N)
-	signx := make([]int, N)
-
-	OpusAssert(K > 0)
-	OpusAssert(N > 1)
-
-	exp_rotation(X, X_ptr, N, 1, B, K, spread)
-
-	sum := 0
-	for j := 0; j < N; j++ {
-		if X[X_ptr+j] > 0 {
-			signx[j] = 1
-		} else {
-			signx[j] = -1
-			X[X_ptr+j] = -X[X_ptr+j]
-		}
-		iy[j] = 0
-		y[j] = 0
-	}
-
-	xy := 0
-	yy := 0
-	pulsesLeft := K
-
-	if K > (N >> 1) {
-		for j := 0; j < N; j++ {
-			sum += X[X_ptr+j]
-		}
-
-		if sum <= K {
-			X[X_ptr] = int(math.Floor(0.5 + (1.0)*(1<<14)))
-			for j := X_ptr + 1; j < X_ptr+N; j++ {
-				X[j] = 0
-			}
-			sum = int(math.Floor(0.5 + (1.0)*(1<<14)))
-		}
-
-		rcp := EXTRACT16(MULT16_32_Q16Int(K-1, celt_rcp(sum)))
-		for j := 0; j < N; j++ {
-			iy[j] = MULT16_16_Q15Int(X[X_ptr+j], int(rcp))
-			y[j] = iy[j]
-			yy = MAC16_16IntAll(yy, y[j], y[j])
-			xy = MAC16_16IntAll(xy, X[X_ptr+j], y[j])
-			y[j] *= 2
-			pulsesLeft -= iy[j]
-		}
-	}
-
-	OpusAssert(pulsesLeft >= 1)
-
-	if pulsesLeft > N+3 {
-		tmp := pulsesLeft
-		yy = MAC16_16IntAll(yy, tmp, tmp)
-		yy = MAC16_16IntAll(yy, tmp, y[0])
-		iy[0] += pulsesLeft
-		pulsesLeft = 0
-	}
-
-	s := 1
-	for i := 0; i < pulsesLeft; i++ {
-		best_id := 0
-		best_num := -CeltConstants.VERY_LARGE16
-		best_den := 0
-		rshift := 1 + celt_ilog2(K-pulsesLeft+i+1)
-		yy = ADD16Int(yy, 1)
-		for j := 0; j < N; j++ {
-			Rxy := EXTRACT16(SHR32(ADD32(xy, EXTEND32Int(X[X_ptr+j])), rshift))
-			Ryy := ADD16Int(yy, y[j])
-			Rxy = MULT16_16_Q15(Rxy, Rxy)
-			if MULT16_16(best_den, int(Rxy)) > MULT16_16(Ryy, int(best_num)) {
-				best_den = Ryy
-				best_num = Rxy
-				best_id = j
-			}
-		}
-		xy = ADD32(xy, EXTEND32Int(X[X_ptr+best_id]))
-		yy = ADD16Int(yy, y[best_id])
-		y[best_id] += 2 * s
-		iy[best_id]++
-	}
-
-	for j := 0; j < N; j++ {
-		X[X_ptr+j] = MULT16_16(signx[j], X[X_ptr+j])
-		if signx[j] < 0 {
-			iy[j] = -iy[j]
-		}
-	}
-	encode_pulses(iy, N, K, enc)
-	collapse_mask := extract_collapse_mask(iy, N, B)
-	return collapse_mask
-}
-
 func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *EntropyCoder) int {
 	y := make([]int, N)
 	iy := make([]int, N)
@@ -200,7 +106,8 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *Entropy
 	exp_rotation(X, X_ptr, N, 1, B, K, spread)
 
 	sum = 0
-	for j = 0; j < N; j++ {
+	j = 0
+	for j < N {
 		if X[X_ptr+j] > 0 {
 			signx[j] = 1
 		} else {
@@ -209,6 +116,7 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *Entropy
 		}
 		iy[j] = 0
 		y[j] = 0
+		j++
 	}
 
 	xy = 0
@@ -218,34 +126,39 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *Entropy
 
 	if K > (N >> 1) {
 		var rcp int
-		sum = 0
-		for j = 0; j < N; j++ {
+		j = 0
+		for j < N {
 			sum += X[X_ptr+j]
+			j++
 		}
 
 		if sum <= K {
 			X[X_ptr] = 16384
-			for j = X_ptr + 1; j < X_ptr+N; j++ {
+			j = X_ptr + 1
+			for j < X_ptr+N {
 				X[j] = 0
+				j++
 			}
 			sum = 16384
 		}
 
-		rcp = int(EXTRACT16(MULT16_32_Q16(int16(K-1), celt_rcp(sum))))
-		for j = 0; j < N; j++ {
-			iy[j] = MULT16_16_Q15Int(int(X[X_ptr+j]), rcp)
+		rcp = int(EXTRACT16(MULT16_32_Q16Int(int(K-1), celt_rcp(sum))))
+		j = 0
+		for j < N {
+			iy[j] = MULT16_16_Q15Int(int(X[X_ptr+j]), int(rcp))
 			y[j] = int(iy[j])
 			yy = MAC16_16Int(yy, int16(y[j]), int16(y[j]))
 			xy = MAC16_16Int(xy, int16(X[X_ptr+j]), int16(y[j]))
 			y[j] *= 2
 			pulsesLeft -= iy[j]
+			j++
 		}
 	}
 
 	OpusAssertMsg(pulsesLeft >= 1, "Allocated too many pulses in the quick pass")
 
 	if pulsesLeft > N+3 {
-		tmp := int(pulsesLeft)
+		tmp := pulsesLeft
 		yy = MAC16_16Int(yy, int16(tmp), int16(tmp))
 		yy = MAC16_16Int(yy, int16(tmp), int16(y[0]))
 		iy[0] += pulsesLeft
@@ -255,36 +168,38 @@ func alg_quant(X []int, X_ptr int, N int, K int, spread int, B int, enc *Entropy
 	s = 1
 	for i = 0; i < pulsesLeft; i++ {
 		best_id := 0
-		best_num := -CeltConstants.VERY_LARGE16
+		var best_num int = 0 - int(CeltConstants.VERY_LARGE16)
 		best_den := 0
 		rshift := 1 + celt_ilog2(K-pulsesLeft+i+1)
 		yy = ADD16Int(yy, 1)
-		for j = 0; j < N; j++ {
-			Rxy := EXTRACT16(SHR32(ADD32(int(xy), int(X[X_ptr+j])), rshift))
-			Ryy := ADD16Int(yy, int(y[j]))
-
-			Rxy = MULT16_16_Q15(int16(Rxy), int16(Rxy))
+		j = 0
+		for j < N {
+			var Rxy, Ryy int
+			Rxy = int(EXTRACT16(SHR32(ADD32(int(xy), EXTEND32Int(X[X_ptr+j])), rshift)))
+			Ryy = ADD16Int(yy, y[j])
+			Rxy = MULT16_16_Q15Int(int(Rxy), int(Rxy))
 			if MULT16_16(int(best_den), int(Rxy)) > MULT16_16(int(Ryy), int(best_num)) {
-				best_den = int(Ryy)
-				best_num = int16(Rxy)
+				best_den = Ryy
+				best_num = int(Rxy)
 				best_id = j
 			}
+			j++
 		}
 
-		xy = ADD32(xy, int(X[X_ptr+best_id]))
-		yy = ADD16Int(yy, int(y[best_id]))
-
+		xy = ADD32(xy, EXTEND32Int(X[X_ptr+best_id]))
+		yy = ADD16Int(yy, y[best_id])
 		y[best_id] += 2 * s
 		iy[best_id]++
 	}
 
-	for j = 0; j < N; j++ {
+	j = 0
+	for j < N {
 		X[X_ptr+j] = MULT16_16(int(signx[j]), int(X[X_ptr+j]))
 		if signx[j] < 0 {
 			iy[j] = -iy[j]
 		}
+		j++
 	}
-
 	encode_pulses(iy, N, K, enc)
 
 	collapse_mask = extract_collapse_mask(iy, N, B)

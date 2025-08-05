@@ -244,21 +244,6 @@ func anti_collapse(m *CeltMode, X_ [][]int, collapse_masks []int16, LM int, C in
 	}
 }
 
-func intensity_stereoOld(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE [][]int, bandID int, N int) {
-	i := bandID
-	shift := celt_zlog2(MAX32(bandE[0][i], bandE[1][i])) - 13
-	left := VSHR32(bandE[0][i], shift)
-	right := VSHR32(bandE[1][i], shift)
-	norm := CeltConstants.EPSILON + celt_sqrt(CeltConstants.EPSILON+MULT16_16(left, left)+MULT16_16(right, right))
-	a1 := DIV32_16Int(SHL32(left, 14), norm)
-	a2 := DIV32_16Int(SHL32(right, 14), norm)
-	for j := 0; j < N; j++ {
-		l := X[X_ptr+j]
-		r := Y[Y_ptr+j]
-		X[X_ptr+j] = int(EXTRACT16(SHR32(MAC16_16IntAll(MULT16_16(a1, l), a2, r), 14)))
-	}
-}
-
 func intensity_stereo(m *CeltMode, X []int, X_ptr int, Y []int, Y_ptr int, bandE [][]int, bandID int, N int) {
 	var i = bandID
 	var j = 0
@@ -669,7 +654,6 @@ func compute_theta1(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int,
 }
 
 func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b *BoxedValueInt, B int, B0 int, LM int, stereo int, fill *BoxedValueInt) {
-	fmt.Printf(" compute_theta stereo:%d\r\n", stereo)
 	var qn int
 	itheta := 0
 	var delta int
@@ -991,9 +975,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 		K := get_pulses(q)
 		if encode != 0 {
 			//fmt.Printf("alg_quant\r\n")
-
-			json1, _ := json.Marshal(X)
-			fmt.Printf("alg_quant x:%s\r\n", string(json1))
 			//	panic("alg_quant")
 			cm = alg_quant(X, X_ptr, N, K, spread, B, ec)
 		} else {
@@ -1165,8 +1146,6 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 }
 
 func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
-	json1, _ := json.Marshal(X)
-	fmt.Printf("quant_band_stereo99999999 x:%s\r\n", string(json1))
 	imid := 0
 	iside := 0
 	inv := 0
@@ -1182,16 +1161,13 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 	if N == 1 {
 		return quant_band_n1(ctx, X, X_ptr, Y, Y_ptr, b, lowband_out, lowband_out_ptr)
 	}
-	json3, _ := json.Marshal(X)
-	fmt.Printf("quant_band_stereo9999-1-1 x:%s\r\n", string(json3))
+
 	boxed_b := &BoxedValueInt{Val: b}
 	boxed_fill := &BoxedValueInt{Val: fill}
 	sctx := &split_ctx{}
 	compute_theta(ctx, sctx, X, X_ptr, Y, Y_ptr, N, boxed_b, B, B, LM, 1, boxed_fill)
 	b = boxed_b.Val
 	fill = boxed_fill.Val
-	json2, _ := json.Marshal(X)
-	fmt.Printf("quant_band_stereo9999-2-2 x:%s\r\n", string(json2))
 	inv = sctx.inv
 	imid = sctx.imid
 	iside = sctx.iside
@@ -1261,8 +1237,6 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 
 		rebalance := ctx.remaining_bits
 		if mbits >= sbits {
-			json1, _ := json.Marshal(X)
-			fmt.Printf("quant_band99999999 x:%s\r\n", string(json1))
 			cm = quant_band(ctx, X, X_ptr, N, mbits, B, lowband, lowband_ptr, LM, lowband_out, lowband_out_ptr, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, fill)
 			rebalance = mbits - (rebalance - ctx.remaining_bits)
 			if rebalance > 3<<BITRES && itheta != 0 {
@@ -1335,7 +1309,6 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		Y_ptr := M * int(eBands[i])
 		N := M*int(eBands[i+1]) - X_ptr
 		tell := int(ec.tell_frac())
-
 		if i != start {
 			balance -= tell
 		}
