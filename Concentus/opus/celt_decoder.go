@@ -24,7 +24,7 @@ type CeltDecoder struct {
 	postfilter_gain_old   int
 	postfilter_tapset     int
 	postfilter_tapset_old int
-	preemph_memD          [2]int
+	preemph_memD          []int
 	decode_mem            [][]int
 	lpc                   [][]int
 	oldEBands             []int
@@ -56,7 +56,7 @@ func (this *CeltDecoder) PartialReset() {
 	this.postfilter_gain_old = 0
 	this.postfilter_tapset = 0
 	this.postfilter_tapset_old = 0
-	this.preemph_memD = [2]int{}
+	this.preemph_memD = make([]int, 2)
 	this.decode_mem = nil
 	this.lpc = nil
 	this.oldEBands = nil
@@ -283,7 +283,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 	this.loss_count++
 }
 
-func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
+func (this *CeltDecoder) celt_decode_with_ecOld(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
 	C := this.channels
 	CC := this.stream_channels
 	mode := this.mode
@@ -562,6 +562,337 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 		this.error = 1
 	}
 	return frame_size / this.downsample
+}
+
+func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
+	var c, i, N int
+	var spread_decision, bits int
+	var X [][]int
+	var fine_quant, pulses, cap, offsets, fine_priority, tf_res []int
+	var collapse_masks []int16
+	out_syn := make([][]int, 2)
+	out_syn_ptrs := make([]int, 2)
+	var oldBandE, oldLogE, oldLogE2, backgroundLogE []int
+
+	var shortBlocks, isTransient, intra_ener int
+	CC := ed.channels
+	var LM, M int
+	start := ed.start
+	end := ed.end
+	var effEnd, codedBands, alloc_trim, postfilter_pitch, postfilter_gain int
+	intensity := 0
+	dual_stereo := 0
+	var total_bits, balance, tell, dynalloc_logp, postfilter_tapset int
+	anti_collapse_rsv := 0
+	anti_collapse_on := 0
+	silence := 0
+	C := ed.stream_channels
+	var mode *CeltMode
+	nbEBands := 0
+	overlap := 0
+	var eBands []int16
+
+	mode = ed.mode
+	nbEBands = mode.nbEBands
+	overlap = mode.overlap
+	eBands = mode.eBands
+	start = ed.start
+	end = ed.end
+	fmt.Println("frame_size:", frame_size)
+	frame_size *= ed.downsample
+
+	oldBandE = ed.oldEBands
+	oldLogE = ed.oldLogE
+	oldLogE2 = ed.oldLogE2
+	backgroundLogE = ed.backgroundLogE
+
+	{
+		for LM = 0; LM <= mode.maxLM; LM++ {
+			if mode.shortMdctSize<<LM == frame_size {
+				break
+			}
+		}
+		fmt.Println("celt_decode_with_ec-9 LM:", LM, " maxlen:", mode.maxLM, "frame_size:", frame_size)
+		if LM > mode.maxLM {
+			return OpusError.OPUS_BAD_ARG
+		}
+	}
+	M = 1 << LM
+
+	if length < 0 || length > 1275 || pcm == nil {
+		return OpusError.OPUS_BAD_ARG
+	}
+
+	N = M * mode.shortMdctSize
+	c = 0
+	for {
+		out_syn[c] = ed.decode_mem[c]
+		out_syn_ptrs[c] = CeltConstants.DECODE_BUFFER_SIZE - N
+		c++
+		if !(c < CC) {
+			break
+		}
+	}
+
+	effEnd = end
+	if effEnd > mode.effEBands {
+		effEnd = mode.effEBands
+	}
+
+	if data == nil || length <= 1 {
+		ed.celt_decode_lost(N, LM)
+		deemphasis(out_syn, out_syn_ptrs, pcm, pcm_ptr, N, CC, ed.downsample, mode.preemph, ed.preemph_memD, accum)
+		return frame_size / ed.downsample
+	}
+
+	if dec == nil {
+		dec = NewEntropyCoder()
+		dec.dec_init(data, data_ptr, length)
+	}
+
+	if C == 1 {
+		for i = 0; i < nbEBands; i++ {
+			oldBandE[i] = MAX16Int(oldBandE[i], oldBandE[nbEBands+i])
+		}
+	}
+
+	total_bits = length * 8
+	tell = dec.tell()
+
+	if tell >= total_bits {
+		silence = 1
+	} else if tell == 1 {
+		silence = dec.dec_bit_logp(15)
+	} else {
+		silence = 0
+	}
+
+	if silence != 0 {
+		tell = length * 8
+		dec.nbits_total += tell - dec.tell()
+	}
+
+	postfilter_gain = 0
+	postfilter_pitch = 0
+	postfilter_tapset = 0
+	if start == 0 && tell+16 <= total_bits {
+		if dec.dec_bit_logp(1) != 0 {
+			//var qg int
+			var octave int
+			octave = int(dec.dec_uint(6))
+			postfilter_pitch = (16 << octave) + dec.dec_bits(4+octave) - 1
+			dec.dec_bits(3)
+			if dec.tell()+2 <= total_bits {
+				postfilter_tapset = dec.dec_icdf(tapset_icdf[:], 2)
+			}
+			postfilter_gain = int(math.Floor(0.5 + (0.09375)*(1<<15)))
+		}
+		tell = dec.tell()
+	}
+
+	if LM > 0 && tell+3 <= total_bits {
+		isTransient = dec.dec_bit_logp(3)
+		tell = dec.tell()
+	} else {
+		isTransient = 0
+	}
+
+	if isTransient != 0 {
+		shortBlocks = M
+	} else {
+		shortBlocks = 0
+	}
+
+	intra_ener = 0
+	if tell+3 <= total_bits {
+		intra_ener = dec.dec_bit_logp(3)
+	}
+	unquant_coarse_energy(mode, start, end, oldBandE, intra_ener, dec, C, LM)
+
+	tf_res = make([]int, nbEBands)
+	tf_decode(start, end, isTransient, tf_res, LM, dec)
+
+	tell = dec.tell()
+	spread_decision = Spread.SPREAD_NORMAL
+	if tell+4 <= total_bits {
+		spread_decision = dec.dec_icdf(spread_icdf[:], 5)
+	}
+
+	cap = make([]int, nbEBands)
+	init_caps(mode, cap, LM, C)
+
+	offsets = make([]int, nbEBands)
+	dynalloc_logp = 6
+	total_bits <<= BITRES
+	tell = dec.tell_frac()
+	for i = start; i < end; i++ {
+		var width, quanta int
+		dynalloc_loop_logp := dynalloc_logp
+		boost := 0
+		width = C * (int(eBands[i+1]) - int(eBands[i])) << LM
+		quanta = IMIN(width<<BITRES, IMAX(6<<BITRES, width))
+		for tell+(dynalloc_loop_logp<<BITRES) < total_bits && boost < cap[i] {
+			flag := dec.dec_bit_logp(int64(dynalloc_loop_logp))
+			tell = dec.tell_frac()
+			if flag == 0 {
+				break
+			}
+			boost += quanta
+			total_bits -= quanta
+			dynalloc_loop_logp = 1
+		}
+		offsets[i] = boost
+		if boost > 0 {
+			dynalloc_logp = IMAX(2, dynalloc_logp-1)
+		}
+	}
+
+	fine_quant = make([]int, nbEBands)
+	alloc_trim = 5
+	if tell+(6<<BITRES) <= total_bits {
+		alloc_trim = dec.dec_icdf(trim_icdf[:], 7)
+	}
+
+	bits = (length*8)<<BITRES - dec.tell_frac() - 1
+	if isTransient != 0 && LM >= 2 && bits >= ((LM+2)<<BITRES) {
+		anti_collapse_rsv = 1 << BITRES
+	} else {
+		anti_collapse_rsv = 0
+	}
+	bits -= anti_collapse_rsv
+
+	pulses = make([]int, nbEBands)
+	fine_priority = make([]int, nbEBands)
+
+	boxed_intensity := &BoxedValueInt{Val: intensity}
+	boxed_dual_stereo := &BoxedValueInt{Val: dual_stereo}
+	boxed_balance := &BoxedValueInt{Val: 0}
+	fmt.Printf("compute_allocation dual_stereo-1 :%d\r\n", dual_stereo)
+	codedBands = compute_allocation(mode, start, end, offsets, cap, alloc_trim, boxed_intensity, boxed_dual_stereo, bits, boxed_balance, pulses, fine_quant, fine_priority, C, LM, dec, 0, 0, 0)
+	intensity = boxed_intensity.Val
+	dual_stereo = boxed_dual_stereo.Val
+	fmt.Printf("compute_allocation dual_stereo :%d\r\n", dual_stereo)
+	balance = boxed_balance.Val
+
+	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, dec, C)
+
+	c = 0
+	for {
+		copy(ed.decode_mem[c][0:], ed.decode_mem[c][N:CeltConstants.DECODE_BUFFER_SIZE-N+overlap/2])
+		c++
+		if !(c < CC) {
+			break
+		}
+	}
+
+	collapse_masks = make([]int16, C*nbEBands)
+	X = make([][]int, C)
+	for i := range X {
+		X[i] = make([]int, N)
+	}
+
+	boxed_rng := &BoxedValueInt{Val: ed.rng}
+	var Y_ []int
+	if C == 2 {
+		Y_ = X[1]
+	}
+	fmt.Printf("dual_stereo:%d\r\n", dual_stereo)
+	quant_all_bands(0, mode, start, end, X[0], Y_, collapse_masks, nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res, length*(8<<BITRES)-anti_collapse_rsv, balance, dec, LM, codedBands, boxed_rng)
+	ed.rng = boxed_rng.Val
+
+	if anti_collapse_rsv > 0 {
+		anti_collapse_on = dec.dec_bits(1)
+	}
+
+	unquant_energy_finalise(mode, start, end, oldBandE, fine_quant, fine_priority, length*8-dec.tell(), dec, C)
+
+	if anti_collapse_on != 0 {
+		anti_collapse(mode, X, collapse_masks, LM, C, N, start, end, oldBandE, oldLogE, oldLogE2, pulses, ed.rng)
+	}
+
+	if silence != 0 {
+		for i = 0; i < C*nbEBands; i++ {
+			oldBandE[i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		}
+	}
+
+	celt_synthesis(mode, X, out_syn, out_syn_ptrs, oldBandE, start, effEnd, C, CC, isTransient, LM, ed.downsample, silence)
+
+	c = 0
+	for {
+		ed.postfilter_period = IMAX(ed.postfilter_period, CeltConstants.COMBFILTER_MINPERIOD)
+		ed.postfilter_period_old = IMAX(ed.postfilter_period_old, CeltConstants.COMBFILTER_MINPERIOD)
+		comb_filter(out_syn[c], out_syn_ptrs[c], out_syn[c], out_syn_ptrs[c], ed.postfilter_period_old, ed.postfilter_period, mode.shortMdctSize, ed.postfilter_gain_old, ed.postfilter_gain, ed.postfilter_tapset_old, ed.postfilter_tapset, mode.window, overlap)
+		if LM != 0 {
+			comb_filter(out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, ed.postfilter_period, postfilter_pitch, N-mode.shortMdctSize, ed.postfilter_gain, postfilter_gain, ed.postfilter_tapset, postfilter_tapset, mode.window, overlap)
+		}
+		c++
+		if !(c < CC) {
+			break
+		}
+	}
+	ed.postfilter_period_old = ed.postfilter_period
+	ed.postfilter_gain_old = ed.postfilter_gain
+	ed.postfilter_tapset_old = ed.postfilter_tapset
+	ed.postfilter_period = postfilter_pitch
+	ed.postfilter_gain = postfilter_gain
+	ed.postfilter_tapset = postfilter_tapset
+	if LM != 0 {
+		ed.postfilter_period_old = ed.postfilter_period
+		ed.postfilter_gain_old = ed.postfilter_gain
+		ed.postfilter_tapset_old = ed.postfilter_tapset
+	}
+
+	if C == 1 {
+		copy(oldBandE[nbEBands:], oldBandE[:nbEBands])
+	}
+
+	if isTransient == 0 {
+		var max_background_increase int
+		copy(oldLogE2, oldLogE)
+		copy(oldLogE, oldBandE)
+		if ed.loss_count < 10 {
+			max_background_increase = int(0.5 + 0.001*float64(int(1)<<CeltConstants.DB_SHIFT))
+		} else {
+			max_background_increase = int(0.5 + 1.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		}
+		for i = 0; i < 2*nbEBands; i++ {
+			backgroundLogE[i] = MIN16Int(backgroundLogE[i]+max_background_increase, oldBandE[i])
+		}
+	} else {
+		for i = 0; i < 2*nbEBands; i++ {
+			oldLogE[i] = MIN16Int(oldLogE[i], oldBandE[i])
+		}
+	}
+	c = 0
+	for {
+		for i = 0; i < start; i++ {
+			oldBandE[c*nbEBands+i] = 0
+			oldLogE[c*nbEBands+i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+			oldLogE2[c*nbEBands+i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		}
+		for i = end; i < nbEBands; i++ {
+			oldBandE[c*nbEBands+i] = 0
+			oldLogE[c*nbEBands+i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+			oldLogE2[c*nbEBands+i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
+		}
+		c++
+		if !(c < 2) {
+			break
+		}
+	}
+	ed.rng = int(dec.rng)
+
+	deemphasis(out_syn, out_syn_ptrs, pcm, pcm_ptr, N, CC, ed.downsample, mode.preemph, ed.preemph_memD, accum)
+	ed.loss_count = 0
+
+	if dec.tell() > 8*length {
+		return OpusError.OPUS_INTERNAL_ERROR
+	}
+	if dec.get_error() != 0 {
+		ed.error = 1
+	}
+	return frame_size / ed.downsample
 }
 
 func (this *CeltDecoder) SetStartBand(value int) {

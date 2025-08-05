@@ -1362,7 +1362,6 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 
 		if dual_stereo != 0 && i == intensity {
 			dual_stereo = 0
-
 			if resynth != 0 {
 				for j := 0; j < M*int(eBands[i])-norm_offset; j++ {
 					norm[j] = HALF32(norm[j] + norm[norm2+j])
@@ -1380,7 +1379,9 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 				lowband_out = norm
 			}
 			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, lowband, effective_lowband, LM, lowband_out, M*int(eBands[i])-norm_offset, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
+			fmt.Printf("norm2+effective_lowband:%d\r\n", norm2+effective_lowband)
 			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, lowband, norm2+effective_lowband, LM, lowband_out, norm2+(M*int(eBands[i])-norm_offset), CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
+
 		} else {
 			var lowband []int
 			var lowband_out []int
