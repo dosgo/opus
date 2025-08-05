@@ -13,7 +13,7 @@ func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, 
 }
 
 func silk_encode_pulses(
-	psRangeEnc EntropyCoder,
+	psRangeEnc *EntropyCoder,
 	signalType int,
 	quantOffsetType int,
 	pulses []int8,
@@ -132,7 +132,7 @@ func silk_encode_pulses(
 
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
-			silk_shell_encoder(&psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
+			silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
 		}
 	}
 

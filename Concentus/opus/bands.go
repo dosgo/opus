@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -592,8 +591,6 @@ func compute_theta1(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int,
 		if encode != 0 && stereo != 0 {
 			if itheta == 0 {
 				intensity_stereo(m, X, X_ptr, Y, Y_ptr, bandE, i, N)
-				json2, _ := json.Marshal(X)
-				fmt.Printf("compute_theta1111 x:%s\r\n", string(json2))
 			} else {
 				stereo_split(X, X_ptr, Y, Y_ptr, N)
 			}
@@ -974,8 +971,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	if q != 0 {
 		K := get_pulses(q)
 		if encode != 0 {
-			//fmt.Printf("alg_quant\r\n")
-			//	panic("alg_quant")
 			cm = alg_quant(X, X_ptr, N, K, spread, B, ec)
 		} else {
 			cm = alg_unquant(X, X_ptr, N, K, spread, B, ec, gain)
@@ -1009,7 +1004,6 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 				}
 				renormalise_vector(X, X_ptr, N, gain)
 			}
-			fmt.Printf("\r\n \r\n \r\n \r\n \r\n edit X\r\n \r\n \r\n \r\n")
 		}
 	}
 	return cm

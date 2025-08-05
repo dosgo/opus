@@ -93,7 +93,7 @@ func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs 
 	enc.encode_bin(fl, (fl + fs), 15)
 }
 
-func (l *laplace) ec_laplace_decode(dec EntropyCoder, fs int64, decay int) int {
+func (l *laplace) ec_laplace_decode(dec *EntropyCoder, fs int64, decay int) int {
 	val := 0
 	fm := dec.decode_bin(15)
 	fl := int64(0)

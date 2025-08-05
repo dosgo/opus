@@ -307,7 +307,7 @@ func silk_Encode(
 							}
 
 							silk_encode_indices(psEnc.state_Fxx[n], psRangeEnc, i, 1, condCoding)
-							silk_encode_pulses(*psRangeEnc, int(psEnc.state_Fxx[n].indices_LBRR[i].signalType), int(psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType),
+							silk_encode_pulses(psRangeEnc, int(psEnc.state_Fxx[n].indices_LBRR[i].signalType), int(psEnc.state_Fxx[n].indices_LBRR[i].quantOffsetType),
 								psEnc.state_Fxx[n].pulses_LBRR[i], psEnc.state_Fxx[n].frame_length)
 						}
 					}

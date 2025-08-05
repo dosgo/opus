@@ -1,6 +1,6 @@
 package opus
 
-func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec EntropyCoder, FrameIndex int, decode_LBRR int, condCoding int) {
+func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec *EntropyCoder, FrameIndex int, decode_LBRR int, condCoding int) {
 	var i, k, Ix int
 	var decode_absolute_lagIndex, delta_lagIndex int
 	ec_ix := make([]int16, psDec.LPC_order)

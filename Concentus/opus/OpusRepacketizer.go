@@ -303,22 +303,27 @@ func UnpadMultistreamPacket(data []byte, data_offset int, len_val int, nb_stream
 	return dst_len
 }
 
-func getNumSamplesPerFrame(data []byte, data_ptr int, fs int) int {
-	if data_ptr >= len(data) {
-		return 0
+func getNumSamplesPerFrame(packet []byte, packet_offset int, Fs int) int {
+	var audiosize int
+	if (packet[packet_offset] & 0x80) != 0 {
+		audiosize = int((packet[packet_offset] >> 3) & 0x3)
+		audiosize = (Fs << audiosize) / 400
+	} else if (packet[packet_offset] & 0x60) == 0x60 {
+		if (packet[packet_offset] & 0x08) != 0 {
+			audiosize = Fs / 50
+		} else {
+			audiosize = Fs / 100
+		}
+
+	} else {
+		audiosize = int((packet[packet_offset] >> 3) & 0x3)
+		if audiosize == 3 {
+			audiosize = Fs * 60 / 1000
+		} else {
+			audiosize = (Fs << audiosize) / 100
+		}
 	}
-	audiosize := 0
-	switch (data[data_ptr] >> 3) & 0x03 {
-	case 0:
-		audiosize = 960
-	case 1:
-		audiosize = 480
-	case 2:
-		audiosize = 240
-	case 3:
-		audiosize = 120
-	}
-	return audiosize * fs / 8000
+	return audiosize
 }
 
 func getNumFrames(data []byte, data_ptr int, len_val int) int {

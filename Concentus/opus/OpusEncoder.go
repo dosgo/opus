@@ -2,7 +2,6 @@ package opus
 
 import (
 	"errors"
-	"fmt"
 	"math"
 )
 
@@ -814,7 +813,6 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		redundancy_bytes = 0
 		st.silk_bw_switch = 0
 	}
-	fmt.Printf(" st.mode:%d\r\n", st.mode)
 	if st.mode == MODE_SILK_ONLY {
 		ret = (enc.tell() + 7) >> 3
 		enc.enc_done()
@@ -886,7 +884,6 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			ret--
 		}
 	}
-	fmt.Printf("ret111:%d  st.use_vbr:%d redundancy_bytes:%d\r\n", ret, st.use_vbr, redundancy_bytes)
 	ret += 1 + redundancy_bytes
 	if st.use_vbr == 0 {
 		if PadPacket(data, data_ptr, ret, max_data_bytes) != OpusError.OPUS_OK {

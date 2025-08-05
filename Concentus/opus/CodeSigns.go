@@ -9,7 +9,7 @@ func silk_dec_map(a int) int {
 }
 
 func silk_encode_signs(
-	psRangeEnc EntropyCoder,
+	psRangeEnc *EntropyCoder,
 	pulses []int8,
 	length int,
 	signalType int,

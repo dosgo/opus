@@ -39,16 +39,16 @@ func main() {
 		//System.out.println(bytesEncoded + " bytes encoded");
 
 		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, bytesToCSV(data_packet))
-		if bytesEncoded > 0 {
-			break
-		}
 
 		samplesDecoded, err := decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
 		fmt.Printf("samplesDecoded:%d samplesDecoded:%+v\r\n", samplesDecoded, samplesDecoded)
 		//System.out.println(samplesDecoded + " samples decoded");
 		// bytesOut = ShortsToBytes(pcm);
 		// fileOut.write(bytesOut, 0, bytesOut.length);
-
+		if err != nil {
+			fmt.Printf("err:%+v\r\n", err)
+			break
+		}
 	}
 
 }

@@ -1,6 +1,9 @@
 package opus
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type OpusDecoder struct {
 	channels             int
@@ -98,6 +101,7 @@ func NewOpusDecoder(Fs int, channels int) (*OpusDecoder, error) {
 var SILENCE = []byte{0xFF, 0xFF}
 
 func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, decode_fec int) int {
+
 	var i, silk_ret, celt_ret int
 	dec := EntropyCoder{}
 	var silk_frame_size int
@@ -345,6 +349,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			decode_data = nil
 		}
 		celt_ret = this.Celt_Decoder.celt_decode_with_ec(decode_data, data_ptr, len, pcm, pcm_ptr, celt_frame_size, &dec, celt_accum)
+		fmt.Printf("celt_ret:%+v\r\n", celt_ret)
 	} else {
 		if celt_accum == 0 {
 			for i = pcm_ptr; i < pcm_ptr+(frame_size*this.channels); i++ {
@@ -362,7 +367,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			pcm[pcm_ptr+i] = SAT16(int(pcm[pcm_ptr+i]) + int(pcm_silk[i]))
 		}
 	}
-
+	fmt.Printf("88888\r\n")
 	window := this.Celt_Decoder.GetMode().window
 	var redundant_rng = 0
 	if redundancy != 0 && celt_to_silk == 0 {
@@ -407,7 +412,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			pcm[i] = int16(SATURATE(x, 32767))
 		}
 	}
-
+	fmt.Printf("99999999\r\n")
 	if len <= 1 {
 		this.rangeFinal = 0
 	} else {
@@ -460,6 +465,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	packet_mode = GetEncoderMode(data, data_ptr)
 	packet_bandwidth = GetEncoderMode(data, data_ptr)
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
+
 	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
 
 	var toc BoxedValueByte = BoxedValueByte{0}
@@ -542,7 +548,7 @@ func (this *OpusDecoder) Decode(in_data []byte, in_data_offset int, len int, out
 		if ret == OpusError.OPUS_BAD_ARG {
 			return 0, errors.New("OPUS_BAD_ARG while decoding")
 		}
-		return 0, errors.New("OPUS_BAD_ARG while decoding")
+		return 0, errors.New("An error occurred during decoding")
 	}
 
 	return ret, nil

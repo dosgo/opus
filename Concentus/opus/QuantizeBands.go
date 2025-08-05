@@ -260,7 +260,7 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, int
 				if pi > 40 {
 					pi = 40
 				}
-				qi = Laplace.ec_laplace_decode(*dec, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+				qi = Laplace.ec_laplace_decode(dec, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
 			} else if budget-tell >= 2 {
 				val := dec.dec_icdf(small_energy_icdf, 2)
 				qi = (val >> 1)

@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type CeltDecoder struct {
 	mode                  *CeltMode
@@ -281,7 +284,7 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 }
 
 func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
-	//C := this.channels
+	C := this.channels
 	CC := this.stream_channels
 	mode := this.mode
 	nbEBands := mode.nbEBands
@@ -309,7 +312,6 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	}
 	M := 1 << LM
 	N := M * mode.shortMdctSize
-
 	if len < 0 || len > 1275 || pcm == nil {
 		return OpusError.OPUS_BAD_ARG
 	}
@@ -325,7 +327,6 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	if effEnd > mode.effEBands {
 		effEnd = mode.effEBands
 	}
-
 	if data == nil || len <= 1 {
 		this.celt_decode_lost(N, LM)
 		deemphasis(out_syn, out_syn_ptrs, pcm, pcm_ptr, N, CC, this.downsample, mode.preemph, this.preemph_memD[:], accum)
@@ -356,7 +357,6 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 		tell = total_bits
 		localDec.nbits_total += tell - localDec.tell()
 	}
-
 	postfilter_gain := 0
 	postfilter_pitch := 0
 	postfilter_tapset := 0
@@ -465,15 +465,15 @@ func (this *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, len int,
 	}
 
 	boxed_rng := BoxedValueInt{this.rng}
-	quant_all_bands(0, mode, start, end, X[0], func() []int {
-		if CC == 2 {
-			return X[1]
-		}
-		return nil
-	}(), collapse_masks, nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res, len*(8<<BITRES)-anti_collapse_rsv, balance, localDec, LM, codedBands, &boxed_rng)
-	this.rng = boxed_rng.Val
-
-	anti_collapse_on := 0
+	fmt.Printf("quant_all_bands this.rng:%d\r\n", this.rng)
+	var Y_ []int
+	if C == 2 {
+		Y_ = X[1]
+	}
+	quant_all_bands(0, mode, start, end, X[0], Y_, collapse_masks,
+		nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res,
+		len*(8<<BITRES)-anti_collapse_rsv, balance, dec, LM, codedBands, &boxed_rng)
+	var anti_collapse_on = 0
 	if anti_collapse_rsv > 0 {
 		anti_collapse_on = localDec.dec_bits(1)
 	}
