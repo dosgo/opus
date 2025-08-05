@@ -11,10 +11,10 @@ func gen_toc(mode int, framerate int, bandwidth int, channels int) byte {
 		period++
 	}
 	if mode == MODE_SILK_ONLY {
-		toc = int16((GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_NARROWBAND)) << 5)
+		toc = int16((OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_NARROWBAND)) << 5)
 		toc |= int16((period - 2) << 3)
 	} else if mode == MODE_CELT_ONLY {
-		tmp := GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND)
+		tmp := OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND)
 		if tmp < 0 {
 			tmp = 0
 		}
@@ -23,7 +23,7 @@ func gen_toc(mode int, framerate int, bandwidth int, channels int) byte {
 		toc |= int16(period << 3)
 	} else {
 		toc = 0x60
-		toc |= int16((GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND)) << 4)
+		toc |= int16((OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND)) << 4)
 		toc |= int16((period - 2) << 3)
 	}
 	toc |= int16((map[bool]int{true: 1, false: 0}[channels == 2]) << 2)

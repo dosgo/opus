@@ -2,6 +2,7 @@ package main
 
 import (
 	"concentus/opus"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -45,8 +46,11 @@ func main() {
 		//System.out.println(samplesDecoded + " samples decoded");
 		// bytesOut = ShortsToBytes(pcm);
 		// fileOut.write(bytesOut, 0, bytesOut.length);
-		if err != nil {
+		if err == nil {
 			fmt.Printf("err:%+v\r\n", err)
+			pcmjson, _ := json.Marshal(pcm)
+			fmt.Printf("pcm:%s\r\n", string(pcmjson))
+
 			break
 		}
 	}

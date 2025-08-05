@@ -296,21 +296,19 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		start_band = 17
 	}
 
-	{
-		endband := 21
-		switch this.bandwidth {
-		case OPUS_BANDWIDTH_NARROWBAND:
-			endband = 13
-		case OPUS_BANDWIDTH_MEDIUMBAND, OPUS_BANDWIDTH_WIDEBAND:
-			endband = 17
-		case OPUS_BANDWIDTH_SUPERWIDEBAND:
-			endband = 19
-		case OPUS_BANDWIDTH_FULLBAND:
-			endband = 21
-		}
-		this.Celt_Decoder.SetEndBand(endband)
-		this.Celt_Decoder.SetChannels(this.stream_channels)
+	endband := 21
+	switch this.bandwidth {
+	case OPUS_BANDWIDTH_NARROWBAND:
+		endband = 13
+	case OPUS_BANDWIDTH_MEDIUMBAND, OPUS_BANDWIDTH_WIDEBAND:
+		endband = 17
+	case OPUS_BANDWIDTH_SUPERWIDEBAND:
+		endband = 19
+	case OPUS_BANDWIDTH_FULLBAND:
+		endband = 21
 	}
+	this.Celt_Decoder.SetEndBand(endband)
+	this.Celt_Decoder.SetChannels(this.stream_channels)
 
 	if redundancy != 0 {
 		transition = 0
@@ -463,7 +461,8 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 	}
 
 	packet_mode = GetEncoderMode(data, data_ptr)
-	packet_bandwidth = GetEncoderMode(data, data_ptr)
+	packet_bandwidth = GetBandwidth(data, data_ptr)
+	fmt.Printf("packet_bandwidth:%d\r\n", packet_bandwidth)
 	packet_frame_size = getNumSamplesPerFrame(data, data_ptr, this.Fs)
 
 	packet_stream_channels = GetNumEncodedChannels(data, data_ptr)
@@ -497,6 +496,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 		}
 		this.mode = packet_mode
 		this.bandwidth = packet_bandwidth
+
 		this.frame_size = packet_frame_size
 		this.stream_channels = packet_stream_channels
 		ret = this.opus_decode_frame(data, data_ptr, int(size[0]), pcm_out, pcm_out_ptr+(this.channels*(frame_size-packet_frame_size)), packet_frame_size, 1)
@@ -514,6 +514,7 @@ func (this *OpusDecoder) opus_decode_native(data []byte, data_ptr int, len int, 
 
 	this.mode = packet_mode
 	this.bandwidth = packet_bandwidth
+	fmt.Printf("packet_bandwidth:%d\r\n", packet_bandwidth)
 	this.frame_size = packet_frame_size
 	this.stream_channels = packet_stream_channels
 

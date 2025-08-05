@@ -309,11 +309,11 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		if frame_rate < 50 {
 			tocmode = MODE_SILK_ONLY
 		}
-		if tocmode == MODE_SILK_ONLY && GetOrdinal(bw) > GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
+		if tocmode == MODE_SILK_ONLY && OpusBandwidthHelpers_GetOrdinal(bw) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
 			bw = OPUS_BANDWIDTH_WIDEBAND
-		} else if tocmode == MODE_CELT_ONLY && GetOrdinal(bw) == GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND) {
+		} else if tocmode == MODE_CELT_ONLY && OpusBandwidthHelpers_GetOrdinal(bw) == OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND) {
 			bw = OPUS_BANDWIDTH_NARROWBAND
-		} else if tocmode == MODE_HYBRID && GetOrdinal(bw) <= GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
+		} else if tocmode == MODE_HYBRID && OpusBandwidthHelpers_GetOrdinal(bw) <= OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
 			bw = OPUS_BANDWIDTH_SUPERWIDEBAND
 		}
 		data[data_ptr] = gen_toc(tocmode, frame_rate, bw, st.stream_channels)
@@ -460,12 +460,12 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		for i := 0; i < 8; i++ {
 			bandwidth_thresholds[i] = music_bandwidth_thresholds[i] + ((voice_est * voice_est * (voice_bandwidth_thresholds[i] - music_bandwidth_thresholds[i])) >> 14)
 		}
-		for GetOrdinal(bandwidth) > GetOrdinal(OPUS_BANDWIDTH_NARROWBAND) {
-			idx := 2 * (GetOrdinal(bandwidth) - GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND))
+		for OpusBandwidthHelpers_GetOrdinal(bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_NARROWBAND) {
+			idx := 2 * (OpusBandwidthHelpers_GetOrdinal(bandwidth) - OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND))
 			threshold := bandwidth_thresholds[idx]
 			hysteresis := bandwidth_thresholds[idx+1]
 			if st.first == 0 {
-				if GetOrdinal(st.bandwidth) >= GetOrdinal(bandwidth) {
+				if OpusBandwidthHelpers_GetOrdinal(st.bandwidth) >= OpusBandwidthHelpers_GetOrdinal(bandwidth) {
 					threshold -= hysteresis
 				} else {
 					threshold += hysteresis
@@ -477,11 +477,11 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			bandwidth = SUBTRACT(bandwidth, 1)
 		}
 		st.bandwidth = bandwidth
-		if st.first == 0 && st.mode != MODE_CELT_ONLY && st.silk_mode.inWBmodeWithoutVariableLP == 0 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
+		if st.first == 0 && st.mode != MODE_CELT_ONLY && st.silk_mode.inWBmodeWithoutVariableLP == 0 && OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
 			st.bandwidth = OPUS_BANDWIDTH_WIDEBAND
 		}
 	}
-	if GetOrdinal(st.bandwidth) > GetOrdinal(st.max_bandwidth) {
+	if OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(st.max_bandwidth) {
 		st.bandwidth = st.max_bandwidth
 	}
 	if st.user_bandwidth != OPUS_BANDWIDTH_AUTO {
@@ -490,16 +490,16 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	if st.mode != MODE_CELT_ONLY && max_rate < 15000 {
 		st.bandwidth = MINInt(st.bandwidth, OPUS_BANDWIDTH_WIDEBAND)
 	}
-	if st.Fs <= 24000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
+	if st.Fs <= 24000 && OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_SUPERWIDEBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND
 	}
-	if st.Fs <= 16000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
+	if st.Fs <= 16000 && OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_WIDEBAND
 	}
-	if st.Fs <= 12000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND) {
+	if st.Fs <= 12000 && OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_MEDIUMBAND
 	}
-	if st.Fs <= 8000 && GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_NARROWBAND) {
+	if st.Fs <= 8000 && OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_NARROWBAND) {
 		st.bandwidth = OPUS_BANDWIDTH_NARROWBAND
 	}
 	if st.detected_bandwidth != OPUS_BANDWIDTH_UNKNOWN && st.user_bandwidth == OPUS_BANDWIDTH_AUTO {
@@ -515,10 +515,10 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		} else {
 			min_detected_bandwidth = OPUS_BANDWIDTH_FULLBAND
 		}
-		if GetOrdinal(st.detected_bandwidth) < GetOrdinal(min_detected_bandwidth) {
+		if OpusBandwidthHelpers_GetOrdinal(st.detected_bandwidth) < OpusBandwidthHelpers_GetOrdinal(min_detected_bandwidth) {
 			st.detected_bandwidth = min_detected_bandwidth
 		}
-		if GetOrdinal(st.bandwidth) > GetOrdinal(st.detected_bandwidth) {
+		if OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(st.detected_bandwidth) {
 			st.bandwidth = st.detected_bandwidth
 		}
 	}
@@ -531,7 +531,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		st.bandwidth = OPUS_BANDWIDTH_NARROWBAND
 	}
 
-	if frame_size > st.Fs/50 && (st.mode == MODE_CELT_ONLY || GetOrdinal(st.bandwidth) > GetOrdinal(OPUS_BANDWIDTH_WIDEBAND)) {
+	if frame_size > st.Fs/50 && (st.mode == MODE_CELT_ONLY || OpusBandwidthHelpers_GetOrdinal(st.bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND)) {
 		nb_frames := 3
 		if frame_size <= st.Fs/25 {
 			nb_frames = 2

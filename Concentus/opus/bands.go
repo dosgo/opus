@@ -742,17 +742,35 @@ func compute_theta(ctx *band_ctx, sctx *split_ctx, X []int, X_ptr int, Y []int, 
 				}
 				ec.encode(int64(fl), int64(fl+fs), int64(ft))
 			} else {
-				fl := 0
-				fm := ec.decode(int64(ft))
-				if fm < int64(((qn >> 1) * ((qn >> 1) + 1) >> 1)) {
-					itheta = (isqrt32(8*int64(fm)+1) - 1) >> 1
+				/*
+					fl := 0
+					fm := ec.decode(int64(ft))
+					if fm < int64(((qn >> 1) * ((qn >> 1) + 1) >> 1)) {
+						itheta = (isqrt32(8*int64(fm)+1) - 1) >> 1
+						fs = itheta + 1
+						fl = itheta * (itheta + 1) >> 1
+					} else {
+						itheta = (2*(qn+1) - (isqrt32(8*(int64(ft)-int64(fm)-1)+1))>>1)
+						fs = qn + 1 - itheta
+						fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
+					}
+					ec.dec_update(int64(fl), int64(fl+fs), int64(ft))
+				*/
+				var fl int = 0
+				var fm int
+				fm = int(ec.decode(int64(ft)))
+
+				if fm < ((qn >> 1) * ((qn >> 1) + 1) >> 1) {
+					itheta = (isqrt32(int64(8*fm+1)) - 1) >> 1
 					fs = itheta + 1
 					fl = itheta * (itheta + 1) >> 1
 				} else {
-					itheta = (2*(qn+1) - (isqrt32(8*(int64(ft)-int64(fm)-1)+1))>>1)
+					itheta = (2*(qn+1) - isqrt32(int64(8*(ft-fm-1)+1))) >> 1
+
 					fs = qn + 1 - itheta
 					fl = ft - ((qn + 1 - itheta) * (qn + 2 - itheta) >> 1)
 				}
+
 				ec.dec_update(int64(fl), int64(fl+fs), int64(ft))
 			}
 		}
@@ -976,34 +994,47 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 			cm = alg_unquant(X, X_ptr, N, K, spread, B, ec, gain)
 		}
 	} else {
+		var j = 0
 		if resynth != 0 {
-			cm_mask := (1 << B) - 1
-			fill &= cm_mask
+
+			var cm_mask int
+			/* B can be as large as 16, so this shift might overflow an int on a
+			16-bit platform; use a long to get defined behavior.*/
+			cm_mask = (1 << B) - 1
+			fill = fill & cm_mask
+
 			if fill == 0 {
-				for j := 0; j < N; j++ {
-					X[X_ptr+j] = 0
-				}
+				MemSetWithOffset(X, 0, X_ptr, N)
 			} else {
 				if lowband == nil {
-					for j := 0; j < N; j++ {
+					/* Noise */
+					for j = 0; j < N; j++ {
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						X[X_ptr+j] = int(ctx.seed >> 20)
+						fmt.Printf("ctx.seed:%d\r\n", ctx.seed)
+						X[X_ptr+j] = (ctx.seed) >> 20
 					}
 					cm = cm_mask
 				} else {
-					for j := 0; j < N; j++ {
+					/* Folded spectrum */
+					for j = 0; j < N; j++ {
 						var tmp int
 						ctx.seed = celt_lcg_rand(ctx.seed)
-						tmp = int(math.Floor(0.5 + (1.0/256)*(1<<10)))
-						if (ctx.seed & 0x8000) != 0 {
-							tmp = -tmp
+						/* About 48 dB below the "normal" folding level */
+						tmp = int(math.Floor(0.5 + (1.0/256)*((1)<<(10))))
+						if ((ctx.seed) & 0x8000) != 0 {
+							tmp = tmp
+						} else {
+							tmp = 0 - tmp
 						}
-						X[X_ptr+j] = lowband[lowband_ptr+j] + tmp
+						fmt.Printf("eeee9999e\r\n")
+						X[X_ptr+j] = (lowband[lowband_ptr+j] + tmp)
 					}
 					cm = fill
 				}
+
 				renormalise_vector(X, X_ptr, N, gain)
 			}
+
 		}
 	}
 	return cm
@@ -1013,6 +1044,7 @@ var bit_interleave_table = []int{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
 var bit_deinterleave_table = []int{0, 3, 12, 15, 48, 51, 60, 63, 192, 195, 204, 207, 240, 243, 252, 255}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
+	fmt.Printf("lowband:%+v\r\n", lowband)
 	N0 := N
 	N_B := N
 	var N_B0 int
@@ -1140,6 +1172,8 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 }
 
 func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
+	fmt.Printf("quant_band_stereo lowband:%+v\r\n", lowband)
+
 	imid := 0
 	iside := 0
 	inv := 0
@@ -1340,24 +1374,42 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			lowband_scratch = nil
 		}
 
-		if lowband_offset != 0 && (spread != SPREAD_AGGRESSIVE || B > 1 || tf_change < 0) {
-			fold_start := lowband_offset
-			for fold_start > 0 && M*int(eBands[fold_start]) > effective_lowband+norm_offset {
+		if lowband_offset != 0 && (spread != Spread.SPREAD_AGGRESSIVE || B > 1 || tf_change < 0) {
+			var fold_start int
+			var fold_end int
+			var fold_i int
+			/* This ensures we never repeat spectral content within one band */
+			effective_lowband = IMAX(0, M*int(eBands[lowband_offset])-norm_offset-N)
+			fold_start = lowband_offset
+			fold_start--
+			for M*int(eBands[fold_start]) > effective_lowband+norm_offset {
 				fold_start--
 			}
-			fold_end := lowband_offset
-			for fold_end < m.nbEBands-1 && M*int(eBands[fold_end]) < effective_lowband+norm_offset+N {
+
+			//while (M * eBands[--fold_start] > effective_lowband + norm_offset) ;
+			fold_end = lowband_offset - 1
+			fold_end++
+			for M*int(eBands[fold_end]) < effective_lowband+norm_offset+N {
 				fold_end++
 			}
-			x_cm = 0
-			y_cm = 0
-			for fold_i := fold_start; fold_i < fold_end; fold_i++ {
-				x_cm |= int64(collapse_masks[fold_i*C+0])
-				y_cm |= int64(collapse_masks[fold_i*C+C-1])
+			//while (M * eBands[++fold_end] < effective_lowband + norm_offset + N) ;
+
+			var x_cm = 0
+			var y_cm = 0
+			fold_i = fold_start
+
+			for {
+				x_cm |= int(collapse_masks[fold_i*C+0])
+				y_cm |= int(collapse_masks[fold_i*C+C-1])
+				fold_i++
+				if fold_i < fold_end {
+					continue
+				}
+				break
 			}
 		} else {
-			x_cm = (1 << B) - 1
-			y_cm = (1 << B) - 1
+			x_cm = ((1 << B) - 1)
+			y_cm = ((1 << B) - 1)
 		}
 
 		if dual_stereo != 0 && i == intensity {
@@ -1386,12 +1438,14 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			var lowband []int
 			var lowband_out []int
 			if effective_lowband != -1 {
+				//fmt.Printf("effective_lowband:%d norm:%+v\r\n", effective_lowband, norm)
+				fmt.Printf("effective_lowband:%d \r\n", effective_lowband)
 				lowband = norm
 			}
 			if last == 0 {
 				lowband_out = norm
 			}
-
+			fmt.Printf("effective_lowband:%d \r\n", effective_lowband)
 			if Y != nil {
 
 				x_cm = int64(quant_band_stereo(ctx, X, X_ptr, Y, Y_ptr, N,

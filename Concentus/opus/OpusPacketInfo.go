@@ -113,6 +113,24 @@ func GetEncoderMode(packet []byte, packet_offset int) int {
 	return MODE_SILK_ONLY
 }
 
+func GetBandwidth(packet []byte, packet_offset int) int {
+	var bandwidth int
+	if (packet[packet_offset] & 0x80) != 0 {
+		bandwidth = OpusBandwidthHelpers_GetBandwidth(OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_MEDIUMBAND) + (int(packet[packet_offset]>>5) & 0x3))
+		if bandwidth == OPUS_BANDWIDTH_MEDIUMBAND {
+			bandwidth = OPUS_BANDWIDTH_NARROWBAND
+		}
+	} else if (packet[packet_offset] & 0x60) == 0x60 {
+		bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND
+		if (packet[packet_offset] & 0x10) != 0 {
+			bandwidth = OPUS_BANDWIDTH_FULLBAND
+		}
+
+	} else {
+		bandwidth = OpusBandwidthHelpers_GetBandwidth(OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_NARROWBAND) + (int(packet[packet_offset]>>5) & 0x3))
+	}
+	return bandwidth
+}
 func encode_size(size int, data []byte, data_ptr int) int {
 	if size < 252 {
 		data[data_ptr] = byte(size)

@@ -90,6 +90,7 @@ func (this *CeltDecoder) ResetState() {
 }
 
 func (this *CeltDecoder) celt_decoder_init(sampling_rate int, channels int) int {
+	fmt.Printf("celt_decoder_init\r\n\r\n\r\n\r\n")
 	ret := this.opus_custom_decoder_init(mode48000_960_120, channels)
 	if ret != OpusError.OPUS_OK {
 		return ret
@@ -116,6 +117,7 @@ func (this *CeltDecoder) opus_custom_decoder_init(mode *CeltMode, channels int) 
 	this.downsample = 1
 	this.start = 0
 	this.end = this.mode.effEBands
+	fmt.Printf("opus_custom_decoder_init this.end:%d\r\n", this.end)
 	this.signalling = 1
 	this.loss_count = 0
 	this.ResetState()
@@ -577,8 +579,8 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	var shortBlocks, isTransient, intra_ener int
 	CC := ed.channels
 	var LM, M int
-	start := ed.start
-	end := ed.end
+	var start, end int
+
 	var effEnd, codedBands, alloc_trim, postfilter_pitch, postfilter_gain int
 	intensity := 0
 	dual_stereo := 0
@@ -707,6 +709,7 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	if tell+3 <= total_bits {
 		intra_ener = dec.dec_bit_logp(3)
 	}
+	fmt.Printf("unquant_coarse_energy start:%d end:%d oldBandE:%+v intra_ener:%+v c:%d Lm:%d\r\n", start, end, oldBandE, intra_ener, C, LM)
 	unquant_coarse_energy(mode, start, end, oldBandE, intra_ener, dec, C, LM)
 
 	tf_res = make([]int, nbEBands)
@@ -767,11 +770,9 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	boxed_intensity := &BoxedValueInt{Val: intensity}
 	boxed_dual_stereo := &BoxedValueInt{Val: dual_stereo}
 	boxed_balance := &BoxedValueInt{Val: 0}
-	fmt.Printf("compute_allocation dual_stereo-1 :%d\r\n", dual_stereo)
 	codedBands = compute_allocation(mode, start, end, offsets, cap, alloc_trim, boxed_intensity, boxed_dual_stereo, bits, boxed_balance, pulses, fine_quant, fine_priority, C, LM, dec, 0, 0, 0)
 	intensity = boxed_intensity.Val
 	dual_stereo = boxed_dual_stereo.Val
-	fmt.Printf("compute_allocation dual_stereo :%d\r\n", dual_stereo)
 	balance = boxed_balance.Val
 
 	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, dec, C)
@@ -796,7 +797,6 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	if C == 2 {
 		Y_ = X[1]
 	}
-	fmt.Printf("dual_stereo:%d\r\n", dual_stereo)
 	quant_all_bands(0, mode, start, end, X[0], Y_, collapse_masks, nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res, length*(8<<BITRES)-anti_collapse_rsv, balance, dec, LM, codedBands, boxed_rng)
 	ed.rng = boxed_rng.Val
 
@@ -906,6 +906,7 @@ func (this *CeltDecoder) SetEndBand(value int) {
 	if value < 1 || value > this.mode.nbEBands {
 		panic("End band above max number of ebands (or less than 1)")
 	}
+	fmt.Printf("SetEndBand value:%d\r\n", value)
 	this.end = value
 }
 

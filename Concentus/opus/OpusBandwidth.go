@@ -43,7 +43,7 @@ const (
 	OPUS_BANDWIDTH_FULLBAND
 )
 
-func GetOrdinal(bw int) int {
+func OpusBandwidthHelpers_GetOrdinal(bw int) int {
 	switch bw {
 	case OPUS_BANDWIDTH_NARROWBAND:
 		return 1
@@ -59,7 +59,7 @@ func GetOrdinal(bw int) int {
 	return -1
 }
 
-func GetBandwidth(ordinal int) int {
+func OpusBandwidthHelpers_GetBandwidth(ordinal int) int {
 	switch ordinal {
 	case 1:
 		return OPUS_BANDWIDTH_NARROWBAND
@@ -76,5 +76,5 @@ func GetBandwidth(ordinal int) int {
 }
 
 func SUBTRACT(a int, b int) int {
-	return GetBandwidth(GetOrdinal(a) - b)
+	return OpusBandwidthHelpers_GetBandwidth(OpusBandwidthHelpers_GetOrdinal(a) - b)
 }

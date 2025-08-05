@@ -115,6 +115,7 @@ func (ec *EntropyCoder) write_byte_at_end(_value uint) int {
 }
 
 func (ec *EntropyCoder) dec_normalize() {
+	old := ec.rng
 	for ec.rng <= EC_CODE_BOT {
 		var sym int
 		ec.nbits_total += EC_SYM_BITS
@@ -131,6 +132,9 @@ func (ec *EntropyCoder) dec_normalize() {
 
 		/*And subtract them from val, capped to be less than EC_CODE_TOP.*/
 		ec.val = (((int64(ec.val) << EC_SYM_BITS) + int64(EC_SYM_MAX & ^sym)) & int64(EC_CODE_TOP-1))
+	}
+	if ec.rng > 6917529027641081855 {
+		fmt.Printf("6917529027641081855  old:%d\r\n\r\n\r\n\r\n", old)
 	}
 }
 
@@ -175,13 +179,16 @@ func (ec *EntropyCoder) dec_update(_fl int64, _fh int64, _ft int64) {
 	_ft = (_ft)
 	s := ec.ext * (_ft - _fh)
 	ec.val = ec.val - s
+	old := ec.rng
 	if _fl > 0 {
 		ec.rng = (ec.ext * (_fh - _fl))
 	} else {
 		ec.rng = ec.rng - s
 	}
-	fmt.Printf("dec_update ec.rng:%d\r\n", ec.rng)
-
+	if ec.rng < 0 {
+		fmt.Printf("dec_update  rng:%d old:%d ec.ext:%d _fl:%d _fh:%d _ft:%d\r\n\r\n", ec.rng, old, ec.ext, _fl, _fh, _ft)
+		panic("eeee")
+	}
 	ec.dec_normalize()
 }
 
@@ -590,6 +597,7 @@ func (ec *EntropyCoder) tell_frac() int {
 	nbits = ec.nbits_total << BITRES
 	l = EC_ILOG(ec.rng)
 	fmt.Printf("l:%d ec.rng:%d\r\n", l, ec.rng)
+
 	r = int(ec.rng >> (l - 16))
 	b = int64((r >> 12) - 8)
 

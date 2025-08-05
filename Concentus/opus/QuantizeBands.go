@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 var pred_coef = []int{29440, 26112, 21248, 16384}
 var beta_coef = []int{30147, 22282, 12124, 6554}
 var beta_intra = 4915
@@ -237,12 +239,12 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int, e
 	}
 }
 
-func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
+func unquant_coarse_energyold(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
 	prob_model := CeltTables.E_prob_model[LM][intra]
 	prev := [2]int{0, 0}
 	var coef, beta int
 	budget := dec.storage * 8
-
+	fmt.Printf("unquant_coarse_energy\r\n")
 	if intra != 0 {
 		coef = 0
 		beta = beta_intra
@@ -283,6 +285,66 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, int
 			}
 			oldEBands[index] = (tmp >> 7)
 			prev[c] = prev[c] + (q << 7) - (beta * (q >> 8))
+		}
+	}
+}
+
+func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
+	prob_model := e_prob_model[LM][intra]
+	var i, c int
+	var prev = []int{0, 0}
+	var coef int
+	var beta int
+	var budget int
+	var tell int
+
+	if intra != 0 {
+		coef = 0
+		beta = beta_intra
+	} else {
+		beta = beta_coef[LM]
+		coef = pred_coef[LM]
+	}
+
+	budget = dec.storage * 8
+
+	/* Decode at a fixed coarse resolution */
+	for i = start; i < end; i++ {
+		c = 0
+		for {
+			var qi int
+			var q int
+			var tmp int
+			/* It would be better to express this invariant as a
+			   test on C at function entry, but that isn't enough
+			   to make the static analyzer happy. */
+			OpusAssert(c < 2)
+			tell = dec.tell()
+			if budget-tell >= 15 {
+				var pi int
+				pi = 2 * IMIN(i, 20)
+				qi = Laplace.ec_laplace_decode(dec,
+					int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
+			} else if budget-tell >= 2 {
+				qi = dec.dec_icdf(small_energy_icdf, 2)
+				qi = (qi >> 1) ^ -(qi & 1)
+			} else if budget-tell >= 1 {
+				qi = 0 - dec.dec_bit_logp(1)
+			} else {
+				qi = -1
+			}
+			q = SHL32(qi, CeltConstants.DB_SHIFT) // opus bug: useless extend32
+
+			oldEBands[i+c*m.nbEBands] = MAX16Int(int(0-(0.5+(9.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))), oldEBands[i+c*m.nbEBands])
+			tmp = PSHR32(MULT16_16(coef, oldEBands[i+c*m.nbEBands]), 8) + prev[c] + SHL32(q, 7)
+			tmp = MAX32(-int(0.5+(28.0)*float64(int(1)<<(CeltConstants.DB_SHIFT+7))), tmp)
+			oldEBands[i+c*m.nbEBands] = PSHR32(tmp, 7)
+			prev[c] = prev[c] + SHL32(q, 7) - MULT16_16(beta, PSHR32(q, 8))
+			c++
+			if c < C {
+				continue
+			}
+			break
 		}
 	}
 }

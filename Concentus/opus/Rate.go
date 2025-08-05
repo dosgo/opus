@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 const ALLOC_STEPS = 6
 
 var LOG2_FRAC_TABLE = [25]byte{
@@ -182,9 +180,7 @@ func interp_bits2pulses(m *CeltMode, start int, end int, skip_start int, bits1 [
 		if encode != 0 {
 			ec.enc_bit_logp(dual_stereo.Val, 1)
 		} else {
-			fmt.Printf("eeeee dual_stereo.Val:%d ec.val:%d ec.rng:%d\r\n", dual_stereo.Val, ec.val, ec.rng)
 			dual_stereo.Val = ec.dec_bit_logp(1)
-			fmt.Printf("eeeee dual_stereo.Val:%d\r\n", dual_stereo.Val)
 		}
 	} else {
 		dual_stereo.Val = 0
