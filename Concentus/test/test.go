@@ -38,10 +38,11 @@ func main() {
 		if err != nil {
 			break
 		}
-		if i < 3 {
-			i++
-			continue
-		}
+		/*
+			if i < 3 {
+				i++
+				continue
+			}*/
 		if i > 4 {
 			break
 		}

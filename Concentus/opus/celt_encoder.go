@@ -374,7 +374,7 @@ func (this *CeltEncoder) run_prefilter(input [][]int, prefilter_mem [][]int, CC 
 	return pf_on
 }
 
-func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
+func (this *CeltEncoder) celt_encode_with_ecOld(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
 
 	var i, c, N, bits int
 	var input [][]int
@@ -1120,798 +1120,822 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	}
 }
 
-func celt_encode_with_ec (pcm []int16,  pcm_ptr int,  frame_size int, compressed []byte,  compressed_ptr int,  nbCompressedBytes int,  enc *EntropyCoder)int {
-       var   i, c, N int;
-      var   bits int;
-       var  input  [][]int;
-       var freq  [][]int;
-       var X  [][]int;
-       var bandE  [][]int;
-        var bandLogE  [][]int;
-      var bandLogE2  [][]int;
-       var  fine_quant  []int;
-       var error  [][]int;
-        var pulses  []int; 
-       var cap   []int; 
-        var offsets   []int; 
-       var fine_priority   []int; 
-       var tf_res   []int; 
-      var   collapse_masks []int16;
-        var shortBlocks = 0;
-        var isTransient = 0;
-        var CC = this.channels;
-        var C = this.stream_channels;
-        var LM, M int;
-        var tf_select int;
-        var nbFilledBytes, nbAvailableBytes int;
-        var start int;
-        var end int;
-        var effEnd int;
-        var codedBands int;
-        var tf_sum int;
-        var alloc_trim int;
-        var pitch_index = CeltConstants.COMBFILTER_MINPERIOD;
-        var gain1 = 0;
-        var dual_stereo = 0;
-        var effectiveBytes int;
-        var dynalloc_logp int;
-        var vbr_rate int;
-        var total_bits int;
-        var total_boost int;
-        var balance int;
-        var tell int;
-        var prefilter_tapset = 0;
-        var pf_on int;
-        var anti_collapse_rsv int;
-        var anti_collapse_on = 0;
-        var silence = 0;
-        var tf_chan = 0;
-        var tf_estimate int;
-        var pitch_change = 0;
-        var tot_boost int;
-        var sample_max int;
-        var maxDepth int;
-       var   mode CeltMode;
-        var nbEBands int;
-        var overlap int;
-       var eBands []int16;
-        var secondMdct int;
-        var signalBandwidth int;
-        var transient_got_disabled = 0;
-        var surround_masking = 0;
-        var temporal_vbr = 0;
-        var surround_trim = 0;
-        var equiv_rate = 510000;
-       var surround_dynalloc []int;
+func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
+	var i, c, N int
+	var bits int
+	var input [][]int
+	var freq [][]int
+	var X [][]int
+	var bandE [][]int
+	var bandLogE [][]int
+	var bandLogE2 [][]int
+	var fine_quant []int
+	var error [][]int
+	var pulses []int
+	var cap []int
+	var offsets []int
+	var fine_priority []int
+	var tf_res []int
+	var collapse_masks []int16
+	var shortBlocks = 0
+	var isTransient = 0
+	var CC = this.channels
+	var C = this.stream_channels
+	var LM, M int
+	var tf_select int
+	var nbFilledBytes, nbAvailableBytes int
+	var start int
+	var end int
+	var effEnd int
+	var codedBands int
+	//var tf_sum int
+	var alloc_trim int
+	var pitch_index = CeltConstants.COMBFILTER_MINPERIOD
+	var gain1 = 0
+	var dual_stereo = 0
+	var effectiveBytes int
+	var dynalloc_logp int
+	var vbr_rate int
+	var total_bits int
+	var total_boost int
+	var balance int
+	var tell int
+	var prefilter_tapset = 0
+	var pf_on int
+	var anti_collapse_rsv int
+	var anti_collapse_on = 0
+	var silence = 0
+	var tf_chan = 0
+	var tf_estimate int
+	var pitch_change = 0
+	var tot_boost int
+	var sample_max int
+	var maxDepth int
+	var mode *CeltMode
+	var nbEBands int
+	var overlap int
+	var eBands []int16
+	var secondMdct int
+	var signalBandwidth int
+	var transient_got_disabled = 0
+	var surround_masking = 0
+	var temporal_vbr = 0
+	var surround_trim = 0
+	var equiv_rate = 510000
+	var surround_dynalloc []int
 
-        mode = this.mode;
-        nbEBands = mode.nbEBands;
-        overlap = mode.overlap;
-        eBands = mode.eBands;
-        start = this.start;
-        end = this.end;
-        tf_estimate = 0;
-        if (nbCompressedBytes < 2 || pcm == null) {
-            return OpusError.OPUS_BAD_ARG;
-        }
+	mode = this.mode
+	nbEBands = mode.nbEBands
+	overlap = mode.overlap
+	eBands = mode.eBands
+	start = this.start
+	end = this.end
+	tf_estimate = 0
+	if nbCompressedBytes < 2 || pcm == nil {
+		return OpusError.OPUS_BAD_ARG
+	}
 
-        frame_size *= this.upsample;
-        for LM = 0; LM <= mode.maxLM; LM++ {
-            if (mode.shortMdctSize << LM == frame_size) {
-                break;
-            }
-        }
-        if (LM > mode.maxLM) {
-            return OpusError.OPUS_BAD_ARG;
-        }
-        M = 1 << LM;
-        N = M * mode.shortMdctSize;
-
-        if (enc == null) {
-            tell = 1;
-            nbFilledBytes = 0;
-        } else {
-            tell = enc.tell();
-            nbFilledBytes = (tell + 4) >> 3;
-        }
-
-        Inlines.OpusAssert(this.signalling == 0);
-
-        /* Can't produce more than 1275 output bytes */
-        nbCompressedBytes = Inlines.IMIN(nbCompressedBytes, 1275);
-        nbAvailableBytes = nbCompressedBytes - nbFilledBytes;
-
-        if (this.vbr != 0 && this.bitrate != OpusConstants.OPUS_BITRATE_MAX) {
-             den:= mode.Fs >> EntropyCoder.BITRES;
-            vbr_rate = (this.bitrate * frame_size + (den >> 1)) / den;
-            effectiveBytes = vbr_rate >> (3 + EntropyCoder.BITRES);
-        } else {
-            var  tmp int;
-            vbr_rate = 0;
-            tmp = this.bitrate * frame_size;
-            if (tell > 1) {
-                tmp += tell;
-            }
-            if (this.bitrate != OpusConstants.OPUS_BITRATE_MAX) {
-                nbCompressedBytes = Inlines.IMAX(2, Inlines.IMIN(nbCompressedBytes,(tmp + 4 * mode.Fs) / (8 * mode.Fs) - boolToInt(this.signalling != 0)));
-            }
-            effectiveBytes = nbCompressedBytes;
-        }
-        if (this.bitrate != OpusConstants.OPUS_BITRATE_MAX) {
-            equiv_rate = this.bitrate - (40 * C + 20) * ((400 >> LM) - 50);
-        }
-
-        if (enc == null) {
-     
-			enc = NewEntropyCoder()
-			enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
-            enc.enc_init(compressed, compressed_ptr, nbCompressedBytes);
-        }
-
-        if (vbr_rate > 0) {
-            /* Computes the max bit-rate allowed in VBR mode to avoid violating the
-                target rate and buffering.
-               We must do this up front so that bust-prevention logic triggers
-                correctly if we don't have enough bits. */
-            if (this.constrained_vbr != 0) {
-                var  vbr_bound EntropyCoder;
-                var  max_allowed int;
-                /* We could use any multiple of vbr_rate as bound (depending on the
-                    delay).
-                   This is clamped to ensure we use at least two bytes if the encoder
-                    was entirely empty, but to allow 0 in hybrid mode. */
-                vbr_bound = vbr_rate;
-				tmp:=0
-				if tell == 1{
-					tmp=2
-				}
-                max_allowed = Inlines.IMIN(Inlines.IMAX(tmp,(vbr_rate + vbr_bound - this.vbr_reservoir) >> (EntropyCoder.BITRES + 3)),nbAvailableBytes);
-                if (max_allowed < nbAvailableBytes) {
-                    nbCompressedBytes = nbFilledBytes + max_allowed;
-                    nbAvailableBytes = max_allowed;
-                    enc.enc_shrink(nbCompressedBytes);
-                }
-            }
-        }
-        total_bits = nbCompressedBytes * 8;
-
-        effEnd = end;
-        if (effEnd > mode.effEBands) {
-            effEnd = mode.effEBands;
-        }
-
-        input = Arrays.InitTwoDimensionalArrayInt(CC, N + overlap);
-
-        sample_max = Inlines.MAX32(this.overlap_max, Inlines.celt_maxabs32(pcm, pcm_ptr, C * (N - overlap) / this.upsample));
-        this.overlap_max = Inlines.celt_maxabs32(pcm, pcm_ptr + (C * (N - overlap) / this.upsample), C * overlap / this.upsample);
-        sample_max = Inlines.MAX32(sample_max, this.overlap_max);
-        silence = boolToInt(sample_max == 0) ;
-        if (tell == 1) {
-            enc.enc_bit_logp(silence, 15);
-        } else {
-            silence = 0;
-        }
-        if (silence != 0) {
-            /*In VBR mode there is no need to send more than the minimum. */
-            if (vbr_rate > 0) {
-                effectiveBytes =Inlines.IMIN(nbCompressedBytes, nbFilledBytes + 2);
-				 nbCompressedBytes = effectiveBytes
-                total_bits = nbCompressedBytes * 8;
-                nbAvailableBytes = 2;
-                enc.enc_shrink(nbCompressedBytes);
-            }
-            /* Pretend we've filled all the remaining bits with zeros
-                  (that's what the initialiser did anyway) */
-            tell = nbCompressedBytes * 8;
-            enc.nbits_total += tell - enc.tell();
-        }
-        c = 0;
-         boxed_memE :=  BoxedValueInt{0};
-        for {
-            var need_clip int= 0;
-            boxed_memE.Val = this.preemph_memE[c];
-            CeltCommon.celt_preemphasis(pcm, pcm_ptr + c, input[c], overlap, N, CC, this.upsample,
-                    mode.preemph, boxed_memE, need_clip);
-            this.preemph_memE[c] = boxed_memE.Val;
-			c++
-			if(c < CC){
-				continue
-			}
-			break;
-        } 
-
-        /* Find pitch period and gain */
-	
-		var  enabled int;
-		var qg int;
-		enabled = boolToInt(((this.lfe != 0 && nbAvailableBytes > 3) || nbAvailableBytes > 12 * C) && start == 0 && silence == 0 && this.disable_pf == 0 && this.complexity >= 5 && !(this.consec_transient != 0 && LM != 3 && this.variable_duration == OpusFramesize.OPUS_FRAMESIZE_VARIABLE));
-
-		prefilter_tapset = this.tapset_decision;
-		 boxed_pitch_index :=  BoxedValueInt{0};
-		 boxed_gain1 :=  BoxedValueInt{0};
-		 boxed_qg :=  BoxedValueInt{0};
-		pf_on = this.run_prefilter(input, this.prefilter_mem, CC, N, prefilter_tapset, boxed_pitch_index, boxed_gain1, boxed_qg, enabled, nbAvailableBytes);
-		pitch_index = boxed_pitch_index.Val;
-		gain1 = boxed_gain1.Val;
-		qg = boxed_qg.Val;
-
-		if ((gain1 > ( (0.5 + (.4) * (( 1) << (15))))|| this.prefilter_gain > ((short) (0.5 + (.4) * ((1) << (15))))) && (this.analysis.valid == 0 || this.analysis.tonality > .3) 	&& (pitch_index > 1.26 * this.prefilter_period || pitch_index < .79 * this.prefilter_period)) {
-			pitch_change = 1;
+	frame_size *= this.upsample
+	for LM = 0; LM <= mode.maxLM; LM++ {
+		if mode.shortMdctSize<<LM == frame_size {
+			break
 		}
-		if (pf_on == 0) {
-			if (start == 0 && tell + 16 <= total_bits) {
-				enc.enc_bit_logp(0, 1);
+	}
+	if LM > mode.maxLM {
+		return OpusError.OPUS_BAD_ARG
+	}
+	M = 1 << LM
+	N = M * mode.shortMdctSize
+
+	if enc == nil {
+		tell = 1
+		nbFilledBytes = 0
+	} else {
+		tell = enc.tell()
+		nbFilledBytes = (tell + 4) >> 3
+	}
+
+	OpusAssert(this.signalling == 0)
+
+	/* Can't produce more than 1275 output bytes */
+	nbCompressedBytes = IMIN(nbCompressedBytes, 1275)
+	nbAvailableBytes = nbCompressedBytes - nbFilledBytes
+
+	if this.vbr != 0 && this.bitrate != OPUS_BITRATE_MAX {
+		den := mode.Fs >> BITRES
+		vbr_rate = (this.bitrate*frame_size + (den >> 1)) / den
+		effectiveBytes = vbr_rate >> (3 + BITRES)
+	} else {
+		var tmp int
+		vbr_rate = 0
+		tmp = this.bitrate * frame_size
+		if tell > 1 {
+			tmp += tell
+		}
+		if this.bitrate != OPUS_BITRATE_MAX {
+			nbCompressedBytes = IMAX(2, IMIN(nbCompressedBytes, (tmp+4*mode.Fs)/(8*mode.Fs)-boolToInt(this.signalling != 0)))
+		}
+		effectiveBytes = nbCompressedBytes
+	}
+	if this.bitrate != OPUS_BITRATE_MAX {
+		equiv_rate = this.bitrate - (40*C+20)*((400>>LM)-50)
+	}
+
+	if enc == nil {
+
+		enc = NewEntropyCoder()
+		enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
+		enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
+	}
+
+	if vbr_rate > 0 {
+		/* Computes the max bit-rate allowed in VBR mode to avoid violating the
+		    target rate and buffering.
+		   We must do this up front so that bust-prevention logic triggers
+		    correctly if we don't have enough bits. */
+		if this.constrained_vbr != 0 {
+			var vbr_bound int
+			var max_allowed int
+			/* We could use any multiple of vbr_rate as bound (depending on the
+			    delay).
+			   This is clamped to ensure we use at least two bytes if the encoder
+			    was entirely empty, but to allow 0 in hybrid mode. */
+			vbr_bound = vbr_rate
+			tmp := 0
+			if tell == 1 {
+				tmp = 2
+			}
+			max_allowed = IMIN(IMAX(tmp, (vbr_rate+vbr_bound-this.vbr_reservoir)>>(BITRES+3)), nbAvailableBytes)
+			if max_allowed < nbAvailableBytes {
+				nbCompressedBytes = nbFilledBytes + max_allowed
+				nbAvailableBytes = max_allowed
+				enc.enc_shrink(nbCompressedBytes)
+			}
+		}
+	}
+	total_bits = nbCompressedBytes * 8
+
+	effEnd = end
+	if effEnd > mode.effEBands {
+		effEnd = mode.effEBands
+	}
+
+	input = InitTwoDimensionalArrayInt(CC, N+overlap)
+
+	sample_max = MAX32(this.overlap_max, int(celt_maxabs32Short(pcm, pcm_ptr, C*(N-overlap)/this.upsample)))
+	this.overlap_max = int(celt_maxabs32Short(pcm, pcm_ptr+(C*(N-overlap)/this.upsample), C*overlap/this.upsample))
+	sample_max = MAX32(sample_max, this.overlap_max)
+	silence = boolToInt(sample_max == 0)
+	if tell == 1 {
+		enc.enc_bit_logp(silence, 15)
+	} else {
+		silence = 0
+	}
+	if silence != 0 {
+		/*In VBR mode there is no need to send more than the minimum. */
+		if vbr_rate > 0 {
+			effectiveBytes = IMIN(nbCompressedBytes, nbFilledBytes+2)
+			nbCompressedBytes = effectiveBytes
+			total_bits = nbCompressedBytes * 8
+			nbAvailableBytes = 2
+			enc.enc_shrink(nbCompressedBytes)
+		}
+		/* Pretend we've filled all the remaining bits with zeros
+		   (that's what the initialiser did anyway) */
+		tell = nbCompressedBytes * 8
+		enc.nbits_total += tell - enc.tell()
+	}
+	c = 0
+	boxed_memE := BoxedValueInt{0}
+	for {
+		var need_clip int = 0
+		boxed_memE.Val = this.preemph_memE[c]
+		celt_preemphasis(pcm, pcm_ptr+c, input[c], overlap, N, CC, this.upsample,
+			mode.preemph, &boxed_memE, need_clip)
+		this.preemph_memE[c] = boxed_memE.Val
+		c++
+		if c < CC {
+			continue
+		}
+		break
+	}
+
+	/* Find pitch period and gain */
+
+	var enabled int
+	var qg int
+	enabled = boolToInt(((this.lfe != 0 && nbAvailableBytes > 3) || nbAvailableBytes > 12*C) && start == 0 && silence == 0 && this.disable_pf == 0 && this.complexity >= 5 && !(this.consec_transient != 0 && LM != 3 && this.variable_duration == OPUS_FRAMESIZE_VARIABLE))
+
+	prefilter_tapset = this.tapset_decision
+	boxed_pitch_index := BoxedValueInt{0}
+	boxed_gain1 := BoxedValueInt{0}
+	boxed_qg := BoxedValueInt{0}
+	pf_on = this.run_prefilter(input, this.prefilter_mem, CC, N, prefilter_tapset, &boxed_pitch_index, &boxed_gain1, &boxed_qg, enabled, nbAvailableBytes)
+	pitch_index = boxed_pitch_index.Val
+	gain1 = boxed_gain1.Val
+	qg = boxed_qg.Val
+
+	if (gain1 > int(math.Floor(0.5+(.4)*float64(1<<(15)))) || this.prefilter_gain > int(math.Floor(0.5+(.4)*float64(1<<(15))))) && (this.analysis.valid == 0 || this.analysis.tonality > .3) && (pitch_index > int(1.26*float64(this.prefilter_period)) || pitch_index < int(0.79*float64(this.prefilter_period))) {
+		pitch_change = 1
+	}
+	if pf_on == 0 {
+		if start == 0 && tell+16 <= total_bits {
+			enc.enc_bit_logp(0, 1)
+		}
+	} else {
+		/*This block is not gated by a total bits check only because
+		of the nbAvailableBytes check above.*/
+		var octave int
+		enc.enc_bit_logp(1, 1)
+		pitch_index += 1
+		octave = EC_ILOG(int64(pitch_index)) - 5
+		enc.enc_uint(int64(octave), 6)
+		enc.enc_bits(int64(pitch_index-(16<<octave)), 4+octave)
+		pitch_index -= 1
+		enc.enc_bits(int64(qg), 3)
+		enc.enc_icdf(prefilter_tapset, tapset_icdf, 2)
+	}
+
+	isTransient = 0
+	shortBlocks = 0
+	if this.complexity >= 1 && this.lfe == 0 {
+		boxed_tf_estimate := BoxedValueInt{0}
+		boxed_tf_chan := BoxedValueInt{0}
+		isTransient = transient_analysis(input, N+overlap, CC,
+			&boxed_tf_estimate, &boxed_tf_chan)
+		tf_estimate = boxed_tf_estimate.Val
+		tf_chan = boxed_tf_chan.Val
+	}
+
+	if LM > 0 && enc.tell()+3 <= total_bits {
+		if isTransient != 0 {
+			shortBlocks = M
+		}
+	} else {
+		isTransient = 0
+		transient_got_disabled = 1
+	}
+
+	freq = InitTwoDimensionalArrayInt(CC, N)
+	/**
+	 * < Interleaved signal MDCTs
+	 */
+	bandE = InitTwoDimensionalArrayInt(CC, nbEBands)
+	bandLogE = InitTwoDimensionalArrayInt(CC, nbEBands)
+
+	secondMdct = boolToInt(shortBlocks != 0 && this.complexity >= 8)
+	bandLogE2 = InitTwoDimensionalArrayInt(CC, nbEBands)
+
+	//Arrays.MemSet(bandLogE2, 0, C * nbEBands); // not explicitly needed
+	if secondMdct != 0 {
+		compute_mdcts(mode, 0, input, freq, C, CC, LM, this.upsample)
+		compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+		amp2Log2(mode, effEnd, end, bandE, bandLogE2, C)
+		for i = 0; i < nbEBands; i++ {
+			bandLogE2[0][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+		}
+		if C == 2 {
+			for i = 0; i < nbEBands; i++ {
+				bandLogE2[1][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+			}
+		}
+	}
+
+	compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample)
+	if CC == 2 && C == 1 {
+		tf_chan = 0
+	}
+	compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+
+	if this.lfe != 0 {
+		for i = 2; i < end; i++ {
+			bandE[0][i] = IMIN(bandE[0][i], MULT16_32_Q15Int(int(math.Floor(0.5+(1e-4)*float64((1)<<(15)))), bandE[0][0]))
+			bandE[0][i] = MAX32(bandE[0][i], CeltConstants.EPSILON)
+		}
+	}
+	amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
+
+	surround_dynalloc = make([]int, C*nbEBands)
+	//Arrays.MemSet(surround_dynalloc, 0, end); // not strictly needed
+	/* This computes how much masking takes place between surround channels */
+	if start == 0 && this.energy_mask != nil && this.lfe == 0 {
+		var mask_end int
+		var midband int
+		var count_dynalloc int
+		var mask_avg = 0
+		var diff = 0
+		var count = 0
+		mask_end = IMAX(2, this.lastCodedBands)
+		for c = 0; c < C; c++ {
+			for i = 0; i < mask_end; i++ {
+				var mask int
+				//mask = MAX16Int(MIN16Int(this.energy_mask[nbEBands*c+i], int(0.5+(.25)*float64(int(1)<<(CeltConstants.DB_SHIFT)
+				mask = MAX16Int(MIN16Int(this.energy_mask[nbEBands*c+i], int(0.5+(.25)*float64(int(1)<<(CeltConstants.DB_SHIFT)))), -int(0.5+(2.0)*float64(int(1)<<(CeltConstants.DB_SHIFT))))
+
+				if mask > 0 {
+					mask = HALF16Int(mask)
+				}
+				mask_avg += MULT16_16(mask, int(eBands[i+1]-eBands[i]))
+				count += int(eBands[i+1] - eBands[i])
+				diff += MULT16_16(mask, 1+2*i-mask_end)
+			}
+		}
+		OpusAssert(count > 0)
+		mask_avg = DIV32_16Int(mask_avg, count)
+		mask_avg += int(0.5 + (.2)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+		diff = diff * 6 / (C * (mask_end - 1) * (mask_end + 1) * mask_end)
+		/* Again, being conservative */
+		diff = HALF32(diff)
+		diff = MAX32(MIN32(diff, int(0.5+(.031)*float64(int(1)<<(CeltConstants.DB_SHIFT)))), 0-int(0.5+(.031)*float64(int(1)<<(CeltConstants.DB_SHIFT))))
+		/* Find the band that's in the middle of the coded spectrum */
+		//for (midband = 0; eBands[midband + 1] < eBands[mask_end] / 2; midband++) ;
+		midband = 0
+		for eBands[midband+1] < eBands[mask_end]/2 {
+			midband++
+		}
+		count_dynalloc = 0
+		for i = 0; i < mask_end; i++ {
+			var lin int
+			var unmask int
+			lin = mask_avg + diff*(i-midband)
+			if C == 2 {
+				unmask = MAX16Int(this.energy_mask[i], this.energy_mask[nbEBands+i])
+			} else {
+				unmask = this.energy_mask[i]
+			}
+			unmask = MIN16Int(unmask, int(0.5+(.0)*float64(int(1)<<(CeltConstants.DB_SHIFT))))
+			unmask -= lin
+			if unmask > int(0.5+(.25)*float64(int(1)<<(CeltConstants.DB_SHIFT))) {
+				surround_dynalloc[i] = unmask - int(0.5+.25*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+				count_dynalloc++
+			}
+		}
+		if count_dynalloc >= 3 {
+			/* If we need dynalloc in many bands, it's probably because our
+			   initial masking rate was too low. */
+			mask_avg += int(0.5 + (.25)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+			if mask_avg > 0 {
+				/* Something went really wrong in the original calculations,
+				   disabling masking. */
+				mask_avg = 0
+				diff = 0
+				MemSetLen(surround_dynalloc, 0, mask_end)
+			} else {
+				for i = 0; i < mask_end; i++ {
+					surround_dynalloc[i] = MAX16Int(0, surround_dynalloc[i]-int(0.5+(.25)*float64(int(1)<<(CeltConstants.DB_SHIFT))))
+				}
+			}
+		}
+		mask_avg += int(0.5 + 0.2*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+		/* Convert to 1/64th units used for the trim */
+		surround_trim = 64 * diff
+		/*printf("%d %d ", mask_avg, surround_trim);*/
+		surround_masking = mask_avg
+	}
+	/* Temporal VBR (but not for LFE) */
+	if this.lfe == 0 {
+		follow := -int(0.5 + (10.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+		var frame_avg int = 0
+		var offset int = 0
+		if shortBlocks != 0 {
+			offset = HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+		}
+		for i = start; i < end; i++ {
+			follow = MAX16Int(follow-int(0.5+(1.0)*float64(int(1)<<(CeltConstants.DB_SHIFT))), bandLogE[0][i]-offset)
+			if C == 2 {
+				follow = MAX16Int(follow, bandLogE[1][i]-offset)
+			}
+			frame_avg += follow
+		}
+		frame_avg /= (end - start)
+		temporal_vbr = SUB16Int(frame_avg, this.spec_avg)
+		temporal_vbr = MIN16Int(int(0.5+(3.0)*float64(int(1)<<(CeltConstants.DB_SHIFT))), MAX16Int(-int(0.5+(1.5)*float64(int(1)<<(CeltConstants.DB_SHIFT))), temporal_vbr))
+		this.spec_avg += (MULT16_16_Q15Int(int(math.Floor(0.5+(.02)*float64((1)<<(15)))), temporal_vbr))
+	}
+
+	if secondMdct == 0 {
+		copy(bandLogE2[0], bandLogE[0])
+
+		if C == 2 {
+			//System.arraycopy(bandLogE[1], 0, bandLogE2[1], 0, nbEBands)
+			copy(bandLogE2[1], bandLogE[1])
+		}
+	}
+
+	/* Last chance to catch any transient we might have missed in the
+	   time-domain analysis */
+	if LM > 0 && enc.tell()+3 <= total_bits && isTransient == 0 && this.complexity >= 5 && this.lfe == 0 {
+		if patch_transient_decision(bandLogE, this.oldBandE, nbEBands, start, end, C) != 0 {
+			isTransient = 1
+			shortBlocks = M
+			compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample)
+			compute_band_energies(mode, freq, bandE, effEnd, C, LM)
+			amp2Log2(mode, effEnd, end, bandE, bandLogE, C)
+			/* Compensate for the scaling of short vs long mdcts */
+			for i = 0; i < nbEBands; i++ {
+				bandLogE2[0][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+			}
+			if C == 2 {
+				for i = 0; i < nbEBands; i++ {
+					bandLogE2[1][i] += HALF16Int(SHL16Int(LM, CeltConstants.DB_SHIFT))
+				}
+			}
+			tf_estimate = int(math.Floor(0.5 + (.2)*float64((1)<<(14))))
+		}
+	}
+
+	if LM > 0 && enc.tell()+3 <= total_bits {
+		enc.enc_bit_logp(isTransient, 3)
+	}
+
+	X = InitTwoDimensionalArrayInt(C, N)
+	/**
+	 * < Interleaved normalised MDCTs
+	 */
+
+	/* Band normalisation */
+	normalise_bands(mode, freq, X, bandE, effEnd, C, M)
+
+	tf_res = make([]int, nbEBands)
+	/* Disable variable tf resolution for hybrid and at very low bitrate */
+	if effectiveBytes >= 15*C && start == 0 && this.complexity >= 2 && this.lfe == 0 {
+		var lambda int
+		if effectiveBytes < 40 {
+			lambda = 12
+		} else if effectiveBytes < 60 {
+			lambda = 6
+		} else if effectiveBytes < 100 {
+			lambda = 4
+		} else {
+			lambda = 3
+		}
+		lambda *= 2
+		boxed_tf_sum := BoxedValueInt{0}
+		tf_select = tf_analysis(mode, effEnd, isTransient, tf_res, lambda, X, N, LM, &boxed_tf_sum, tf_estimate, tf_chan)
+		//tf_sum = boxed_tf_sum.Val
+
+		for i = effEnd; i < end; i++ {
+			tf_res[i] = tf_res[effEnd-1]
+		}
+	} else {
+		//tf_sum = 0
+		for i = 0; i < end; i++ {
+			tf_res[i] = isTransient
+		}
+		tf_select = 0
+	}
+
+	error = InitTwoDimensionalArrayInt(C, nbEBands)
+	boxed_delayedintra := BoxedValueInt{this.delayedIntra}
+	quant_coarse_energy(mode, start, end, effEnd, bandLogE,
+		this.oldBandE, total_bits, error, enc,
+		C, LM, nbAvailableBytes, this.force_intra,
+		&boxed_delayedintra, boolToInt(this.complexity >= 4), this.loss_rate, this.lfe)
+	this.delayedIntra = boxed_delayedintra.Val
+
+	tf_encode(start, end, isTransient, tf_res, LM, tf_select, enc)
+
+	if enc.tell()+4 <= total_bits {
+		if this.lfe != 0 {
+			this.tapset_decision = 0
+			this.spread_decision = Spread.SPREAD_NORMAL
+		} else if shortBlocks != 0 || this.complexity < 3 || nbAvailableBytes < 10*C || start != 0 {
+			if this.complexity == 0 {
+				this.spread_decision = Spread.SPREAD_NONE
+			} else {
+				this.spread_decision = Spread.SPREAD_NORMAL
 			}
 		} else {
-			/*This block is not gated by a total bits check only because
-				of the nbAvailableBytes check above.*/
-			var  octave int;
-			enc.enc_bit_logp(1, 1);
-			pitch_index += 1;
-			octave = Inlines.EC_ILOG(pitch_index) - 5;
-			enc.enc_uint(octave, 6);
-			enc.enc_bits((pitch_index - (16 << octave)), 4 + octave);
-			pitch_index -= 1;
-			enc.enc_bits(qg, 3);
-			enc.enc_icdf(prefilter_tapset, CeltTables.tapset_icdf, 2);
+			boxed_tonal_average := BoxedValueInt{this.tonal_average}
+			boxed_tapset_decision := BoxedValueInt{this.tapset_decision}
+			boxed_hf_average := BoxedValueInt{this.hf_average}
+			this.spread_decision = spreading_decision(mode, X,
+				&boxed_tonal_average, this.spread_decision, &boxed_hf_average,
+				&boxed_tapset_decision, boolToInt(pf_on != 0 && shortBlocks == 0), effEnd, C, M)
+			this.tonal_average = boxed_tonal_average.Val
+			this.tapset_decision = boxed_tapset_decision.Val
+			this.hf_average = boxed_hf_average.Val
+
 		}
-	
+		enc.enc_icdf(this.spread_decision, spread_icdf, 5)
+	}
 
-        isTransient = 0;
-        shortBlocks = 0;
-        if (this.complexity >= 1 && this.lfe == 0) {
-             boxed_tf_estimate :=  BoxedValueInt{0};
-             boxed_tf_chan :=  BoxedValueInt{0};
-            isTransient = CeltCommon.transient_analysis(input, N + overlap, CC,
-                    boxed_tf_estimate, boxed_tf_chan);
-            tf_estimate = boxed_tf_estimate.Val;
-            tf_chan = boxed_tf_chan.Val;
-        }
+	offsets = make([]int, nbEBands)
 
-        if (LM > 0 && enc.tell() + 3 <= total_bits) {
-            if (isTransient != 0) {
-                shortBlocks = M;
-            }
-        } else {
-            isTransient = 0;
-            transient_got_disabled = 1;
-        }
+	boxed_tot_boost := BoxedValueInt{0}
+	maxDepth = dynalloc_analysis(bandLogE, bandLogE2, nbEBands, start, end, C, offsets,
+		this.lsb_depth, mode.logN, isTransient, this.vbr, this.constrained_vbr,
+		eBands, LM, effectiveBytes, &boxed_tot_boost, this.lfe, surround_dynalloc)
+	tot_boost = boxed_tot_boost.Val
 
-        freq = Arrays.InitTwoDimensionalArrayInt(CC, N);
-        /**
-         * < Interleaved signal MDCTs
-         */
-        bandE = Arrays.InitTwoDimensionalArrayInt(CC, nbEBands);
-        bandLogE = Arrays.InitTwoDimensionalArrayInt(CC, nbEBands);
+	/* For LFE, everything interesting is in the first band */
+	if this.lfe != 0 {
+		offsets[0] = IMIN(8, effectiveBytes/3)
+	}
+	cap = make([]int, nbEBands)
+	init_caps(mode, cap, LM, C)
 
-        secondMdct = boolToInt(shortBlocks != 0 && this.complexity >= 8) ;
-        bandLogE2 = Arrays.InitTwoDimensionalArrayInt(CC, nbEBands);
-        //Arrays.MemSet(bandLogE2, 0, C * nbEBands); // not explicitly needed
-        if (secondMdct != 0) {
-            CeltCommon.compute_mdcts(mode, 0, input, freq, C, CC, LM, this.upsample);
-            Bands.compute_band_energies(mode, freq, bandE, effEnd, C, LM);
-            QuantizeBands.amp2Log2(mode, effEnd, end, bandE, bandLogE2, C);
-            for i = 0; i < nbEBands; i++ {
-                bandLogE2[0][i] += Inlines.HALF16(Inlines.SHL16(LM, CeltConstants.DB_SHIFT));
-            }
-            if (C == 2) {
-                for i = 0; i < nbEBands; i++ {
-                    bandLogE2[1][i] += Inlines.HALF16(Inlines.SHL16(LM, CeltConstants.DB_SHIFT));
-                }
-            }
-        }
-
-        CeltCommon.compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample);
-        if (CC == 2 && C == 1) {
-            tf_chan = 0;
-        }
-        Bands.compute_band_energies(mode, freq, bandE, effEnd, C, LM);
-
-        if (this.lfe != 0) {
-            for i = 2; i < end; i++ {
-                bandE[0][i] = Inlines.IMIN(bandE[0][i], Inlines.MULT16_32_Q15(((short) (0.5 + (1e-4) * (( 1) << (15)))), bandE[0][0]));
-                bandE[0][i] = Inlines.MAX32(bandE[0][i], CeltConstants.EPSILON);
-            }
-        }
-        QuantizeBands.amp2Log2(mode, effEnd, end, bandE, bandLogE, C);
-
-        surround_dynalloc :=make([]int,C * nbEBands) 
-        //Arrays.MemSet(surround_dynalloc, 0, end); // not strictly needed
-        /* This computes how much masking takes place between surround channels */
-        if (start == 0 && this.energy_mask != null && this.lfe == 0) {
-            var  mask_end int;
-            var midband int;
-            var count_dynalloc int;
-            var mask_avg = 0;
-            var diff = 0;
-            var count = 0;
-            mask_end = Inlines.IMAX(2, this.lastCodedBands);
-            for c = 0; c < C; c++ {
-                for i = 0; i < mask_end; i++ {
-                   var  mask int;
-                    mask = Inlines.MAX16(Inlines.MIN16(this.energy_mask[nbEBands * c + i], ( (0.5 + (.25) * (1 << (CeltConstants.DB_SHIFT))))));
-                    if (mask > 0) {
-                        mask = Inlines.HALF16(mask);
-                    }
-                    mask_avg += Inlines.MULT16_16(mask, eBands[i + 1] - eBands[i]);
-                    count += eBands[i + 1] - eBands[i];
-                    diff += Inlines.MULT16_16(mask, 1 + 2 * i - mask_end);
-                }
-            }
-            Inlines.OpusAssert(count > 0);
-            mask_avg = Inlines.DIV32_16(mask_avg, count);
-            mask_avg += ((short) (0.5 + (.2) * (( 1) << (CeltConstants.DB_SHIFT))));
-            diff = diff * 6 / (C * (mask_end - 1) * (mask_end + 1) * mask_end);
-            /* Again, being conservative */
-            diff = Inlines.HALF32(diff);
-            diff = Inlines.MAX32(Inlines.MIN32(diff, ( (0.5 + (.031) * (( 1) << (CeltConstants.DB_SHIFT))))), 0 - ( (0.5 + (.031) * (( 1) << (CeltConstants.DB_SHIFT)))));
-            /* Find the band that's in the middle of the coded spectrum */
-            //for (midband = 0; eBands[midband + 1] < eBands[mask_end] / 2; midband++) ;
-			midband := 0
-			for eBands[midband+1] < eBands[mask_end]/2 {
-				midband++
+	dynalloc_logp = 6
+	total_bits <<= BITRES
+	total_boost = 0
+	tell = enc.tell_frac()
+	for i = start; i < end; i++ {
+		var width, quanta int
+		var dynalloc_loop_logp int
+		var boost int
+		var j int
+		width = C * int(eBands[i+1]-eBands[i]) << LM
+		/* quanta is 6 bits, but no more than 1 bit/sample
+		   and no less than 1/8 bit/sample */
+		quanta = IMIN(width<<BITRES, IMAX(6<<BITRES, width))
+		dynalloc_loop_logp = dynalloc_logp
+		boost = 0
+		for j = 0; tell+(dynalloc_loop_logp<<BITRES) < total_bits-total_boost && boost < cap[i]; j++ {
+			var flag int
+			flag = boolToInt(j < offsets[i])
+			enc.enc_bit_logp(flag, dynalloc_loop_logp)
+			tell = enc.tell_frac()
+			if flag == 0 {
+				break
 			}
-            count_dynalloc = 0;
-            for i = 0; i < mask_end; i++ {
-                var  lin int;
-                var unmask int;
-                lin = mask_avg + diff * (i - midband);
-                if (C == 2) {
-                    unmask = Inlines.MAX16(this.energy_mask[i], this.energy_mask[nbEBands + i]);
-                } else {
-                    unmask = this.energy_mask[i];
-                }
-                unmask = Inlines.MIN16(unmask, ((short) (0.5 + (.0) * (( 1) << (CeltConstants.DB_SHIFT)))));
-                unmask -= lin;
-                if (unmask > ((short) (0.5 + (.25) * (( 1) << (CeltConstants.DB_SHIFT))))) {
-                    surround_dynalloc[i] = unmask - ((short) (0.5 + (.25) * (( 1) << (CeltConstants.DB_SHIFT))));
-                    count_dynalloc++;
-                }
-            }
-            if (count_dynalloc >= 3) {
-                /* If we need dynalloc in many bands, it's probably because our
-                   initial masking rate was too low. */
-                mask_avg += ( (0.5 + (.25) * (( 1) << (CeltConstants.DB_SHIFT))));
-                if (mask_avg > 0) {
-                    /* Something went really wrong in the original calculations,
-                       disabling masking. */
-                    mask_avg = 0;
-                    diff = 0;
-                    Arrays.MemSet(surround_dynalloc, 0, mask_end);
-                } else {
-                    for i = 0; i < mask_end; i++ {
-                        surround_dynalloc[i] = Inlines.MAX16(0, surround_dynalloc[i] - ((short) (0.5 + (.25) * (( 1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(.25f, CeltConstants.DB_SHIFT)*/);
-                    }
-                }
-            }
-            mask_avg += ((short) (0.5 + (.2) * (( 1) << (CeltConstants.DB_SHIFT))));
-            /* Convert to 1/64th units used for the trim */
-            surround_trim = 64 * diff;
-            /*printf("%d %d ", mask_avg, surround_trim);*/
-            surround_masking = mask_avg;
-        }
-        /* Temporal VBR (but not for LFE) */
-        if (this.lfe == 0) {
-             follow := -((short) (0.5 + (10.0) * (( 1) << (CeltConstants.DB_SHIFT))));
-           var   frame_avg int= 0;
-            var offset int = 0
-			if shortBlocks != 0 {
-				offset= HALF16(SHL16(LM, CeltConstants.DB_SHIFT)) 
+			boost += quanta
+			total_boost += quanta
+			dynalloc_loop_logp = 1
+		}
+		/* Making dynalloc more likely */
+		if j != 0 {
+			dynalloc_logp = IMAX(2, dynalloc_logp-1)
+		}
+		offsets[i] = boost
+	}
+
+	if C == 2 {
+		/* Always use MS for 2.5 ms frames until we can do a better analysis */
+		if LM != 0 {
+			dual_stereo = stereo_analysis(mode, X, LM)
+		}
+
+		this.intensity = hysteresis_decision((equiv_rate / 1000),
+			intensity_thresholds, intensity_histeresis, 21, this.intensity)
+		this.intensity = IMIN(end, IMAX(start, this.intensity))
+	}
+
+	alloc_trim = 5
+	if tell+(6<<BITRES) <= total_bits-total_boost {
+		if this.lfe != 0 {
+			alloc_trim = 5
+		} else {
+			boxed_stereo_saving := BoxedValueInt{this.stereo_saving}
+			alloc_trim = alloc_trim_analysis(mode, X, bandLogE,
+				end, LM, C, &this.analysis, &boxed_stereo_saving, tf_estimate,
+				this.intensity, surround_trim)
+			this.stereo_saving = boxed_stereo_saving.Val
+		}
+		enc.enc_icdf(alloc_trim, trim_icdf, 7)
+		tell = enc.tell_frac()
+	}
+
+	/* Variable bitrate */
+	if vbr_rate > 0 {
+		var alpha int
+		var delta int
+		/* The target rate in 8th bits per frame */
+		var target, base_target int
+		var min_allowed int
+		var lm_diff = mode.maxLM - LM
+
+		/* Don't attempt to use more than 510 kb/s, even for frames smaller than 20 ms.
+		   The CELT allocator will just not be able to use more than that anyway. */
+		nbCompressedBytes = IMIN(nbCompressedBytes, 1275>>(3-LM))
+		base_target = vbr_rate - ((40*C + 20) << BITRES)
+
+		if this.constrained_vbr != 0 {
+			base_target += (this.vbr_offset >> lm_diff)
+		}
+
+		target = compute_vbr(mode, &this.analysis, base_target, LM, equiv_rate,
+			this.lastCodedBands, C, this.intensity, this.constrained_vbr,
+			this.stereo_saving, tot_boost, tf_estimate, pitch_change, maxDepth,
+			this.variable_duration, this.lfe, boolToInt(this.energy_mask != nil), surround_masking,
+			temporal_vbr)
+
+		/* The current offset is removed from the target and the space used
+		   so far is added*/
+		target = target + tell
+		/* In VBR mode the frame size must not be reduced so much that it would
+		    result in the encoder running out of bits.
+		   The margin of 2 bytes ensures that none of the bust-prevention logic
+		    in the decoder will have triggered so far. */
+		min_allowed = ((tell + total_boost + (1 << (BITRES + 3)) - 1) >> (BITRES + 3)) + 2 - nbFilledBytes
+
+		nbAvailableBytes = (target + (1 << (BITRES + 2))) >> (BITRES + 3)
+		nbAvailableBytes = IMAX(min_allowed, nbAvailableBytes)
+		nbAvailableBytes = IMIN(nbCompressedBytes, nbAvailableBytes+nbFilledBytes) - nbFilledBytes
+
+		/* By how much did we "miss" the target on that frame */
+		delta = target - vbr_rate
+
+		target = nbAvailableBytes << (BITRES + 3)
+
+		/*If the frame is silent we don't adjust our drift, otherwise
+		  the encoder will shoot to very high rates after hitting a
+		  span of silence, but we do allow the EntropyCoder.BITRES to refill.
+		  This means that we'll undershoot our target in CVBR/VBR modes
+		  on files with lots of silence. */
+		if silence != 0 {
+			nbAvailableBytes = 2
+			target = 2 * 8 << BITRES
+			delta = 0
+		}
+
+		if this.vbr_count < 970 {
+			this.vbr_count++
+			alpha = celt_rcp(SHL32((this.vbr_count + 20), 16))
+		} else {
+			alpha = int(math.Floor(0.5 + 0.001*float64(1<<(15))))
+		}
+		/* How many bits have we used in excess of what we're allowed */
+		if this.constrained_vbr != 0 {
+			this.vbr_reservoir += target - vbr_rate
+		}
+		/*printf ("%d\n", st.vbr_reservoir);*/
+
+		/* Compute the offset we need to apply in order to reach the target */
+		if this.constrained_vbr != 0 {
+			this.vbr_drift += MULT16_32_Q15Int(alpha, (delta*(1<<lm_diff))-this.vbr_offset-this.vbr_drift)
+			this.vbr_offset = -this.vbr_drift
+		}
+		/*printf ("%d\n", st.vbr_drift);*/
+
+		if this.constrained_vbr != 0 && this.vbr_reservoir < 0 {
+			/* We're under the min value -- increase rate */
+			adjust := (-this.vbr_reservoir) / (8 << BITRES)
+			/* Unless we're just coding silence */
+			if silence == 0 {
+				nbAvailableBytes += adjust
 			}
-            for i = start; i < end; i++{
-                follow = Inlines.MAX16(follow - ((short) (0.5 + (1.0) * (( 1) << (CeltConstants.DB_SHIFT)))), bandLogE[0][i] - offset);
-                if (C == 2) {
-                    follow = Inlines.MAX16(follow, bandLogE[1][i] - offset);
-                }
-                frame_avg += follow;
-            }
-            frame_avg /= (end - start);
-            temporal_vbr = Inlines.SUB16(frame_avg, this.spec_avg);
-            temporal_vbr = Inlines.MIN16(( (0.5 + (3.0) * (( 1) << (CeltConstants.DB_SHIFT)))), Inlines.MAX16(-((short) (0.5 + (1.5) * (( 1) << (CeltConstants.DB_SHIFT)))), temporal_vbr));
-            this.spec_avg += (short) (Inlines.MULT16_16_Q15(((short) (0.5 + (.02) * (( 1) << (15)))), temporal_vbr));
-        }
- 
+			// nbAvailableBytes += silence != 0 ? 0 : adjust;
+			this.vbr_reservoir = 0
+			/*printf ("+%d\n", adjust);*/
+		}
+		nbCompressedBytes = IMIN(nbCompressedBytes, nbAvailableBytes+nbFilledBytes)
+		/*printf("%d\n", nbCompressedBytes*50*8);*/
+		/* This moves the raw bits to take into account the new compressed size */
+		enc.enc_shrink(nbCompressedBytes)
+	}
 
-        if (secondMdct == 0) {
-            System.arraycopy(bandLogE[0], 0, bandLogE2[0], 0, nbEBands);
-            if (C == 2) {
-                System.arraycopy(bandLogE[1], 0, bandLogE2[1], 0, nbEBands);
-            }
-        }
+	/* Bit allocation */
+	fine_quant = make([]int, nbEBands)
+	pulses = make([]int, nbEBands)
+	fine_priority = make([]int, nbEBands)
 
-        /* Last chance to catch any transient we might have missed in the
-           time-domain analysis */
-        if (LM > 0 && enc.tell() + 3 <= total_bits && isTransient == 0 && this.complexity >= 5 && this.lfe == 0) {
-            if (CeltCommon.patch_transient_decision(bandLogE, this.oldBandE, nbEBands, start, end, C) != 0) {
-                isTransient = 1;
-                shortBlocks = M;
-                CeltCommon.compute_mdcts(mode, shortBlocks, input, freq, C, CC, LM, this.upsample);
-                Bands.compute_band_energies(mode, freq, bandE, effEnd, C, LM);
-                QuantizeBands.amp2Log2(mode, effEnd, end, bandE, bandLogE, C);
-                /* Compensate for the scaling of short vs long mdcts */
-                for i = 0; i < nbEBands; i++ {
-                    bandLogE2[0][i] += Inlines.HALF16(Inlines.SHL16(LM, CeltConstants.DB_SHIFT));
-                }
-                if (C == 2) {
-                    for i = 0; i < nbEBands; i++ {
-                        bandLogE2[1][i] += Inlines.HALF16(Inlines.SHL16(LM, CeltConstants.DB_SHIFT));
-                    }
-                }
-                tf_estimate = ( (0.5 + (.2) * (( 1) << (14))));
-            }
-        }
+	/* bits =    packet size                                     - where we are                        - safety*/
+	bits = ((nbCompressedBytes * 8) << BITRES) - enc.tell_frac() - 1
+	anti_collapse_rsv = 0
+	if isTransient != 0 && LM >= 2 && bits >= ((LM+2)<<BITRES) {
+		anti_collapse_rsv = (1 << BITRES)
+	}
+	//   anti_collapse_rsv = isTransient != 0 && LM >= 2 && bits >= ((LM + 2) << EntropyCoder.BITRES) ? (1 << EntropyCoder.BITRES) : 0;
+	bits -= anti_collapse_rsv
+	signalBandwidth = end - 1
 
-        if (LM > 0 && enc.tell() + 3 <= total_bits) {
-            enc.enc_bit_logp(isTransient, 3);
-        }
+	if this.analysis.enabled && this.analysis.valid != 0 {
+		var min_bandwidth int
+		if equiv_rate < 32000*C {
+			min_bandwidth = 13
+		} else if equiv_rate < 48000*C {
+			min_bandwidth = 16
+		} else if equiv_rate < 60000*C {
+			min_bandwidth = 18
+		} else if equiv_rate < 80000*C {
+			min_bandwidth = 19
+		} else {
+			min_bandwidth = 20
+		}
+		signalBandwidth = IMAX(this.analysis.bandwidth, min_bandwidth)
+	}
 
-        X = Arrays.InitTwoDimensionalArrayInt(C, N);
-        /**
-         * < Interleaved normalised MDCTs
-         */
+	if this.lfe != 0 {
+		signalBandwidth = 1
+	}
 
-        /* Band normalisation */
-        Bands.normalise_bands(mode, freq, X, bandE, effEnd, C, M);
+	boxed_intensity := BoxedValueInt{this.intensity}
+	boxed_balance := BoxedValueInt{0}
+	boxed_dual_stereo := BoxedValueInt{dual_stereo}
+	codedBands = compute_allocation(mode, start, end, offsets, cap,
+		alloc_trim, &boxed_intensity, &boxed_dual_stereo, bits, &boxed_balance, pulses,
+		fine_quant, fine_priority, C, LM, enc, 1, this.lastCodedBands, signalBandwidth)
+	this.intensity = boxed_intensity.Val
+	balance = boxed_balance.Val
+	dual_stereo = boxed_dual_stereo.Val
 
-        tf_res := make([]int,nbEBands) 
-        /* Disable variable tf resolution for hybrid and at very low bitrate */
-        if (effectiveBytes >= 15 * C && start == 0 && this.complexity >= 2 && this.lfe == 0) {
-            var  lambda int;
-            if (effectiveBytes < 40) {
-                lambda = 12;
-            } else if (effectiveBytes < 60) {
-                lambda = 6;
-            } else if (effectiveBytes < 100) {
-                lambda = 4;
-            } else {
-                lambda = 3;
-            }
-            lambda *= 2;
-             boxed_tf_sum :=BoxedValueInt{0};
-            tf_select = CeltCommon.tf_analysis(mode, effEnd, isTransient, tf_res, lambda, X, N, LM, boxed_tf_sum, tf_estimate, tf_chan);
-            tf_sum = boxed_tf_sum.Val;
+	if this.lastCodedBands != 0 {
+		this.lastCodedBands = IMIN(this.lastCodedBands+1, IMAX(this.lastCodedBands-1, codedBands))
+	} else {
+		this.lastCodedBands = codedBands
+	}
 
-            for i = effEnd; i < end; i++ {
-                tf_res[i] = tf_res[effEnd - 1];
-            }
-        } else {
-            tf_sum = 0;
-            for i = 0; i < end; i++ {
-                tf_res[i] = isTransient;
-            }
-            tf_select = 0;
-        }
+	quant_fine_energy(mode, start, end, this.oldBandE, error, fine_quant, enc, C)
 
-        error = Arrays.InitTwoDimensionalArrayInt(C, nbEBands);
-         boxed_delayedintra :=  BoxedValueInt{this.delayedIntra};
-        QuantizeBands.quant_coarse_energy(mode, start, end, effEnd, bandLogE,
-                this.oldBandE, total_bits, error, enc,
-                C, LM, nbAvailableBytes, this.force_intra,
-                boxed_delayedintra,boolToInt( this.complexity >= 4 ), this.loss_rate, this.lfe);
-        this.delayedIntra = boxed_delayedintra.Val;
+	/* Residual quantisation */
+	collapse_masks = make([]int16, C*nbEBands)
+	boxed_rng := BoxedValueInt{this.rng}
+	var temp1 []int
+	if C == 2 {
+		temp1 = X[1]
+	}
+	quant_all_bands(1, mode, start, end, X[0], temp1, collapse_masks,
+		bandE, pulses, shortBlocks, this.spread_decision,
+		dual_stereo, this.intensity, tf_res, nbCompressedBytes*(8<<BITRES)-anti_collapse_rsv,
+		balance, enc, LM, codedBands, &boxed_rng)
+	this.rng = boxed_rng.Val
 
-        CeltCommon.tf_encode(start, end, isTransient, tf_res, LM, tf_select, enc);
+	if anti_collapse_rsv > 0 {
+		anti_collapse_on = boolToInt(this.consec_transient < 2)
+		enc.enc_bits(int64(anti_collapse_on), 1)
+	}
 
-        if (enc.tell() + 4 <= total_bits) {
-            if (this.lfe != 0) {
-                this.tapset_decision = 0;
-                this.spread_decision = Spread.SPREAD_NORMAL;
-            } else if (shortBlocks != 0 || this.complexity < 3 || nbAvailableBytes < 10 * C || start != 0) {
-                if (this.complexity == 0) {
-                    this.spread_decision = Spread.SPREAD_NONE;
-                } else {
-                    this.spread_decision = Spread.SPREAD_NORMAL;
-                }
-            } else {
-                 boxed_tonal_average = new BoxedValueInt(this.tonal_average);
-                 boxed_tapset_decision = new BoxedValueInt(this.tapset_decision);
-                 boxed_hf_average = new BoxedValueInt(this.hf_average);
-                this.spread_decision = Bands.spreading_decision(mode, X,
-                        boxed_tonal_average, this.spread_decision, boxed_hf_average,
-                        boxed_tapset_decision, (pf_on != 0 && shortBlocks == 0) ? 1 : 0, effEnd, C, M);
-                this.tonal_average = boxed_tonal_average.Val;
-                this.tapset_decision = boxed_tapset_decision.Val;
-                this.hf_average = boxed_hf_average.Val;
+	quant_energy_finalise(mode, start, end, this.oldBandE, error, fine_quant, fine_priority, nbCompressedBytes*8-enc.tell(), enc, C)
 
-          
-            }
-            enc.enc_icdf(this.spread_decision, CeltTables.spread_icdf, 5);
-        }
+	if silence != 0 {
+		for i = 0; i < nbEBands; i++ {
+			this.oldBandE[0][i] = -int(0.5 + (28.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+		}
+		if C == 2 {
+			for i = 0; i < nbEBands; i++ {
+				this.oldBandE[1][i] = -int(0.5 + (28.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+			}
+		}
+	}
 
-        offsets = new int[nbEBands];
+	this.prefilter_period = pitch_index
+	this.prefilter_gain = gain1
+	this.prefilter_tapset = prefilter_tapset
 
-        BoxedValueInt boxed_tot_boost = new BoxedValueInt(0);
-        maxDepth = CeltCommon.dynalloc_analysis(bandLogE, bandLogE2, nbEBands, start, end, C, offsets,
-                this.lsb_depth, mode.logN, isTransient, this.vbr, this.constrained_vbr,
-                eBands, LM, effectiveBytes, boxed_tot_boost, this.lfe, surround_dynalloc);
-        tot_boost = boxed_tot_boost.Val;
+	if CC == 2 && C == 1 {
+		//	System.arraycopy(oldBandE[0], 0, oldBandE[1], 0, nbEBands)
+		copy(this.oldBandE[1], this.oldBandE[0])
+	}
 
-        /* For LFE, everything interesting is in the first band */
-        if (this.lfe != 0) {
-            offsets[0] = Inlines.IMIN(8, effectiveBytes / 3);
-        }
-        cap = new int[nbEBands];
-        CeltCommon.init_caps(mode, cap, LM, C);
+	if isTransient == 0 {
+		//System.arraycopy(this.oldLogE[0], 0, this.oldLogE2[0], 0, nbEBands)
+		copy(this.oldLogE2[0], this.oldLogE[0])
+		//System.arraycopy(this.oldBandE[0], 0, this.oldLogE[0], 0, nbEBands)
+		copy(this.oldLogE[0], this.oldBandE[0])
+		if CC == 2 {
+			//System.arraycopy(this.oldLogE[1], 0, this.oldLogE2[1], 0, nbEBands)
+			copy(this.oldLogE2[1], this.oldLogE[1])
+			//System.arraycopy(this.oldBandE[1], 0, this.oldLogE[1], 0, nbEBands)
+			copy(this.oldLogE[1], this.oldBandE[1])
+		}
+	} else {
+		for i = 0; i < nbEBands; i++ {
+			this.oldLogE[0][i] = MIN16Int(this.oldLogE[0][i], this.oldBandE[0][i])
+		}
+		if CC == 2 {
+			for i = 0; i < nbEBands; i++ {
+				this.oldLogE[1][i] = MIN16Int(this.oldLogE[1][i], this.oldBandE[1][i])
+			}
+		}
+	}
 
-        dynalloc_logp = 6;
-        total_bits <<= EntropyCoder.BITRES;
-        total_boost = 0;
-        tell = (int) enc.tell_frac();
-        for (i = start; i < end; i++) {
-            int width, quanta;
-            int dynalloc_loop_logp;
-            int boost;
-            int j;
-            width = C * (eBands[i + 1] - eBands[i]) << LM;
-            /* quanta is 6 bits, but no more than 1 bit/sample
-               and no less than 1/8 bit/sample */
-            quanta = Inlines.IMIN(width << EntropyCoder.BITRES, Inlines.IMAX(6 << EntropyCoder.BITRES, width));
-            dynalloc_loop_logp = dynalloc_logp;
-            boost = 0;
-            for (j = 0; tell + (dynalloc_loop_logp << EntropyCoder.BITRES) < total_bits - total_boost
-                    && boost < cap[i]; j++) {
-                int flag;
-                flag = j < offsets[i] ? 1 : 0;
-                enc.enc_bit_logp(flag, dynalloc_loop_logp);
-                tell = (int) enc.tell_frac();
-                if (flag == 0) {
-                    break;
-                }
-                boost += quanta;
-                total_boost += quanta;
-                dynalloc_loop_logp = 1;
-            }
-            /* Making dynalloc more likely */
-            if (j != 0) {
-                dynalloc_logp = Inlines.IMAX(2, dynalloc_logp - 1);
-            }
-            offsets[i] = boost;
-        }
+	/* In case start or end were to change */
+	c = 0
+	for {
+		for i = 0; i < start; i++ {
+			this.oldBandE[c][i] = 0
+			this.oldLogE[c][i] = -int(0.5 + (28.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+			this.oldLogE2[c][i] = this.oldLogE[c][i]
+		}
+		for i = end; i < nbEBands; i++ {
+			this.oldBandE[c][i] = 0
+			this.oldLogE[c][i] = -int(0.5 + (28.0)*float64(int(1)<<(CeltConstants.DB_SHIFT)))
+			this.oldLogE2[c][i] = this.oldLogE[c][i]
+		}
+		c++
+		if c < CC {
+			continue
+		}
+		break
+	}
 
-        if (C == 2) {
-            /* Always use MS for 2.5 ms frames until we can do a better analysis */
-            if (LM != 0) {
-                dual_stereo = CeltCommon.stereo_analysis(mode, X, LM);
-            }
+	if isTransient != 0 || transient_got_disabled != 0 {
+		this.consec_transient++
+	} else {
+		this.consec_transient = 0
+	}
+	this.rng = int(enc.rng)
 
-            this.intensity = Bands.hysteresis_decision((int) (equiv_rate / 1000),
-                    CeltTables.intensity_thresholds, CeltTables.intensity_histeresis, 21, this.intensity);
-            this.intensity = Inlines.IMIN(end, Inlines.IMAX(start, this.intensity));
-        }
+	/* If there's any room left (can only happen for very high rates),
+	   it's already filled with zeros */
+	enc.enc_done()
 
-        alloc_trim = 5;
-        if (tell + (6 << EntropyCoder.BITRES) <= total_bits - total_boost) {
-            if (this.lfe != 0) {
-                alloc_trim = 5;
-            } else {
-                BoxedValueInt boxed_stereo_saving = new BoxedValueInt(this.stereo_saving);
-                alloc_trim = CeltCommon.alloc_trim_analysis(mode, X, bandLogE,
-                        end, LM, C, this.analysis, boxed_stereo_saving, tf_estimate,
-                        this.intensity, surround_trim);
-                this.stereo_saving = boxed_stereo_saving.Val;
-            }
-            enc.enc_icdf(alloc_trim, CeltTables.trim_icdf, 7);
-            tell = (int) enc.tell_frac();
-        }
-
-        /* Variable bitrate */
-        if (vbr_rate > 0) {
-            int alpha;
-            int delta;
-            /* The target rate in 8th bits per frame */
-            int target, base_target;
-            int min_allowed;
-            int lm_diff = mode.maxLM - LM;
-
-            /* Don't attempt to use more than 510 kb/s, even for frames smaller than 20 ms.
-               The CELT allocator will just not be able to use more than that anyway. */
-            nbCompressedBytes = Inlines.IMIN(nbCompressedBytes, 1275 >> (3 - LM));
-            base_target = vbr_rate - ((40 * C + 20) << EntropyCoder.BITRES);
-
-            if (this.constrained_vbr != 0) {
-                base_target += (this.vbr_offset >> lm_diff);
-            }
-
-            target = CeltCommon.compute_vbr(mode, this.analysis, base_target, LM, equiv_rate,
-                    this.lastCodedBands, C, this.intensity, this.constrained_vbr,
-                    this.stereo_saving, tot_boost, tf_estimate, pitch_change, maxDepth,
-                    this.variable_duration, this.lfe, this.energy_mask != null ? 1 : 0, surround_masking,
-                    temporal_vbr);
-
-            /* The current offset is removed from the target and the space used
-               so far is added*/
-            target = target + tell;
-            /* In VBR mode the frame size must not be reduced so much that it would
-                result in the encoder running out of bits.
-               The margin of 2 bytes ensures that none of the bust-prevention logic
-                in the decoder will have triggered so far. */
-            min_allowed = ((tell + total_boost + (1 << (EntropyCoder.BITRES + 3)) - 1) >> (EntropyCoder.BITRES + 3)) + 2 - nbFilledBytes;
-
-            nbAvailableBytes = (target + (1 << (EntropyCoder.BITRES + 2))) >> (EntropyCoder.BITRES + 3);
-            nbAvailableBytes = Inlines.IMAX(min_allowed, nbAvailableBytes);
-            nbAvailableBytes = Inlines.IMIN(nbCompressedBytes, nbAvailableBytes + nbFilledBytes) - nbFilledBytes;
-
-            /* By how much did we "miss" the target on that frame */
-            delta = target - vbr_rate;
-
-            target = nbAvailableBytes << (EntropyCoder.BITRES + 3);
-
-            /*If the frame is silent we don't adjust our drift, otherwise
-              the encoder will shoot to very high rates after hitting a
-              span of silence, but we do allow the EntropyCoder.BITRES to refill.
-              This means that we'll undershoot our target in CVBR/VBR modes
-              on files with lots of silence. */
-            if (silence != 0) {
-                nbAvailableBytes = 2;
-                target = 2 * 8 << EntropyCoder.BITRES;
-                delta = 0;
-            }
-
-            if (this.vbr_count < 970) {
-                this.vbr_count++;
-                alpha = Inlines.celt_rcp(Inlines.SHL32((this.vbr_count + 20), 16));
-            } else {
-                alpha = ((short) (0.5 + (.001) * (((int) 1) << (15))))/*Inlines.QCONST16(.001f, 15)*/;
-            }
-            /* How many bits have we used in excess of what we're allowed */
-            if (this.constrained_vbr != 0) {
-                this.vbr_reservoir += target - vbr_rate;
-            }
-            /*printf ("%d\n", st.vbr_reservoir);*/
-
- /* Compute the offset we need to apply in order to reach the target */
-            if (this.constrained_vbr != 0) {
-                this.vbr_drift += (int) Inlines.MULT16_32_Q15(alpha, (delta * (1 << lm_diff)) - this.vbr_offset - this.vbr_drift);
-                this.vbr_offset = -this.vbr_drift;
-            }
-            /*printf ("%d\n", st.vbr_drift);*/
-
-            if (this.constrained_vbr != 0 && this.vbr_reservoir < 0) {
-                /* We're under the min value -- increase rate */
-                int adjust = (-this.vbr_reservoir) / (8 << EntropyCoder.BITRES);
-                /* Unless we're just coding silence */
-                nbAvailableBytes += silence != 0 ? 0 : adjust;
-                this.vbr_reservoir = 0;
-                /*printf ("+%d\n", adjust);*/
-            }
-            nbCompressedBytes = Inlines.IMIN(nbCompressedBytes, nbAvailableBytes + nbFilledBytes);
-            /*printf("%d\n", nbCompressedBytes*50*8);*/
- /* This moves the raw bits to take into account the new compressed size */
-            enc.enc_shrink(nbCompressedBytes);
-        }
-
-        /* Bit allocation */
-        fine_quant = new int[nbEBands];
-        pulses = new int[nbEBands];
-        fine_priority = new int[nbEBands];
-
-        /* bits =    packet size                                     - where we are                        - safety*/
-        bits = (((int) nbCompressedBytes * 8) << EntropyCoder.BITRES) - (int) enc.tell_frac() - 1;
-        anti_collapse_rsv = isTransient != 0 && LM >= 2 && bits >= ((LM + 2) << EntropyCoder.BITRES) ? (1 << EntropyCoder.BITRES) : 0;
-        bits -= anti_collapse_rsv;
-        signalBandwidth = end - 1;
-
-        if (this.analysis.enabled && this.analysis.valid != 0) {
-            int min_bandwidth;
-            if (equiv_rate < (int) 32000 * C) {
-                min_bandwidth = 13;
-            } else if (equiv_rate < (int) 48000 * C) {
-                min_bandwidth = 16;
-            } else if (equiv_rate < (int) 60000 * C) {
-                min_bandwidth = 18;
-            } else if (equiv_rate < (int) 80000 * C) {
-                min_bandwidth = 19;
-            } else {
-                min_bandwidth = 20;
-            }
-            signalBandwidth = Inlines.IMAX(this.analysis.bandwidth, min_bandwidth);
-        }
-
-        if (this.lfe != 0) {
-            signalBandwidth = 1;
-        }
-
-        BoxedValueInt boxed_intensity = new BoxedValueInt(this.intensity);
-        BoxedValueInt boxed_balance = new BoxedValueInt(0);
-        BoxedValueInt boxed_dual_stereo = new BoxedValueInt(dual_stereo);
-        codedBands = Rate.compute_allocation(mode, start, end, offsets, cap,
-                alloc_trim, boxed_intensity, boxed_dual_stereo, bits, boxed_balance, pulses,
-                fine_quant, fine_priority, C, LM, enc, 1, this.lastCodedBands, signalBandwidth);
-        this.intensity = boxed_intensity.Val;
-        balance = boxed_balance.Val;
-        dual_stereo = boxed_dual_stereo.Val;
-
-        if (this.lastCodedBands != 0) {
-            this.lastCodedBands = Inlines.IMIN(this.lastCodedBands + 1, Inlines.IMAX(this.lastCodedBands - 1, codedBands));
-        } else {
-            this.lastCodedBands = codedBands;
-        }
-
-        QuantizeBands.quant_fine_energy(mode, start, end, this.oldBandE, error, fine_quant, enc, C);
-
-        /* Residual quantisation */
-        collapse_masks = new short[C * nbEBands];
-        BoxedValueInt boxed_rng = new BoxedValueInt(this.rng);
-        Bands.quant_all_bands(1, mode, start, end, X[0], C == 2 ? X[1] : null, collapse_masks,
-                bandE, pulses, shortBlocks, this.spread_decision,
-                dual_stereo, this.intensity, tf_res, nbCompressedBytes * (8 << EntropyCoder.BITRES) - anti_collapse_rsv,
-                balance, enc, LM, codedBands, boxed_rng);
-        this.rng = boxed_rng.Val;
-
-        if (anti_collapse_rsv > 0) {
-            anti_collapse_on = (this.consec_transient < 2) ? 1 : 0;
-            enc.enc_bits(anti_collapse_on, 1);
-        }
-
-        QuantizeBands.quant_energy_finalise(mode, start, end, this.oldBandE, error, fine_quant, fine_priority, nbCompressedBytes * 8 - (int) enc.tell(), enc, C);
-
-        if (silence != 0) {
-            for (i = 0; i < nbEBands; i++) {
-                this.oldBandE[0][i] = -((short) (0.5 + (28.0f) * (((int) 1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(28.0f, CeltConstants.DB_SHIFT)*/;
-            }
-            if (C == 2) {
-                for (i = 0; i < nbEBands; i++) {
-                    this.oldBandE[1][i] = -((short) (0.5 + (28.0f) * (((int) 1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(28.0f, CeltConstants.DB_SHIFT)*/;
-                }
-            }
-        }
-
-        this.prefilter_period = pitch_index;
-        this.prefilter_gain = gain1;
-        this.prefilter_tapset = prefilter_tapset;
-
-        if (CC == 2 && C == 1) {
-            System.arraycopy(oldBandE[0], 0, oldBandE[1], 0, nbEBands);
-        }
-
-        if (isTransient == 0) {
-            System.arraycopy(oldLogE[0], 0, oldLogE2[0], 0, nbEBands);
-            System.arraycopy(oldBandE[0], 0, oldLogE[0], 0, nbEBands);
-            if (CC == 2) {
-                System.arraycopy(oldLogE[1], 0, oldLogE2[1], 0, nbEBands);
-                System.arraycopy(oldBandE[1], 0, oldLogE[1], 0, nbEBands);
-            }
-        } else {
-            for (i = 0; i < nbEBands; i++) {
-                oldLogE[0][i] = Inlines.MIN16(oldLogE[0][i], oldBandE[0][i]);
-            }
-            if (CC == 2) {
-                for (i = 0; i < nbEBands; i++) {
-                    oldLogE[1][i] = Inlines.MIN16(oldLogE[1][i], oldBandE[1][i]);
-                }
-            }
-        }
-
-        /* In case start or end were to change */
-        c = 0;
-        do {
-            for (i = 0; i < start; i++) {
-                oldBandE[c][i] = 0;
-                oldLogE[c][i] = oldLogE2[c][i] = -((short) (0.5 + (28.0f) * (((int) 1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(28.0f, CeltConstants.DB_SHIFT)*/;
-            }
-            for (i = end; i < nbEBands; i++) {
-                oldBandE[c][i] = 0;
-                oldLogE[c][i] = oldLogE2[c][i] = -((short) (0.5 + (28.0f) * (((int) 1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(28.0f, CeltConstants.DB_SHIFT)*/;
-            }
-        } while (++c < CC);
-
-        if (isTransient != 0 || transient_got_disabled != 0) {
-            this.consec_transient++;
-        } else {
-            this.consec_transient = 0;
-        }
-        this.rng = (int) enc.rng;
-
-        /* If there's any room left (can only happen for very high rates),
-           it's already filled with zeros */
-        enc.enc_done();
-
-        if (enc.get_error() != 0) {
-            return OpusError.OPUS_INTERNAL_ERROR;
-        } else {
-            return nbCompressedBytes;
-        }
-    }
+	if enc.get_error() != 0 {
+		return OpusError.OPUS_INTERNAL_ERROR
+	} else {
+		return nbCompressedBytes
+	}
+}
 
 func boolToSlice(cond bool, slice []int) []int {
 	if cond {
