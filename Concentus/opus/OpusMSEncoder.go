@@ -49,7 +49,7 @@ func (st *OpusMSEncoder) ResetState() {
 	for s := 0; s < st.layout.nb_streams; s++ {
 		enc := st.encoders[encoder_ptr]
 		encoder_ptr++
-		enc.resetState()
+		enc.ResetState()
 	}
 }
 

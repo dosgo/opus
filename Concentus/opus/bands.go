@@ -1,9 +1,6 @@
 package opus
 
 import (
-	"crypto/md5"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math"
 )
@@ -1497,18 +1494,4 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		}
 	}
 	seed.Val = ctx.seed
-}
-func IntSliceToMD5(slice []int) string {
-	hasher := md5.New()
-	buf := make([]byte, 4) // 用于每个整数的缓冲区
-
-	for _, num := range slice {
-		// 将int转换为uint32（保留位模式）
-		u := uint32(num)
-		binary.BigEndian.PutUint32(buf, u)
-		hasher.Write(buf)
-	}
-
-	hash := hasher.Sum(nil)
-	return hex.EncodeToString(hash)
 }

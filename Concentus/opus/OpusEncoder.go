@@ -2,6 +2,7 @@ package opus
 
 import (
 	"errors"
+	"fmt"
 	"math"
 )
 
@@ -95,7 +96,7 @@ func (st *OpusEncoder) PartialReset() {
 	st.rangeFinal = 0
 }
 
-func (st *OpusEncoder) resetState() {
+func (st *OpusEncoder) ResetState() {
 	dummy := EncControlState{}
 	st.analysis.Reset()
 	st.PartialReset()
@@ -108,6 +109,65 @@ func (st *OpusEncoder) resetState() {
 	st.mode = MODE_HYBRID
 	st.bandwidth = OPUS_BANDWIDTH_FULLBAND
 	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
+}
+func (enc *OpusEncoder) PrintAllFields() {
+	/*
+		fmt.Printf("silk_mode: %+v\n", enc.silk_mode)
+		fmt.Printf("application: %d\n", enc.application)
+		fmt.Printf("channels: %d\n", enc.channels)
+		fmt.Printf("delay_compensation: %d\n", enc.delay_compensation)
+		fmt.Printf("force_channels: %d\n", enc.force_channels)
+		fmt.Printf("signal_type: %d\n", enc.signal_type)
+		fmt.Printf("user_bandwidth: %d\n", enc.user_bandwidth)
+		fmt.Printf("max_bandwidth: %d\n", enc.max_bandwidth)
+		fmt.Printf("user_forced_mode: %d\n", enc.user_forced_mode)
+		fmt.Printf("voice_ratio: %d\n", enc.voice_ratio)
+		fmt.Printf("Fs: %d\n", enc.Fs)
+		fmt.Printf("use_vbr: %d\n", enc.use_vbr)
+		fmt.Printf("vbr_constraint: %d\n", enc.vbr_constraint)
+		fmt.Printf("variable_duration: %d\n", enc.variable_duration)
+		fmt.Printf("bitrate_bps: %d\n", enc.bitrate_bps)
+		fmt.Printf("user_bitrate_bps: %d\n", enc.user_bitrate_bps)
+		fmt.Printf("lsb_depth: %d\n", enc.lsb_depth)
+		fmt.Printf("encoder_buffer: %d\n", enc.encoder_buffer)
+		fmt.Printf("lfe: %d\n", enc.lfe)
+		//fmt.Printf("analysis: %+v\n", enc.analysis.info)
+		/*
+			for _, v := range enc.analysis.info {
+				fmt.Printf("analysis.info: %+v\n", v)
+			}*/
+	/*
+		fmt.Printf("stream_channels: %d\n", enc.stream_channels)
+		fmt.Printf("hybrid_stereo_width_Q14: %d\n", enc.hybrid_stereo_width_Q14)
+		fmt.Printf("variable_HP_smth2_Q15: %d\n", enc.variable_HP_smth2_Q15)
+		fmt.Printf("prev_HB_gain: %d\n", enc.prev_HB_gain)
+		fmt.Printf("hp_mem: %v\n", enc.hp_mem)
+		fmt.Printf("mode: %d\n", enc.mode)
+		fmt.Printf("prev_mode: %d\n", enc.prev_mode)
+		fmt.Printf("prev_channels: %d\n", enc.prev_channels)
+		fmt.Printf("prev_framesize: %d\n", enc.prev_framesize)
+		fmt.Printf("bandwidth: %d\n", enc.bandwidth)
+		fmt.Printf("silk_bw_switch: %d\n", enc.silk_bw_switch)
+		fmt.Printf("first: %d\n", enc.first)
+		fmt.Printf("energy_masking: %v\n", enc.energy_masking)
+		fmt.Printf("width_mem: %+v\n", enc.width_mem)
+		//ddd, _ := json.Marshal(enc.delay_buffer)
+		//fmt.Printf("delay_buffer: %+v\n", string(ddd))
+		fmt.Printf("detected_bandwidth: %d\n", enc.detected_bandwidth)
+		fmt.Printf("rangeFinal: %d\n", enc.rangeFinal)
+	*/
+	//fmt.Printf("SilkEncoder: %+v\n", enc.SilkEncoder)
+	//enc.SilkEncoder.sStereo.PrintAllFields()
+	//	enc.Celt_Encoder.PrintAllFields()
+	//for _, v := range enc.SilkEncoder.state_Fxx {
+	//	v.PrintAllFields()
+	//}
+	//fmt.Printf("Celt_Encoder: %+v\n", enc.Celt_Encoder)
+	//enc.Celt_Encoder.oldBandE
+
+	fmt.Printf("enc.delay_buffer:%+v\r\n", enc.delay_buffer)
+	fmt.Printf("enc.Celt_Encoder.oldBandE:%+v\r\n", enc.Celt_Encoder.oldBandE)
+
 }
 
 func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder, error) {

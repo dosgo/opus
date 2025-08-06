@@ -2,7 +2,9 @@ package main
 
 import (
 	"concentus/opus"
-	"encoding/json"
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -30,33 +32,67 @@ func main() {
 	inBuf := make([]byte, packetSamples*2*2)
 	data_packet := make([]byte, 1275)
 	start := time.Now().UnixNano()
+	i := 0
 	for {
 		_, err := io.ReadFull(fileIn, inBuf)
 		if err != nil {
 			break
 		}
-		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
-		fmt.Printf("pcm %+v\r\n", len(pcm))
-		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
-		//System.out.println(bytesEncoded + " bytes encoded");
-
-		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, bytesToCSV(data_packet))
-
-		samplesDecoded, err := decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
-		fmt.Printf("samplesDecoded:%d samplesDecoded:%+v\r\n", samplesDecoded, samplesDecoded)
-
-		if err == nil {
-			fmt.Printf("err:%+v\r\n", err)
-			pcmjson, _ := json.Marshal(pcm)
-			fmt.Printf("pcm:%s\r\n", string(pcmjson))
-
+		if i < 3 {
+			i++
+			continue
+		}
+		if i > 4 {
 			break
 		}
+		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
+
+		fmt.Printf("imput md5:%s\r\n", ByteSliceToMD5(inBuf))
+
+		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
+		encoder.PrintAllFields()
+
+		//encoder.ResetState()
+
+		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
+		//break
+		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
+		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, ByteSliceToMD5(data_packet))
+
+		_, err = decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
+		//fmt.Printf("%d samples decoded\r\n", samplesDecoded)
+		if err == nil {
+			fmt.Printf("pcm:%s\r\n", IntSliceToMD5(pcm))
+		}
+		i++
 	}
 	elapsed := time.Duration(time.Now().UnixNano() - start)
 	fmt.Printf("Time was: %+v ms\n", float64(elapsed)/1e6)
 
 }
+
+func ByteSliceToMD5(slice []byte) string {
+	hasher := md5.New()
+	hasher.Write(slice)
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
+}
+
+func IntSliceToMD5(slice []int16) string {
+	hasher := md5.New()
+	buf := make([]byte, 2) // 用于每个整数的缓冲区
+
+	for _, num := range slice {
+		// 将int转换为uint32（保留位模式）
+		u := uint16(num)
+		binary.BigEndian.PutUint16(buf, u)
+		hasher.Write(buf)
+	}
+
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
+}
+
 func bytesToCSV(data []byte) string {
 	if len(data) == 0 {
 		return ""
