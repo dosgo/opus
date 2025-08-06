@@ -14,5 +14,14 @@ type SilkVADState struct {
 }
 
 func (s *SilkVADState) Reset() {
-	*s = SilkVADState{}
+	Arrays.MemSet(AnaState, 0, 2)
+	Arrays.MemSet(AnaState1, 0, 2)
+	Arrays.MemSet(AnaState2, 0, 2)
+	Arrays.MemSet(XnrgSubfr, 0, SilkConstants.VAD_N_BANDS)
+	Arrays.MemSet(NrgRatioSmth_Q8, 0, SilkConstants.VAD_N_BANDS)
+	HPstate = 0
+	Arrays.MemSet(NL, 0, SilkConstants.VAD_N_BANDS)
+	Arrays.MemSet(inv_NL, 0, SilkConstants.VAD_N_BANDS)
+	Arrays.MemSet(NoiseLevelBias, 0, SilkConstants.VAD_N_BANDS)
+	counter = 0
 }
