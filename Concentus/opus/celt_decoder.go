@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -283,286 +282,6 @@ func (this *CeltDecoder) celt_decode_lost(N int, LM int) {
 	this.loss_count++
 }
 
-func (this *CeltDecoder) celt_decode_with_ecOld(data []byte, data_ptr int, len int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
-	C := this.channels
-	CC := this.stream_channels
-	mode := this.mode
-	nbEBands := mode.nbEBands
-	overlap := mode.overlap
-	eBands := mode.eBands
-	start := this.start
-	end := this.end
-	frame_size *= this.downsample
-	var intensity = 0
-	var dual_stereo = 0
-	var balance = 0
-	oldBandE := this.oldEBands
-	oldLogE := this.oldLogE
-	oldLogE2 := this.oldLogE2
-	backgroundLogE := this.backgroundLogE
-
-	LM := 0
-	for LM = 0; LM <= mode.maxLM; LM++ {
-		if mode.shortMdctSize<<LM == frame_size {
-			break
-		}
-	}
-	if LM > mode.maxLM {
-		return OpusError.OPUS_BAD_ARG
-	}
-	M := 1 << LM
-	N := M * mode.shortMdctSize
-	if len < 0 || len > 1275 || pcm == nil {
-		return OpusError.OPUS_BAD_ARG
-	}
-
-	out_syn := make([][]int, 2)
-	out_syn_ptrs := make([]int, 2)
-	for c := 0; c < CC; c++ {
-		out_syn[c] = this.decode_mem[c]
-		out_syn_ptrs[c] = CeltConstants.DECODE_BUFFER_SIZE - N
-	}
-
-	effEnd := end
-	if effEnd > mode.effEBands {
-		effEnd = mode.effEBands
-	}
-	if data == nil || len <= 1 {
-		this.celt_decode_lost(N, LM)
-		deemphasis(out_syn, out_syn_ptrs, pcm, pcm_ptr, N, CC, this.downsample, mode.preemph, this.preemph_memD[:], accum)
-		return frame_size / this.downsample
-	}
-
-	localDec := dec
-	if dec == nil {
-		localDec = new(EntropyCoder)
-		localDec.dec_init(data, data_ptr, len)
-	}
-
-	if CC == 1 {
-		for i := 0; i < nbEBands; i++ {
-			oldBandE[i] = MAX16Int(oldBandE[i], oldBandE[nbEBands+i])
-		}
-	}
-
-	total_bits := len * 8
-	tell := localDec.tell()
-	silence := 0
-	if tell >= total_bits {
-		silence = 1
-	} else if tell == 1 {
-		silence = localDec.dec_bit_logp(15)
-	}
-	if silence != 0 {
-		tell = total_bits
-		localDec.nbits_total += tell - localDec.tell()
-	}
-	postfilter_gain := 0
-	postfilter_pitch := 0
-	postfilter_tapset := 0
-	if start == 0 && tell+16 <= total_bits {
-		if localDec.dec_bit_logp(1) != 0 {
-			octave := int(localDec.dec_uint(6))
-			postfilter_pitch = (16 << octave) + int(localDec.dec_bits(4+octave)) - 1
-			qg := int(localDec.dec_bits(3))
-			if localDec.tell()+2 <= total_bits {
-				postfilter_tapset = int(localDec.dec_icdf(tapset_icdf[:], 2))
-			}
-
-			postfilter_gain = int(math.Floor(0.5+(.09375)*((1)<<(15)))) * (qg + 1)
-		}
-		tell = localDec.tell()
-	}
-
-	isTransient := 0
-	if LM > 0 && tell+3 <= total_bits {
-		isTransient = localDec.dec_bit_logp(3)
-		tell = localDec.tell()
-	}
-
-	shortBlocks := 0
-	if isTransient != 0 {
-		shortBlocks = M
-	}
-
-	intra_ener := 0
-	if tell+3 <= total_bits {
-		intra_ener = localDec.dec_bit_logp(3)
-	}
-	unquant_coarse_energy(mode, start, end, oldBandE, intra_ener, localDec, CC, LM)
-
-	tf_res := make([]int, nbEBands)
-	tf_decode(start, end, isTransient, tf_res, LM, localDec)
-
-	tell = localDec.tell()
-	spread_decision := SPREAD_NORMAL
-	if tell+4 <= total_bits {
-		spread_decision = int(localDec.dec_icdf(spread_icdf[:], 5))
-	}
-
-	cap := make([]int, nbEBands)
-	init_caps(mode, cap, LM, CC)
-
-	offsets := make([]int, nbEBands)
-	dynalloc_logp := 6
-	total_bits <<= BITRES
-	tell = localDec.tell_frac()
-	for i := start; i < end; i++ {
-		width := CC * int(eBands[i+1]-eBands[i]) << LM
-		quanta := IMIN(width<<BITRES, IMAX(6<<BITRES, width))
-		dynalloc_loop_logp := dynalloc_logp
-		boost := 0
-		for tell+(dynalloc_loop_logp<<BITRES) < total_bits && boost < cap[i] {
-			flag := localDec.dec_bit_logp(int64(dynalloc_loop_logp))
-			tell = localDec.tell_frac()
-			if flag == 0 {
-				break
-			}
-			boost += quanta
-			total_bits -= quanta
-			dynalloc_loop_logp = 1
-		}
-		offsets[i] = boost
-		if boost > 0 {
-			dynalloc_logp = IMAX(2, dynalloc_logp-1)
-		}
-	}
-
-	fine_quant := make([]int, nbEBands)
-	alloc_trim := 5
-	if tell+(6<<BITRES) <= total_bits {
-		alloc_trim = int(localDec.dec_icdf(trim_icdf[:], 7))
-	}
-
-	bits := (len*8)<<BITRES - localDec.tell_frac() - 1
-	anti_collapse_rsv := 0
-	if isTransient != 0 && LM >= 2 && bits >= (LM+2)<<BITRES {
-		anti_collapse_rsv = 1 << BITRES
-	}
-	bits -= anti_collapse_rsv
-
-	pulses := make([]int, nbEBands)
-	fine_priority := make([]int, nbEBands)
-
-	boxed_intensity := BoxedValueInt{intensity}
-	boxed_dual_stereo := BoxedValueInt{dual_stereo}
-	boxed_balance := BoxedValueInt{0}
-
-	codedBands := compute_allocation(mode, start, end, offsets, cap, alloc_trim, &boxed_intensity, &boxed_dual_stereo, bits, &boxed_balance, pulses, fine_quant, fine_priority, CC, LM, localDec, 0, 0, 0)
-	intensity = boxed_intensity.Val
-	dual_stereo = boxed_dual_stereo.Val
-	balance = boxed_balance.Val
-	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, localDec, CC)
-
-	for c := 0; c < CC; c++ {
-		copy(this.decode_mem[c][:CeltConstants.DECODE_BUFFER_SIZE-N+overlap/2], this.decode_mem[c][N:])
-	}
-
-	collapse_masks := make([]int16, CC*nbEBands)
-	X := make([][]int, CC)
-	for c := range X {
-		X[c] = make([]int, N)
-	}
-
-	boxed_rng := BoxedValueInt{this.rng}
-	var Y_ []int
-	if C == 2 {
-		Y_ = X[1]
-	}
-	quant_all_bands(0, mode, start, end, X[0], Y_, collapse_masks,
-		nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res,
-		len*(8<<BITRES)-anti_collapse_rsv, balance, dec, LM, codedBands, &boxed_rng)
-	var anti_collapse_on = 0
-	if anti_collapse_rsv > 0 {
-		anti_collapse_on = localDec.dec_bits(1)
-	}
-
-	unquant_energy_finalise(mode, start, end, oldBandE, fine_quant, fine_priority, len*8-localDec.tell(), localDec, CC)
-
-	if anti_collapse_on != 0 {
-		anti_collapse(mode, X, collapse_masks, LM, CC, N, start, end, oldBandE, oldLogE, oldLogE2, pulses, this.rng)
-	}
-
-	if silence != 0 {
-		q28 := int(QCONST16(28.0, CeltConstants.DB_SHIFT))
-		for i := 0; i < CC*nbEBands; i++ {
-			oldBandE[i] = -q28
-		}
-	}
-
-	celt_synthesis(mode, X, out_syn, out_syn_ptrs, oldBandE, start, effEnd, CC, CC, isTransient, LM, this.downsample, silence)
-
-	for c := 0; c < CC; c++ {
-		this.postfilter_period = IMAX(this.postfilter_period, CeltConstants.COMBFILTER_MINPERIOD)
-		this.postfilter_period_old = IMAX(this.postfilter_period_old, CeltConstants.COMBFILTER_MINPERIOD)
-		comb_filter(out_syn[c], out_syn_ptrs[c], out_syn[c], out_syn_ptrs[c], this.postfilter_period_old, this.postfilter_period, mode.shortMdctSize, this.postfilter_gain_old, this.postfilter_gain, this.postfilter_tapset_old, this.postfilter_tapset, mode.window, overlap)
-		if LM != 0 {
-			comb_filter(out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, out_syn[c], out_syn_ptrs[c]+mode.shortMdctSize, this.postfilter_period, postfilter_pitch, N-mode.shortMdctSize, this.postfilter_gain, postfilter_gain, this.postfilter_tapset, postfilter_tapset, mode.window, overlap)
-		}
-	}
-	this.postfilter_period_old = this.postfilter_period
-	this.postfilter_gain_old = this.postfilter_gain
-	this.postfilter_tapset_old = this.postfilter_tapset
-	this.postfilter_period = postfilter_pitch
-	this.postfilter_gain = postfilter_gain
-	this.postfilter_tapset = postfilter_tapset
-	if LM != 0 {
-		this.postfilter_period_old = this.postfilter_period
-		this.postfilter_gain_old = this.postfilter_gain
-		this.postfilter_tapset_old = this.postfilter_tapset
-	}
-
-	if CC == 1 {
-		copy(oldBandE[nbEBands:], oldBandE[:nbEBands])
-	}
-
-	if isTransient == 0 {
-		max_background_increase := 0
-		if this.loss_count < 10 {
-			max_background_increase = M * int(QCONST16(0.001, CeltConstants.DB_SHIFT))
-		} else {
-			max_background_increase = int(QCONST16(1.0, CeltConstants.DB_SHIFT))
-		}
-		copy(oldLogE2, oldLogE)
-		copy(oldLogE, oldBandE)
-		for i := 0; i < 2*nbEBands; i++ {
-			backgroundLogE[i] = MIN16Int(backgroundLogE[i]+max_background_increase, oldBandE[i])
-		}
-	} else {
-		for i := 0; i < 2*nbEBands; i++ {
-			oldLogE[i] = MIN16Int(oldLogE[i], oldBandE[i])
-		}
-	}
-
-	q28 := int(QCONST16(28.0, CeltConstants.DB_SHIFT))
-	for c := 0; c < 2; c++ {
-		for i := 0; i < start; i++ {
-			idx := c*nbEBands + i
-			oldBandE[idx] = 0
-			oldLogE[idx] = -q28
-			oldLogE2[idx] = -q28
-		}
-		for i := end; i < nbEBands; i++ {
-			idx := c*nbEBands + i
-			oldBandE[idx] = 0
-			oldLogE[idx] = -q28
-			oldLogE2[idx] = -q28
-		}
-	}
-	this.rng = int(localDec.rng)
-
-	deemphasis(out_syn, out_syn_ptrs, pcm, pcm_ptr, N, CC, this.downsample, mode.preemph, this.preemph_memD[:], accum)
-	this.loss_count = 0
-
-	if localDec.tell() > 8*len {
-		return OpusError.OPUS_INTERNAL_ERROR
-	}
-	if localDec.get_error() != 0 {
-		this.error = 1
-	}
-	return frame_size / this.downsample
-}
-
 func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int, pcm []int16, pcm_ptr int, frame_size int, dec *EntropyCoder, accum int) int {
 	var c, i, N int
 	var spread_decision, bits int
@@ -597,7 +316,6 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	eBands = mode.eBands
 	start = ed.start
 	end = ed.end
-	fmt.Println("frame_size:", frame_size)
 	frame_size *= ed.downsample
 
 	oldBandE = ed.oldEBands
@@ -772,7 +490,6 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	balance = boxed_balance.Val
 
 	unquant_fine_energy(mode, start, end, oldBandE, fine_quant, dec, C)
-
 	c = 0
 	for {
 		copy(ed.decode_mem[c][0:], ed.decode_mem[c][N:CeltConstants.DECODE_BUFFER_SIZE-N+overlap/2])
@@ -793,7 +510,9 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 	if C == 2 {
 		Y_ = X[1]
 	}
+
 	quant_all_bands(0, mode, start, end, X[0], Y_, collapse_masks, nil, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res, length*(8<<BITRES)-anti_collapse_rsv, balance, dec, LM, codedBands, boxed_rng)
+
 	ed.rng = boxed_rng.Val
 
 	if anti_collapse_rsv > 0 {
@@ -811,7 +530,6 @@ func (ed *CeltDecoder) celt_decode_with_ec(data []byte, data_ptr int, length int
 			oldBandE[i] = -int(0.5 + 28.0*float64(int(1)<<CeltConstants.DB_SHIFT))
 		}
 	}
-
 	celt_synthesis(mode, X, out_syn, out_syn_ptrs, oldBandE, start, effEnd, C, CC, isTransient, LM, ed.downsample, silence)
 
 	c = 0

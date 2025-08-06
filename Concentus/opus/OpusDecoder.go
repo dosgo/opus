@@ -335,7 +335,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 	}
 
 	this.Celt_Decoder.SetStartBand(start_band)
-
 	if mode != MODE_SILK_ONLY {
 		celt_frame_size := IMIN(F20, frame_size)
 		if mode != this.prev_mode && (this.prev_mode != MODE_AUTO && this.prev_mode != MODE_UNKNOWN) && this.prev_redundancy == 0 {
@@ -360,6 +359,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 
 	if mode != MODE_CELT_ONLY && celt_accum == 0 {
 		for i = 0; i < frame_size*this.channels; i++ {
+
 			pcm[pcm_ptr+i] = SAT16(int(pcm[pcm_ptr+i]) + int(pcm_silk[i]))
 		}
 	}
@@ -371,8 +371,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 
 		this.Celt_Decoder.celt_decode_with_ec(data, data_ptr+len, redundancy_bytes, redundant_audio, 0, F5, nil, 0)
 		redundant_rng = this.Celt_Decoder.GetFinalRange()
-		//smooth_fade(pcm, pcm_ptr+this.channels*(frame_size-F2_5), redundant_audio, 0, this.channels*F2_5,
-		//	pcm, pcm_ptr+this.channels*(frame_size-F2_5), F2_5, this.channels, window, this.Fs)
 
 		smooth_fade(pcm, pcm_ptr+this.channels*(frame_size-F2_5), redundant_audio, this.channels*F2_5,
 			pcm, (pcm_ptr + this.channels*(frame_size-F2_5)), F2_5, this.channels, window, this.Fs)
@@ -399,7 +397,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 				pcm, pcm_ptr, F2_5, this.channels, window, this.Fs)
 		}
 	}
-
 	if this.decode_gain != 0 {
 		gain := celt_exp2(int(MULT16_16_P15(QCONST16(6.48814081e-4, 25), int16(this.decode_gain))))
 		for i = pcm_ptr; i < pcm_ptr+(frame_size*this.channels); i++ {

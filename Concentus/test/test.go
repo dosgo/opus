@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 	var packetSamples = 960
 	inBuf := make([]byte, packetSamples*2*2)
 	data_packet := make([]byte, 1275)
-
+	start := time.Now().UnixNano()
 	for {
 		_, err := io.ReadFull(fileIn, inBuf)
 		if err != nil {
@@ -43,9 +44,7 @@ func main() {
 
 		samplesDecoded, err := decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
 		fmt.Printf("samplesDecoded:%d samplesDecoded:%+v\r\n", samplesDecoded, samplesDecoded)
-		//System.out.println(samplesDecoded + " samples decoded");
-		// bytesOut = ShortsToBytes(pcm);
-		// fileOut.write(bytesOut, 0, bytesOut.length);
+
 		if err == nil {
 			fmt.Printf("err:%+v\r\n", err)
 			pcmjson, _ := json.Marshal(pcm)
@@ -54,6 +53,8 @@ func main() {
 			break
 		}
 	}
+	elapsed := time.Duration(time.Now().UnixNano() - start)
+	fmt.Printf("Time was: %+v ms\n", float64(elapsed)/1e6)
 
 }
 func bytesToCSV(data []byte) string {

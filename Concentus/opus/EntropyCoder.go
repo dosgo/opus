@@ -181,25 +181,6 @@ func (ec *EntropyCoder) dec_update(_fl int64, _fh int64, _ft int64) {
 	ec.dec_normalize()
 }
 
-func (ec *EntropyCoder) dec_bit_logpOld(_logp int64) int {
-	r := ec.rng
-	d := ec.val
-	s := r >> _logp
-	ret := 0
-	if d < s {
-		ret = 1
-	} else {
-		ec.val = d - s
-	}
-	if ret != 0 {
-		ec.rng = s
-	} else {
-		ec.rng = r - s
-	}
-	ec.dec_normalize()
-	return ret
-}
-
 func (ec *EntropyCoder) dec_bit_logp(_logp int64) int {
 	var r int64
 	var d int64
@@ -225,27 +206,6 @@ func (ec *EntropyCoder) dec_bit_logp(_logp int64) int {
 	return ret
 }
 
-func (ec *EntropyCoder) dec_icdfOld(_icdf []int16, _ftb int) int {
-	s := ec.rng
-	d := ec.val
-	r := s >> _ftb
-	ret := -1
-	var t int64
-	for {
-		ret++
-		t = s
-		s = r * int64(_icdf[ret])
-		if d < s {
-			continue
-		}
-		break
-	}
-	ec.val = d - s
-	ec.rng = t - s
-	ec.dec_normalize()
-	return ret
-}
-
 func (ec *EntropyCoder) dec_icdf(_icdf []int16, _ftb int) int {
 	var t int64
 	var s = ec.rng
@@ -264,12 +224,6 @@ func (ec *EntropyCoder) dec_icdf(_icdf []int16, _ftb int) int {
 	ec.val = (d - s)
 	ec.rng = (t - s)
 	ec.dec_normalize()
-	return ret
-}
-
-func (ec *EntropyCoder) dec_icdf_offsetOld(_icdf []int16, _icdf_offset int, _ftb int) int {
-	sub := _icdf[_icdf_offset:]
-	ret := ec.dec_icdf(sub, _ftb)
 	return ret
 }
 
@@ -293,32 +247,6 @@ func (ec *EntropyCoder) dec_icdf_offset(_icdf []int16, _icdf_offset int, _ftb in
 	ec.rng = (t - s)
 	ec.dec_normalize()
 	return ret - _icdf_offset
-}
-
-func (ec *EntropyCoder) dec_uintOld(_ft int64) int64 {
-	ft := _ft
-	if ft <= 1 {
-		panic("ft must be >1")
-	}
-	ft--
-	ftb := EC_ILOG(int64(ft))
-	if ftb > EC_UINT_BITS {
-		ftb -= EC_UINT_BITS
-		ft1 := (ft >> ftb) + 1
-		s := ec.decode(ft1)
-		ec.dec_update(s, s+1, ft1)
-		t := (s << ftb) | int64(ec.dec_bits(ftb))
-		if t <= ft {
-			return t
-		}
-		ec.error = 1
-		return ft
-	} else {
-		ft++
-		s := ec.decode(ft)
-		ec.dec_update(s, s+1, ft)
-		return s
-	}
 }
 
 func (ec *EntropyCoder) dec_uint(_ft int64) int64 {
@@ -348,26 +276,6 @@ func (ec *EntropyCoder) dec_uint(_ft int64) int64 {
 		ec.dec_update(s, s+1, _ft)
 		return s
 	}
-}
-
-func (ec *EntropyCoder) dec_bitsOld(_bits int) int {
-	window := ec.end_window
-	available := ec.nend_bits
-	for available < _bits {
-		window |= int64(ec.read_byte_from_end()) << available
-		available += EC_SYM_BITS
-		if available > EC_WINDOW_SIZE-EC_SYM_BITS {
-			break
-		}
-	}
-	ret := int(window & ((1 << _bits) - 1))
-	window >>= _bits
-	available -= _bits
-	ec.end_window = window
-	ec.nend_bits = available
-	ec.nbits_total += _bits
-
-	return ret
 }
 
 func (ec *EntropyCoder) dec_bits(_bits int) int {

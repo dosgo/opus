@@ -1,6 +1,9 @@
 package opus
 
 import (
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math"
 )
@@ -1292,19 +1295,23 @@ func quant_band_stereo(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, N 
 }
 
 func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ []int, collapse_masks []int16, bandE [][]int, pulses []int, shortBlocks int, spread int, dual_stereo int, intensity int, tf_res []int, total_bits int, balance int, ec *EntropyCoder, LM int, codedBands int, seed *BoxedValueInt) {
+
 	eBands := m.eBands
 	M := 1 << LM
 	B := 1
 	if shortBlocks != 0 {
 		B = M
 	}
+	var C = 1
+	if Y_ != nil {
+		C = 2
+	}
 	norm_offset := M * int(eBands[start])
-	norm := make([]int, M*int(eBands[m.nbEBands-1])-norm_offset)
+	norm := make([]int, (C * (M*int(eBands[m.nbEBands-1]) - norm_offset)))
 	norm2 := M*int(eBands[m.nbEBands-1]) - norm_offset
 	lowband_scratch := X_
 	lowband_scratch_ptr := M * int(eBands[m.nbEBands-1])
 	lowband_offset := 0
-	C := 1
 	if Y_ != nil {
 		C = 2
 	}
@@ -1350,8 +1357,8 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 
 		update_lowband := 1
 		effective_lowband := -1
-		x_cm := int64(0)
-		y_cm := int64(0)
+		var x_cm = int64(0)
+		var y_cm = int64(0)
 
 		if resynth != 0 && M*int(eBands[i])-N >= M*int(eBands[start]) && (update_lowband != 0 || lowband_offset == 0) {
 			lowband_offset = i
@@ -1361,6 +1368,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		ctx.tf_change = tf_change
 
 		if i >= m.effEBands {
+
 			X = norm
 			X_ptr = 0
 			if Y_ != nil {
@@ -1393,13 +1401,13 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			}
 			//while (M * eBands[++fold_end] < effective_lowband + norm_offset + N) ;
 
-			var x_cm = 0
-			var y_cm = 0
+			x_cm = 0
+			y_cm = 0
 			fold_i = fold_start
 
 			for {
-				x_cm |= int(collapse_masks[fold_i*C+0])
-				y_cm |= int(collapse_masks[fold_i*C+C-1])
+				x_cm |= int64(collapse_masks[fold_i*C+0])
+				y_cm |= int64(collapse_masks[fold_i*C+C-1])
 				fold_i++
 				if fold_i < fold_end {
 					continue
@@ -1429,6 +1437,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			if last == 0 {
 				lowband_out = norm
 			}
+
 			x_cm = int64(quant_band(ctx, X, X_ptr, N, b/2, B, lowband, effective_lowband, LM, lowband_out, M*int(eBands[i])-norm_offset, CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(x_cm)))
 
 			y_cm = int64(quant_band(ctx, Y, Y_ptr, N, b/2, B, lowband, norm2+effective_lowband, LM, lowband_out, norm2+(M*int(eBands[i])-norm_offset), CeltConstants.Q15ONE, lowband_scratch, lowband_scratch_ptr, int(y_cm)))
@@ -1437,7 +1446,6 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 			var lowband []int
 			var lowband_out []int
 			if effective_lowband != -1 {
-
 				lowband = norm
 			}
 			if last == 0 {
@@ -1458,6 +1466,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 					int(x_cm|y_cm)))
 
 			} else {
+
 				x_cm = int64(quant_band(
 					ctx,
 					X,
@@ -1474,6 +1483,7 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 					lowband_scratch,
 					lowband_scratch_ptr,
 					int(x_cm|y_cm))) // opt: lots of pointers are created here too
+
 			}
 			y_cm = x_cm
 		}
@@ -1487,4 +1497,18 @@ func quant_all_bands(encode int, m *CeltMode, start int, end int, X_ []int, Y_ [
 		}
 	}
 	seed.Val = ctx.seed
+}
+func IntSliceToMD5(slice []int) string {
+	hasher := md5.New()
+	buf := make([]byte, 4) // 用于每个整数的缓冲区
+
+	for _, num := range slice {
+		// 将int转换为uint32（保留位模式）
+		u := uint32(num)
+		binary.BigEndian.PutUint32(buf, u)
+		hasher.Write(buf)
+	}
+
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
 }

@@ -237,55 +237,6 @@ func quant_energy_finalise(m *CeltMode, start int, end int, oldEBands [][]int, e
 	}
 }
 
-func unquant_coarse_energyold(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
-	prob_model := CeltTables.E_prob_model[LM][intra]
-	prev := [2]int{0, 0}
-	var coef, beta int
-	budget := dec.storage * 8
-	if intra != 0 {
-		coef = 0
-		beta = beta_intra
-	} else {
-		beta = beta_coef[LM]
-		coef = pred_coef[LM]
-	}
-
-	for i := start; i < end; i++ {
-		for c := 0; c < C; c++ {
-			tell := dec.tell()
-			var qi int
-			if budget-tell >= 15 {
-				pi := 2 * i
-				if pi > 40 {
-					pi = 40
-				}
-				qi = Laplace.ec_laplace_decode(dec, int64(prob_model[pi])<<7, int(prob_model[pi+1])<<6)
-			} else if budget-tell >= 2 {
-				val := dec.dec_icdf(small_energy_icdf, 2)
-				qi = (val >> 1)
-				if (val & 1) != 0 {
-					qi = -qi
-				}
-			} else if budget-tell >= 1 {
-				qi = -dec.dec_bit_logp(1)
-			} else {
-				qi = -1
-			}
-			q := qi << CeltConstants.DB_SHIFT
-			index := i + c*m.nbEBands
-			if oldEBands[index] < -(9 << CeltConstants.DB_SHIFT) {
-				oldEBands[index] = -(9 << CeltConstants.DB_SHIFT)
-			}
-			tmp := (coef*int(oldEBands[index]))>>8 + prev[c] + (q << 7)
-			if tmp < -(28 << (CeltConstants.DB_SHIFT + 7)) {
-				tmp = -(28 << (CeltConstants.DB_SHIFT + 7))
-			}
-			oldEBands[index] = (tmp >> 7)
-			prev[c] = prev[c] + (q << 7) - (beta * (q >> 8))
-		}
-	}
-}
-
 func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, intra int, dec *EntropyCoder, C int, LM int) {
 	prob_model := e_prob_model[LM][intra]
 	var i, c int
@@ -347,16 +298,24 @@ func unquant_coarse_energy(m *CeltMode, start int, end int, oldEBands []int, int
 }
 
 func unquant_fine_energy(m *CeltMode, start int, end int, oldEBands []int, fine_quant []int, dec *EntropyCoder, C int) {
-	for i := start; i < end; i++ {
+	var i, c int
+	/* Decode finer resolution */
+	for i = start; i < end; i++ {
 		if fine_quant[i] <= 0 {
 			continue
 		}
-		for c := 0; c < C; c++ {
-			q2 := dec.dec_bits(fine_quant[i])
-			offset := ((q2 << CeltConstants.DB_SHIFT) + (1 << (fine_quant[i] - 1))) >> fine_quant[i]
-			offset -= 1 << (CeltConstants.DB_SHIFT - 1)
-			index := i + c*m.nbEBands
-			oldEBands[index] += (offset)
+		c = 0
+		for {
+			var q2 int
+			var offset int
+			q2 = dec.dec_bits(fine_quant[i])
+			offset = SUB16Int((SHR32(SHL32(q2, CeltConstants.DB_SHIFT)+int(0.5+(.5)*float64(int(1)<<(CeltConstants.DB_SHIFT))), fine_quant[i])), int(0.5+(.5)*float64(int(1)<<(CeltConstants.DB_SHIFT))))
+			oldEBands[i+c*m.nbEBands] += offset
+			c++
+			if c < C {
+				continue
+			}
+			break
 		}
 	}
 }

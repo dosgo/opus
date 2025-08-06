@@ -818,59 +818,93 @@ func dynalloc_analysis(bandLogE [][]int, bandLogE2 [][]int, nbEBands int, start 
 	return maxDepth
 }
 
-func deemphasis(input [][]int, input_ptrs []int, pcm []int16, pcm_ptr int, N int, C int, downsample int, coef []int, mem []int, accum int) {
-	Nd := N / downsample
+func deemphasis(input [][]int, input_ptrs []int, pcm []int16, pcm_ptr int, N int, C int, downsample int, coef []int,
+	mem []int, accum int) {
+	var c int
+	var Nd int
+	var apply_downsampling int = 0
+	var coef0 int
 	scratch := make([]int, N)
-
-	for c := 0; c < C; c++ {
-		m_val := mem[c]
+	coef0 = coef[0]
+	Nd = N / downsample
+	c = 0
+	for {
+		var j int
+		var x_ptr int
+		var y int
+		m := mem[c]
 		x := input[c]
-		x_ptr := input_ptrs[c]
-		y_ptr := pcm_ptr + c
-
+		x_ptr = input_ptrs[c]
+		y = pcm_ptr + c
 		if downsample > 1 {
-			for j := 0; j < N; j++ {
-				tmp := x[x_ptr+j] + m_val + CeltConstants.VERY_SMALL
-				m_val = MULT16_32_Q15(int16(coef[0]), tmp)
+			/* Shortcut for the standard (non-custom modes) case */
+			for j = 0; j < N; j++ {
+				tmp := x[x_ptr+j] + m + CeltConstants.VERY_SMALL
+				m = MULT16_32_Q15Int(coef0, tmp)
 				scratch[j] = tmp
 			}
-			for j := 0; j < Nd; j++ {
-				idx := y_ptr + j*C
-				pcm[idx] = SIG2WORD16(scratch[j*downsample])
-			}
+			apply_downsampling = 1
 		} else if accum != 0 {
-			for j := 0; j < N; j++ {
-				tmp := x[x_ptr+j] + m_val + CeltConstants.VERY_SMALL
-				m_val = MULT16_32_Q15(int16(coef[0]), tmp)
-				idx := y_ptr + j*C
-				pcm[idx] = SAT16(ADD32(int(pcm[idx]), int(SIG2WORD16(tmp))))
+			for j = 0; j < N; j++ {
+				tmp := x[x_ptr+j] + m + CeltConstants.VERY_SMALL
+				m = MULT16_32_Q15Int(coef0, tmp)
+				pcm[y+(j*C)] = SAT16(ADD32(int(pcm[y+(j*C)]), int(SIG2WORD16(tmp))))
 			}
 		} else {
-			for j := 0; j < N; j++ {
-				tmp := x[x_ptr+j] + m_val + CeltConstants.VERY_SMALL
-				if x[x_ptr+j] > 0 && m_val > 0 && tmp < 0 {
+			for j = 0; j < N; j++ {
+				tmp := (x[x_ptr+j] + m + CeltConstants.VERY_SMALL)
+				if x[x_ptr+j] > 0 && m > 0 && tmp < 0 {
 					tmp = math.MaxInt32
-					m_val = math.MaxInt32
+					m = math.MaxInt32
 				} else {
-					m_val = MULT16_32_Q15(int16(coef[0]), tmp)
+					m = MULT16_32_Q15Int(coef0, tmp)
 				}
-				pcm[y_ptr+j*C] = SIG2WORD16(tmp)
+				pcm[y+(j*C)] = SIG2WORD16(tmp)
 			}
 		}
-		mem[c] = m_val
+		mem[c] = m
+
+		if apply_downsampling != 0 {
+			/* Perform down-sampling */
+			{
+				for j = 0; j < Nd; j++ {
+					pcm[y+(j*C)] = SIG2WORD16(scratch[j*downsample])
+				}
+			}
+		}
+		c++
+		if c < C {
+			continue
+		}
+		break
 	}
+
 }
 
-func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []int, oldBandE []int, start int, effEnd int, C int, CC int, isTransient int, LM int, downsample int, silence int) {
-	M := 1 << LM
-	overlap := mode.overlap
-	nbEBands := mode.nbEBands
-	N := mode.shortMdctSize << LM
-	freq := make([]int, N)
+func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []int,
+	oldBandE []int, start int, effEnd int, C int, CC int,
+	isTransient int, LM int, downsample int,
+	silence int) {
+	var c, i int
+	var M int
+	var b int
+	var B int
+	var N, NB int
+	var shift int
+	var nbEBands int
+	var overlap int
+	var freq []int
 
-	B := 0
-	NB := 0
-	shift := 0
+	overlap = mode.overlap
+	nbEBands = mode.nbEBands
+	N = mode.shortMdctSize << LM
+
+	freq = make([]int, N)
+	/**
+	 * < Interleaved signal MDCTs
+	 */
+	M = 1 << LM
+
 	if isTransient != 0 {
 		B = M
 		NB = mode.shortMdctSize
@@ -882,33 +916,51 @@ func celt_synthesis(mode *CeltMode, X [][]int, out_syn [][]int, out_syn_ptrs []i
 	}
 
 	if CC == 2 && C == 1 {
-		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
-		freq2 := out_syn_ptrs[1] + overlap/2
+		/* Copying a mono streams to two channels */
+		var freq2 int
+		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M,
+			downsample, silence)
+		/* Store a temporary copy in the output buffer because the IMDCT destroys its input. */
+		freq2 = out_syn_ptrs[1] + (overlap / 2)
+		//System.arraycopy(freq, 0, out_syn[1], freq2, N)
 		copy(out_syn[1][freq2:freq2+N], freq)
-		for b := 0; b < B; b++ {
-			clt_mdct_backward(mode.mdct, out_syn[1], freq2+b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
+		for b = 0; b < B; b++ {
+			clt_mdct_backward(mode.mdct, out_syn[1], freq2+b, out_syn[0], out_syn_ptrs[0]+(NB*b), mode.window, overlap, shift, B)
 		}
-		for b := 0; b < B; b++ {
-			clt_mdct_backward(mode.mdct, freq, b, out_syn[1], out_syn_ptrs[1]+NB*b, mode.window, overlap, shift, B)
+		for b = 0; b < B; b++ {
+			clt_mdct_backward(mode.mdct, freq, b, out_syn[1], out_syn_ptrs[1]+(NB*b), mode.window, overlap, shift, B)
 		}
 	} else if CC == 1 && C == 2 {
-		freq2 := out_syn_ptrs[0] + overlap/2
-		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M, downsample, silence)
-		denormalise_bands(mode, X[1], out_syn[0], freq2, oldBandE, nbEBands, start, effEnd, M, downsample, silence)
-		for i := 0; i < N; i++ {
-			freq[i] = (freq[i] + out_syn[0][freq2+i]) / 2
+		/* Downmixing a stereo stream to mono */
+		freq2 := out_syn_ptrs[0] + (overlap / 2)
+		denormalise_bands(mode, X[0], freq, 0, oldBandE, 0, start, effEnd, M,
+			downsample, silence)
+		/* Use the output buffer as temp array before downmixing. */
+		denormalise_bands(mode, X[1], out_syn[0], freq2, oldBandE, nbEBands, start, effEnd, M,
+			downsample, silence)
+		for i = 0; i < N; i++ {
+			freq[i] = HALF32(ADD32(freq[i], out_syn[0][freq2+i]))
 		}
-		for b := 0; b < B; b++ {
-			clt_mdct_backward(mode.mdct, freq, b, out_syn[0], out_syn_ptrs[0]+NB*b, mode.window, overlap, shift, B)
+		for b = 0; b < B; b++ {
+			clt_mdct_backward(mode.mdct, freq, b, out_syn[0], out_syn_ptrs[0]+(NB*b), mode.window, overlap, shift, B)
 		}
 	} else {
-		for c := 0; c < CC; c++ {
-			denormalise_bands(mode, X[c], freq, 0, oldBandE, c*nbEBands, start, effEnd, M, downsample, silence)
-			for b := 0; b < B; b++ {
-				clt_mdct_backward(mode.mdct, freq, b, out_syn[c], out_syn_ptrs[c]+NB*b, mode.window, overlap, shift, B)
+		/* Normal case (mono or stereo) */
+		c = 0
+		for {
+			denormalise_bands(mode, X[c], freq, 0, oldBandE, c*nbEBands, start, effEnd, M,
+				downsample, silence)
+			for b = 0; b < B; b++ {
+				clt_mdct_backward(mode.mdct, freq, b, out_syn[c], out_syn_ptrs[c]+(NB*b), mode.window, overlap, shift, B)
 			}
+			c++
+			if c < CC {
+				continue
+			}
+			break
 		}
 	}
+
 }
 
 func tf_decode(start int, end int, isTransient int, tf_res []int, LM int, dec *EntropyCoder) {
