@@ -1242,9 +1242,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	}
 
 	if enc == nil {
-
 		enc = NewEntropyCoder()
-		enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
 		enc.enc_init(compressed, compressed_ptr, nbCompressedBytes)
 	}
 

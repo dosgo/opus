@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 )
 
 type OpusEncoder struct {
@@ -111,51 +113,52 @@ func (st *OpusEncoder) ResetState() {
 	st.variable_HP_smth2_Q15 = silk_LSHIFT(silk_lin2log(TuningParameters.VARIABLE_HP_MIN_CUTOFF_HZ), 8)
 }
 func (enc *OpusEncoder) PrintAllFields() {
+
+	fmt.Printf("silk_mode: %+v\n", enc.silk_mode)
+	fmt.Printf("application: %d\n", enc.application)
+	fmt.Printf("channels: %d\n", enc.channels)
+	fmt.Printf("delay_compensation: %d\n", enc.delay_compensation)
+	fmt.Printf("force_channels: %d\n", enc.force_channels)
+	fmt.Printf("signal_type: %d\n", enc.signal_type)
+	fmt.Printf("user_bandwidth: %d\n", enc.user_bandwidth)
+	fmt.Printf("max_bandwidth: %d\n", enc.max_bandwidth)
+	fmt.Printf("user_forced_mode: %d\n", enc.user_forced_mode)
+	fmt.Printf("voice_ratio: %d\n", enc.voice_ratio)
+	fmt.Printf("Fs: %d\n", enc.Fs)
+	fmt.Printf("use_vbr: %d\n", enc.use_vbr)
+	fmt.Printf("vbr_constraint: %d\n", enc.vbr_constraint)
+	fmt.Printf("variable_duration: %d\n", enc.variable_duration)
+	fmt.Printf("bitrate_bps: %d\n", enc.bitrate_bps)
+	fmt.Printf("user_bitrate_bps: %d\n", enc.user_bitrate_bps)
+	fmt.Printf("lsb_depth: %d\n", enc.lsb_depth)
+	fmt.Printf("encoder_buffer: %d\n", enc.encoder_buffer)
+	fmt.Printf("lfe: %d\n", enc.lfe)
+	//fmt.Printf("analysis: %+v\n", enc.analysis.info)
 	/*
-		fmt.Printf("silk_mode: %+v\n", enc.silk_mode)
-		fmt.Printf("application: %d\n", enc.application)
-		fmt.Printf("channels: %d\n", enc.channels)
-		fmt.Printf("delay_compensation: %d\n", enc.delay_compensation)
-		fmt.Printf("force_channels: %d\n", enc.force_channels)
-		fmt.Printf("signal_type: %d\n", enc.signal_type)
-		fmt.Printf("user_bandwidth: %d\n", enc.user_bandwidth)
-		fmt.Printf("max_bandwidth: %d\n", enc.max_bandwidth)
-		fmt.Printf("user_forced_mode: %d\n", enc.user_forced_mode)
-		fmt.Printf("voice_ratio: %d\n", enc.voice_ratio)
-		fmt.Printf("Fs: %d\n", enc.Fs)
-		fmt.Printf("use_vbr: %d\n", enc.use_vbr)
-		fmt.Printf("vbr_constraint: %d\n", enc.vbr_constraint)
-		fmt.Printf("variable_duration: %d\n", enc.variable_duration)
-		fmt.Printf("bitrate_bps: %d\n", enc.bitrate_bps)
-		fmt.Printf("user_bitrate_bps: %d\n", enc.user_bitrate_bps)
-		fmt.Printf("lsb_depth: %d\n", enc.lsb_depth)
-		fmt.Printf("encoder_buffer: %d\n", enc.encoder_buffer)
-		fmt.Printf("lfe: %d\n", enc.lfe)
-		//fmt.Printf("analysis: %+v\n", enc.analysis.info)
-		/*
-			for _, v := range enc.analysis.info {
-				fmt.Printf("analysis.info: %+v\n", v)
-			}*/
-	/*
-		fmt.Printf("stream_channels: %d\n", enc.stream_channels)
-		fmt.Printf("hybrid_stereo_width_Q14: %d\n", enc.hybrid_stereo_width_Q14)
-		fmt.Printf("variable_HP_smth2_Q15: %d\n", enc.variable_HP_smth2_Q15)
-		fmt.Printf("prev_HB_gain: %d\n", enc.prev_HB_gain)
-		fmt.Printf("hp_mem: %v\n", enc.hp_mem)
-		fmt.Printf("mode: %d\n", enc.mode)
-		fmt.Printf("prev_mode: %d\n", enc.prev_mode)
-		fmt.Printf("prev_channels: %d\n", enc.prev_channels)
-		fmt.Printf("prev_framesize: %d\n", enc.prev_framesize)
-		fmt.Printf("bandwidth: %d\n", enc.bandwidth)
-		fmt.Printf("silk_bw_switch: %d\n", enc.silk_bw_switch)
-		fmt.Printf("first: %d\n", enc.first)
-		fmt.Printf("energy_masking: %v\n", enc.energy_masking)
-		fmt.Printf("width_mem: %+v\n", enc.width_mem)
-		//ddd, _ := json.Marshal(enc.delay_buffer)
-		//fmt.Printf("delay_buffer: %+v\n", string(ddd))
-		fmt.Printf("detected_bandwidth: %d\n", enc.detected_bandwidth)
-		fmt.Printf("rangeFinal: %d\n", enc.rangeFinal)
-	*/
+		for _, v := range enc.analysis.info {
+			fmt.Printf("analysis.info: %+v\n", v)
+		}*/
+
+	fmt.Printf("stream_channels: %d\n", enc.stream_channels)
+	fmt.Printf("hybrid_stereo_width_Q14: %d\n", enc.hybrid_stereo_width_Q14)
+	fmt.Printf("variable_HP_smth2_Q15: %d\n", enc.variable_HP_smth2_Q15)
+	fmt.Printf("prev_HB_gain: %d\n", enc.prev_HB_gain)
+	fmt.Printf("hp_mem: %v\n", enc.hp_mem)
+	fmt.Printf("mode: %d\n", enc.mode)
+	fmt.Printf("prev_mode: %d\n", enc.prev_mode)
+	fmt.Printf("prev_channels: %d\n", enc.prev_channels)
+	fmt.Printf("prev_framesize: %d\n", enc.prev_framesize)
+	fmt.Printf("bandwidth: %d\n", enc.bandwidth)
+	fmt.Printf("silk_bw_switch: %d\n", enc.silk_bw_switch)
+	fmt.Printf("first: %d\n", enc.first)
+	fmt.Printf("energy_masking: %v\n", enc.energy_masking)
+	fmt.Printf("width_mem: %+v\n", enc.width_mem)
+	//ddd, _ := json.Marshal(enc.delay_buffer)
+	//fmt.Printf("delay_buffer: %+v\n", string(ddd))
+	fmt.Printf("detected_bandwidth: %d\n", enc.detected_bandwidth)
+	fmt.Printf("rangeFinal: %d\n", enc.rangeFinal)
+	fmt.Printf("enc.Celt_Encoder.mode.overlap: %d\r\n", enc.Celt_Encoder.mode.overlap)
+
 	//fmt.Printf("SilkEncoder: %+v\n", enc.SilkEncoder)
 	//enc.SilkEncoder.sStereo.PrintAllFields()
 	//	enc.Celt_Encoder.PrintAllFields()
@@ -165,8 +168,8 @@ func (enc *OpusEncoder) PrintAllFields() {
 	//fmt.Printf("Celt_Encoder: %+v\n", enc.Celt_Encoder)
 	//enc.Celt_Encoder.oldBandE
 
-	fmt.Printf("enc.delay_buffer:%+v\r\n", enc.delay_buffer)
-	fmt.Printf("enc.Celt_Encoder.oldBandE:%+v\r\n", enc.Celt_Encoder.oldBandE)
+	//	fmt.Printf("enc.delay_buffer:%+v\r\n", enc.delay_buffer)
+	//	fmt.Printf("enc.Celt_Encoder.oldBandE:%+v\r\n", enc.Celt_Encoder.oldBandE)
 
 }
 
@@ -180,6 +183,7 @@ func NewOpusEncoder(Fs, channels int, application OpusApplication) (*OpusEncoder
 	st := &OpusEncoder{}
 
 	st.SilkEncoder = NewSilkEncoder()
+
 	st.Celt_Encoder = CeltEncoder{}
 	st.analysis = NewTonalityAnalysisState()
 	ret := st.opus_init_encoder(Fs, channels, application)
@@ -200,7 +204,9 @@ func (st *OpusEncoder) opus_init_encoder(Fs, channels int, application OpusAppli
 	st.stream_channels = channels
 	st.channels = channels
 	st.Fs = Fs
+
 	ret := silk_InitEncoder(&st.SilkEncoder, &st.silk_mode)
+
 	if ret != 0 {
 		return OpusError.OPUS_INTERNAL_ERROR
 	}
@@ -582,7 +588,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			st.bandwidth = st.detected_bandwidth
 		}
 	}
-
+	fmt.Printf("lsb_depth:%d\r\n", lsb_depth)
 	celt_enc.SetLSBDepth(lsb_depth)
 	if st.mode == MODE_CELT_ONLY && st.bandwidth == OPUS_BANDWIDTH_MEDIUMBAND {
 		st.bandwidth = OPUS_BANDWIDTH_WIDEBAND
@@ -815,6 +821,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			celt_enc.SetVBR(true)
 			celt_enc.SetVBRConstraint(st.vbr_constraint != 0)
 			celt_enc.SetBitrate(st.bitrate_bps + bonus)
+			fmt.Printf("SetVBRConstraint st.vbr_constraint:%d st.bitrate_bps:%d  bonus:%d\r\n", st.vbr_constraint, st.bitrate_bps, bonus)
 			nb_compr_bytes = max_data_bytes - 1 - redundancy_bytes
 		} else {
 			nb_compr_bytes = bytes_target
@@ -886,6 +893,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		celt_enc.SetStartBand(0)
 		celt_enc.SetVBR(false)
 		err := celt_enc.celt_encode_with_ec(pcm_buf, 0, st.Fs/200, data, data_ptr+nb_compr_bytes, redundancy_bytes, nil)
+
 		if err < 0 {
 			return OpusError.OPUS_INTERNAL_ERROR
 		}
@@ -901,7 +909,11 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			celt_enc.SetPrediction(0)
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
+			fmt.Printf("data Buf:%s\r\n", formatSignedBytes(data))
+			fmt.Printf("st:%+v\r\n", st)
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
+			//dd, _ := json.Marshal(data)
+			fmt.Printf("pcm_buf:%+v\r\n", data)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
@@ -953,7 +965,21 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	return ret
 }
+func formatSignedBytes(data []byte) string {
+	var builder strings.Builder
+	builder.WriteString("[")
+	for i, b := range data {
+		// 转换为有符号整数
+		signed := int8(b)
 
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(strconv.Itoa(int(signed)))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
 func (st *OpusEncoder) Encode(in_pcm []int16, pcm_offset, frame_size int, out_data []byte, out_data_offset, max_data_bytes int) (int, error) {
 	if out_data_offset+max_data_bytes > len(out_data) {
 		return 0, errors.New("Output buffer is too small")

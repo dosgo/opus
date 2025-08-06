@@ -17,7 +17,7 @@ func main() {
 
 	encoder, err := opus.NewOpusEncoder(48000, 2, opus.OPUS_APPLICATION_AUDIO)
 	encoder.SetBitrate(96000)
-	encoder.SetForceMode(opus.MODE_CELT_ONLY)
+	encoder.SetForceMode(opus.MODE_SILK_ONLY)
 	encoder.SetSignalType(opus.OPUS_SIGNAL_MUSIC)
 	encoder.SetComplexity(0)
 
@@ -49,12 +49,14 @@ func main() {
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
 
 		fmt.Printf("imput md5:%s\r\n", ByteSliceToMD5(inBuf))
-
+		//encoder.PrintAllFields()
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
-		encoder.PrintAllFields()
 
 		//encoder.ResetState()
 
+		if i == 4 {
+			fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
+		}
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
 		//break
 		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
@@ -71,7 +73,21 @@ func main() {
 	fmt.Printf("Time was: %+v ms\n", float64(elapsed)/1e6)
 
 }
+func formatSignedBytes(data []byte) string {
+	var builder strings.Builder
+	builder.WriteString("[")
+	for i, b := range data {
+		// 转换为有符号整数
+		signed := int8(b)
 
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(strconv.Itoa(int(signed)))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
 func ByteSliceToMD5(slice []byte) string {
 	hasher := md5.New()
 	hasher.Write(slice)

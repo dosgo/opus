@@ -75,7 +75,7 @@ type SilkChannelEncoder struct {
 	frames_since_onset            int
 	ec_prevSignalType             int
 	ec_prevLagIndex               int16
-	resampler_state               SilkResamplerState
+	resampler_state               *SilkResamplerState
 	useDTX                        int
 	inDTX                         int
 	noSpeechCounter               int
@@ -92,8 +92,41 @@ type SilkChannelEncoder struct {
 
 func NewSilkChannelEncoder() *SilkChannelEncoder {
 	obj := &SilkChannelEncoder{}
-	obj.indices_LBRR = make([]*SideInfoIndices, MAX_FRAMES_PER_PACKET)
 
+	  obj.In_HP_State = make([]int,2);
+/*
+    /* State of second smoother                                         */
+   	obj.sLP = new SilkLPState();
+    /* Low pass filter state                                            */
+  obj.sVAD = new SilkVADState();
+    /* Voice activity detector state                                    */
+   obj.sNSQ = new SilkNSQState();
+    /* Noise Shape Quantizer State                                      */
+   obj.prev_NLSFq_Q15 = make([]int16,SilkConstants.MAX_LPC_ORDER);
+    /* Previously quantized NLSF vector                                 */
+
+    /* Flag for ensuring codec_control only runs once per packet        */
+  
+  
+    /* Pointer to NLSF codebook                                         */
+    final int[] input_quality_bands_Q15 = new int[SilkConstants.VAD_N_BANDS];
+   
+    /* Quality setting                                                  */
+
+    final byte[] VAD_flags = new byte[SilkConstants.MAX_FRAMES_PER_PACKET];
+ 
+    final int[] LBRR_flags = new int[SilkConstants.MAX_FRAMES_PER_PACKET];
+
+    final SideInfoIndices indices = new SideInfoIndices();
+
+
+
+	obj.indices_LBRR = make([]*SideInfoIndices, MAX_FRAMES_PER_PACKET)
+	obj.resampler_state = NewSilkResamplerState()
+	obj.inputBuf = make([]int16, SilkConstants.MAX_FRAME_LENGTH+2)
+	obj.pulses = make([]int8, SilkConstants.MAX_FRAME_LENGTH)
+
+	
 	for i := 0; i < MAX_FRAMES_PER_PACKET; i++ {
 		obj.indices_LBRR[i] = NewSideInfoIndices()
 	}
@@ -423,7 +456,7 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int) int {
 	ret := int(0)
 	if s.fs_kHz != fs_kHz || s.prev_API_fs_Hz != s.API_fs_Hz {
 		if s.fs_kHz == 0 {
-			ret += silk_resampler_init(&s.resampler_state, s.API_fs_Hz, fs_kHz*1000, 1)
+			ret += silk_resampler_init(s.resampler_state, s.API_fs_Hz, fs_kHz*1000, 1)
 		} else {
 			var x_buf_API_fs_Hz []int16
 			var temp_resampler_state SilkResamplerState
@@ -438,8 +471,8 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int) int {
 			api_buf_samples = buf_length_ms * silk_DIV32_16(s.API_fs_Hz, 1000)
 			x_buf_API_fs_Hz = make([]int16, api_buf_samples)
 			ret += silk_resampler(&temp_resampler_state, x_buf_API_fs_Hz, 0, s.x_buf[:], 0, old_buf_samples)
-			ret += silk_resampler_init(&s.resampler_state, s.API_fs_Hz, silk_SMULBB(fs_kHz, 1000), 1)
-			ret += silk_resampler(&s.resampler_state, s.x_buf[:], 0, x_buf_API_fs_Hz, 0, api_buf_samples)
+			ret += silk_resampler_init(s.resampler_state, s.API_fs_Hz, silk_SMULBB(fs_kHz, 1000), 1)
+			ret += silk_resampler(s.resampler_state, s.x_buf[:], 0, x_buf_API_fs_Hz, 0, api_buf_samples)
 		}
 	}
 	s.prev_API_fs_Hz = s.API_fs_Hz

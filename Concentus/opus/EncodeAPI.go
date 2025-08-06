@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 func silk_InitEncoder(encState *SilkEncoder, encStatus *EncControlState) int {
 	ret := SilkError.SILK_NO_ERROR
@@ -162,7 +165,7 @@ func silk_Encode(
 
 	nSamplesToBufferMax = 10 * nBlocksOf10ms * psEnc.state_Fxx[0].fs_kHz
 	nSamplesFromInputMax = silk_DIV32_16(nSamplesToBufferMax*psEnc.state_Fxx[0].API_fs_Hz, int(psEnc.state_Fxx[0].fs_kHz*1000))
-
+	fmt.Printf("nSamplesFromInputMax:%d\r\n", nSamplesFromInputMax)
 	buf = make([]int16, nSamplesFromInputMax)
 
 	samplesIn_ptr := 0
@@ -190,8 +193,9 @@ func silk_Encode(
 					buf[:nSamplesFromInput],
 					nSamplesFromInput)
 			*/
+
 			ret += silk_resampler(
-				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].resampler_state,
 				psEnc.state_Fxx[0].inputBuf,
 				psEnc.state_Fxx[0].inputBufIx+2,
 				buf,
@@ -208,7 +212,7 @@ func silk_Encode(
 				buf[n] = samplesIn[samplesIn_ptr+2*n+1]
 			}
 			ret += silk_resampler(
-				&psEnc.state_Fxx[1].resampler_state,
+				psEnc.state_Fxx[1].resampler_state,
 				psEnc.state_Fxx[1].inputBuf,
 				psEnc.state_Fxx[1].inputBufIx+2,
 				buf,
@@ -223,7 +227,7 @@ func silk_Encode(
 			}
 
 			ret += silk_resampler(
-				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].resampler_state,
 				psEnc.state_Fxx[0].inputBuf,
 				psEnc.state_Fxx[0].inputBufIx+2,
 				buf,
@@ -232,7 +236,7 @@ func silk_Encode(
 
 			if psEnc.nPrevChannelsInternal == 2 && psEnc.state_Fxx[0].nFramesEncoded == 0 {
 				ret += silk_resampler(
-					&psEnc.state_Fxx[1].resampler_state,
+					psEnc.state_Fxx[1].resampler_state,
 					psEnc.state_Fxx[1].inputBuf,
 					psEnc.state_Fxx[1].inputBufIx+2,
 					buf,
@@ -251,7 +255,7 @@ func silk_Encode(
 			OpusAssert(encControl.nChannelsAPI == 1 && encControl.nChannelsInternal == 1)
 			copy(buf, samplesIn[samplesIn_ptr:samplesIn_ptr+nSamplesFromInput])
 			ret += silk_resampler(
-				&psEnc.state_Fxx[0].resampler_state,
+				psEnc.state_Fxx[0].resampler_state,
 				psEnc.state_Fxx[0].inputBuf,
 				psEnc.state_Fxx[0].inputBufIx+2,
 				buf,
