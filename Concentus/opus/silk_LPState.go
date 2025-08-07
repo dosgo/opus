@@ -6,6 +6,10 @@ type SilkLPState struct {
 	mode                int
 }
 
+func NewSilkLPState() *SilkLPState {
+	obj := &SilkLPState{}
+	return obj
+}
 func (s *SilkLPState) Reset() {
 	s.In_LP_State[0] = 0
 	s.In_LP_State[1] = 0

@@ -86,7 +86,7 @@ func silk_VAD_GetSA_Q8(psEncC *SilkChannelEncoder, pIn []int16, pIn_ptr int) int
 		psEncC.sVAD.XnrgSubfr[b] = sumSquared
 	}
 
-	silk_VAD_GetNoiseLevels(Xnrg[:], &psEncC.sVAD)
+	silk_VAD_GetNoiseLevels(Xnrg[:], psEncC.sVAD)
 
 	sumSquared := 0
 	for b := 0; b < VAD_N_BANDS; b++ {

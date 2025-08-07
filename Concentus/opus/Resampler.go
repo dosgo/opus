@@ -1,5 +1,12 @@
 package opus
 
+import (
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
+	"fmt"
+)
+
 const (
 	USE_silk_resampler_copy                   = 0
 	USE_silk_resampler_private_up2_HQ_wrapper = 1
@@ -97,7 +104,8 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 
 	nSamples := S.Fs_in_kHz - S.inputDelay
 	delayBufPtr := S.delayBuf
-
+	fmt.Printf("delayBufPtr-1:%s nSamples:%d\r\n", IntSliceToMD5(delayBufPtr), S.inputDelay)
+	// System.arraycopy(input, input_ptr, delayBufPtr, S.inputDelay, nSamples);
 	copy(delayBufPtr[S.inputDelay:S.inputDelay+nSamples], input[input_ptr:input_ptr+nSamples])
 
 	switch S.resampler_function {
@@ -108,8 +116,13 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 		silk_resampler_private_IIR_FIR(S, output, output_ptr, delayBufPtr, 0, S.Fs_in_kHz)
 		silk_resampler_private_IIR_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
 	case USE_silk_resampler_private_down_FIR:
+		fmt.Printf("delayBufPtr:%s Fs_in_kHz:%d S.Fs_out_kHz:%d\r\n", IntSliceToMD5(delayBufPtr), S.Fs_in_kHz, S.Fs_out_kHz)
 		silk_resampler_private_down_FIR(S, output, output_ptr, delayBufPtr, 0, S.Fs_in_kHz)
+
+		fmt.Printf("silk_resampler output:%s\r\n", IntSliceToMD5(output))
+		//silk_resampler_private_down_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
 		silk_resampler_private_down_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
+		fmt.Printf("silk_resampler output2:%s\r\n", IntSliceToMD5(output))
 	default:
 		copy(output[output_ptr:output_ptr+S.Fs_in_kHz], delayBufPtr[:S.Fs_in_kHz])
 		copy(output[output_ptr+S.Fs_out_kHz:output_ptr+S.Fs_out_kHz+(inLen-S.Fs_in_kHz)], input[input_ptr+nSamples:input_ptr+nSamples+(inLen-S.Fs_in_kHz)])
@@ -275,28 +288,43 @@ func silk_resampler_private_down_FIR_INTERPOL(output []int16, output_ptr int, bu
 }
 
 func silk_resampler_private_down_FIR(S *SilkResamplerState, output []int16, output_ptr int, input []int16, input_ptr int, inLen int) {
-	buf := make([]int, S.batchSize+S.FIR_Order)
+
+	var nSamplesIn int
+	var max_index_Q16, index_increment_Q16 int
+	var buf = make([]int, S.batchSize+S.FIR_Order)
+
+	/* Copy buffered samples to start of buffer */
+	//System.arraycopy(S.sFIR_i32, 0, buf, 0, S.FIR_Order)
+	//copy(buf, S.sFIR_i32)
 	copy(buf[:S.FIR_Order], S.sFIR_i32[:S.FIR_Order])
-
-	index_increment_Q16 := S.invRatio_Q16
-	var nSamplesIn = 0
+	/* Iterate over blocks of frameSizeIn input samples */
+	index_increment_Q16 = S.invRatio_Q16
 	for {
-		nSamplesIn := silk_min(inLen, S.batchSize)
-		silk_resampler_private_AR2(S.sIIR[:], 0, buf, S.FIR_Order, input, input_ptr, S.Coefs, nSamplesIn)
+		nSamplesIn = silk_min(inLen, S.batchSize)
 
-		max_index_Q16 := silk_LSHIFT32(nSamplesIn, 16)
-		output_ptr = silk_resampler_private_down_FIR_INTERPOL(output, output_ptr, buf, S.Coefs, 2, S.FIR_Order, S.FIR_Fracs, max_index_Q16, index_increment_Q16)
+		/* Second-order AR filter (output in Q8) */
+		silk_resampler_private_AR2(S.sIIR, 0, buf, S.FIR_Order, input, input_ptr, S.Coefs, nSamplesIn)
+
+		max_index_Q16 = silk_LSHIFT32(nSamplesIn, 16)
+
+		/* Interpolate filtered signal */
+		output_ptr = silk_resampler_private_down_FIR_INTERPOL(output, output_ptr, buf, S.Coefs, 2, S.FIR_Order,
+			S.FIR_Fracs, max_index_Q16, index_increment_Q16)
 
 		input_ptr += nSamplesIn
 		inLen -= nSamplesIn
 
 		if inLen > 1 {
+			/* More iterations to do; copy last part of filtered signal to beginning of buffer */
+			//System.arraycopy(buf, nSamplesIn, buf, 0, S.FIR_Order)
 			copy(buf[:S.FIR_Order], buf[nSamplesIn:nSamplesIn+S.FIR_Order])
 		} else {
 			break
 		}
 	}
 
+	/* Copy last part of filtered signal to the state for the next call */
+	//System.arraycopy(buf, nSamplesIn, S.sFIR_i32, 0, S.FIR_Order)
 	copy(S.sFIR_i32[:S.FIR_Order], buf[nSamplesIn:nSamplesIn+S.FIR_Order])
 }
 
@@ -386,4 +414,18 @@ func silk_resampler_private_up2_HQ(S []int, output []int16, output_ptr int, inpu
 		S[5] = silk_ADD32(out32_2, X)
 		output[output_ptr+2*k+1] = int16(silk_SAT16(silk_RSHIFT_ROUND(out32_1, 10)))
 	}
+}
+func IntSliceToMD5(slice []int16) string {
+	hasher := md5.New()
+	buf := make([]byte, 2) // 用于每个整数的缓冲区
+
+	for _, num := range slice {
+		// 将int转换为uint32（保留位模式）
+		u := uint16(num)
+		binary.BigEndian.PutUint16(buf, u)
+		hasher.Write(buf)
+	}
+
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
 }

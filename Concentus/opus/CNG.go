@@ -46,7 +46,7 @@ func silk_CNG(
 	frame_ptr int,
 	length int) {
 
-	psCNG := &psDec.sCNG
+	psCNG := psDec.sCNG
 
 	if psDec.fs_kHz != psCNG.fs_kHz {
 		silk_CNG_Reset(psDec)

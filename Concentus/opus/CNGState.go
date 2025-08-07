@@ -41,6 +41,14 @@ type CNGState struct {
 	fs_kHz            int
 }
 
+func NewCNGState() *CNGState {
+	return &CNGState{CNG_exc_buf_Q14: make([]int, SilkConstants.MAX_FRAME_LENGTH), CNG_smth_NLSF_Q15: make([]int16, SilkConstants.MAX_LPC_ORDER), CNG_synth_state: make([]int, SilkConstants.MAX_LPC_ORDER)}
+}
 func (s *CNGState) Reset() {
-	*s = CNGState{}
+	MemSetLen(s.CNG_exc_buf_Q14, 0, SilkConstants.MAX_FRAME_LENGTH)
+	MemSetLen(s.CNG_smth_NLSF_Q15, 0, SilkConstants.MAX_LPC_ORDER)
+	MemSetLen(s.CNG_synth_state, 0, SilkConstants.MAX_LPC_ORDER)
+	s.CNG_smth_Gain_Q16 = 0
+	s.rand_seed = 0
+	s.fs_kHz = 0
 }

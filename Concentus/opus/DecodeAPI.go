@@ -275,7 +275,7 @@ func silk_Decode(
 		minChannels = decControl.nChannelsInternal
 	}
 	for n = 0; n < minChannels; n++ {
-		ret += silk_resampler(&channel_state[n].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[n]+1, nSamplesOutDec.Val)
+		ret += silk_resampler(channel_state[n].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[n]+1, nSamplesOutDec.Val)
 
 		if decControl.nChannelsAPI == 2 {
 			for i = 0; i < nSamplesOut.Val; i++ {
@@ -286,7 +286,7 @@ func silk_Decode(
 
 	if decControl.nChannelsAPI == 2 && decControl.nChannelsInternal == 1 {
 		if stereo_to_mono != 0 {
-			ret += silk_resampler(&channel_state[1].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[0]+1, nSamplesOutDec.Val)
+			ret += silk_resampler(channel_state[1].resampler_state, resample_out, resample_out_ptr, samplesOut_tmp, samplesOut_tmp_ptrs[0]+1, nSamplesOutDec.Val)
 			for i = 0; i < nSamplesOut.Val; i++ {
 				samplesOut[samplesOut_ptr+1+2*i] = resample_out[resample_out_ptr+i]
 			}

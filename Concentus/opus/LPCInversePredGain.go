@@ -30,7 +30,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
 	A_LIMIT := int(math.Floor(0.99975*float64(int(1)<<QA) + 0.5))
@@ -98,7 +101,7 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
 
 func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int, order int) int {
 	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
-
+	fmt.Printf("A_Q24: %v\n", A_Q24)
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
 		Atmp_QA[currentRowIndex][k] = silk_RSHIFT32(A_Q24[k], 24-QA)

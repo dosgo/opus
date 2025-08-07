@@ -41,7 +41,7 @@ func silk_PLC(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, frame []
 }
 
 func silk_PLC_update(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl) {
-	psPLC := &psDec.sPLC
+	psPLC := psDec.sPLC
 	LTP_Gain_Q14 := 0
 	temp_LTP_Gain_Q14 := 0
 
@@ -109,7 +109,7 @@ func silk_PLC_energy(energy1, shift1, energy2, shift2 *BoxedValueInt, exc_Q14 []
 }
 
 func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, frame []int16, frame_ptr int) {
-	psPLC := &psDec.sPLC
+	psPLC := psDec.sPLC
 	prevGain_Q10 := [2]int{
 		silk_RSHIFT(psPLC.prevGain_Q16[0], 6),
 		silk_RSHIFT(psPLC.prevGain_Q16[1], 6),
@@ -241,7 +241,7 @@ func silk_PLC_conceal(psDec *SilkChannelDecoder, psDecCtrl *SilkDecoderControl, 
 }
 
 func silk_PLC_glue_frames(psDec *SilkChannelDecoder, frame []int16, frame_ptr, length int) {
-	psPLC := &psDec.sPLC
+	psPLC := psDec.sPLC
 	if psDec.lossCnt != 0 {
 		conc_e := BoxedValueInt{0}
 		conc_shift := BoxedValueInt{0}

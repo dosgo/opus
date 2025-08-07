@@ -350,9 +350,10 @@ func silk_Encode(
 			}
 
 			if encControl.nChannelsInternal == 2 {
+				fmt.Printf("psEnc.sStereo.mid_only_flags:%v", psEnc.sStereo.mid_only_flags)
 				midOnlyFlag := psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]
 				silk_stereo_LR_to_MS(
-					&psEnc.sStereo,
+					psEnc.sStereo,
 					psEnc.state_Fxx[0].inputBuf,
 					2,
 					psEnc.state_Fxx[1].inputBuf,

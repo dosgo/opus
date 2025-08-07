@@ -1,6 +1,9 @@
 package opus
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 func warped_gain(coefs_Q24 []int, lambda_Q16 int, order int) int {
 	var i int
@@ -182,17 +185,24 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		x_ptr2 += psEnc.subfr_length
 		scale_boxed := BoxedValueInt{scale}
 		if psEnc.warping_Q16 > 0 {
+
 			//silk_warped_autocorr(x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 			silk_warped_autocorr(auto_corr, &scale_boxed, x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 		} else {
 			// silk_autocorr(x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
+			fmt.Printf("silk_autocorr -2: %s scale:%d psEnc.shapeWinLength:%d psEnc.shapingLPCOrder:%d\n", IntSliceToMD5(x_windowed), scale, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 			silk_autocorr(auto_corr, &scale_boxed, x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
+			fmt.Printf("silk_autocorr -3: %v\n", auto_corr)
 		}
 		scale = scale_boxed.Val
 		auto_corr[0] = silk_ADD32(auto_corr[0], silk_max_32(silk_SMULWB(auto_corr[0]>>4, int(TuningParameters.SHAPE_WHITE_NOISE_FRACTION)<<20), 1))
+
 		nrg = silk_schur64(refl_coef_Q16, auto_corr, psEnc.shapingLPCOrder)
+		fmt.Printf("silk_schur64 : %v psEnc.shapingLPCOrder:%d\r\n", auto_corr, psEnc.shapingLPCOrder)
 		OpusAssert(nrg >= 0)
 		silk_k2a_Q16(AR2_Q24, refl_coef_Q16, psEnc.shapingLPCOrder)
+		fmt.Printf("AR2_Q24 -1: %v\n", AR2_Q24)
+		fmt.Printf("refl_coef_Q16 -1: %v\n", refl_coef_Q16)
 		Qnrg = -scale
 		OpusAssert(Qnrg >= -12)
 		OpusAssert(Qnrg <= 30)

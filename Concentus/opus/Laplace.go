@@ -46,8 +46,8 @@ const (
 )
 
 func (l *laplace) ec_laplace_get_freq1(fs0 int64, decay int) int64 {
-	ft := (32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
-	return (ft * (16384 - int64(decay))) >> 15
+	ft := CapToUInt32(32768 - LAPLACE_MINP*(2*LAPLACE_NMIN) - fs0)
+	return (CapToUInt32(ft*(16384-int64(decay))) >> 15)
 }
 
 func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs int64, decay int) {
@@ -68,8 +68,8 @@ func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs 
 		/* Search the decaying part of the PDF.*/
 		for i = 1; fs > 0 && i < val; i++ {
 			fs *= 2
-			fl = (fl + fs + 2*LAPLACE_MINP)
-			fs = fs * int64(decay) >> 15
+			fl = CapToUInt32(fl + fs + 2*LAPLACE_MINP)
+			fs = CapToUInt32(fs * int64(decay) >> 15)
 		}
 
 		/* Everything beyond that has probability LAPLACE_MINP. */
@@ -79,12 +79,12 @@ func (l *laplace) ec_laplace_encode(enc *EntropyCoder, value *BoxedValueInt, fs 
 			ndi_max = int64(32768-fl+LAPLACE_MINP-1) >> LAPLACE_LOG_MINP
 			ndi_max = (ndi_max - s) >> 1
 			di = IMINLong((val)-i, ndi_max-1)
-			fl = (fl + int64(2*di+1+s)*LAPLACE_MINP)
+			fl = CapToUInt32(fl + int64(2*di+1+s)*LAPLACE_MINP)
 			fs = IMINLong(LAPLACE_MINP, 32768-fl)
 			value.Val = int((i + di + s) ^ s)
 		} else {
 			fs += LAPLACE_MINP
-			fl = fl + (fs &^ int64(s))
+			fl = fl + CapToUInt32(fs&^int64(s))
 		}
 		OpusAssert(fl+fs <= 32768)
 		OpusAssert(fs > 0)
@@ -104,19 +104,19 @@ func (l *laplace) ec_laplace_decode(dec *EntropyCoder, fs int64, decay int) int 
 		fs = l.ec_laplace_get_freq1(fs, decay) + LAPLACE_MINP
 		for fs > LAPLACE_MINP && fm >= int64(fl+2*fs) {
 			fs *= 2
-			fl = fl + fs
-			fs = ((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
+			fl = CapToUInt32(fl + fs)
+			fs = CapToUInt32((fs-2*LAPLACE_MINP)*int64(decay))>>15 + LAPLACE_MINP
 			val++
 		}
 		if fs <= LAPLACE_MINP {
 			di := int(fm-int64(fl)) >> (LAPLACE_LOG_MINP + 1)
 			val += di
-			fl = (fl + int64(2*di*LAPLACE_MINP))
+			fl = CapToUInt32(fl + CapToUInt32(2*int64(di)*LAPLACE_MINP))
 		}
 		if fm < int64(fl+fs) {
 			val = -val
 		} else {
-			fl = (fl + fs)
+			fl = CapToUInt32(fl + fs)
 		}
 	}
 

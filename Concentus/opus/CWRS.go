@@ -58,7 +58,7 @@ func cwrsi(_n int, _k int, _i int64, _y []int) int {
 			} else {
 				s = 0
 			}
-			_i -= (p & int64(s))
+			_i -= CapToUInt32(p & int64(s))
 			k0 = _k
 			q = CELT_PVQ_U_DATA[row+_n]
 
@@ -98,7 +98,7 @@ func cwrsi(_n int, _k int, _i int64, _y []int) int {
 				} else {
 					s = 0
 				}
-				_i -= (q & int64(s))
+				_i -= CapToUInt32(q & int64(s))
 				k0 = _k
 				for {
 					_k--
@@ -123,7 +123,7 @@ func cwrsi(_n int, _k int, _i int64, _y []int) int {
 	} else {
 		s = 0
 	}
-	_i -= (p & int64(s))
+	_i -= CapToUInt32(p & int64(s))
 	k0 = _k
 	_k = int((_i + 1) >> 1)
 	if _k != 0 {

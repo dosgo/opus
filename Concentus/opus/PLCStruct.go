@@ -48,24 +48,31 @@ type PLCStruct struct {
 	conc_energy       int
 	conc_energy_shift int
 	prevLTP_scale_Q14 int16
-	prevGain_Q16      [2]int
+	prevGain_Q16      []int
 	fs_kHz            int
 	nb_subfr          int
 	subfr_length      int
 }
 
+func NewPLCStruct() *PLCStruct {
+	obj := &PLCStruct{}
+	obj.LTPCoef_Q14 = make([]int16, SilkConstants.LTP_ORDER)
+	obj.prevLPC_Q12 = make([]int16, SilkConstants.MAX_LPC_ORDER)
+	obj.prevGain_Q16 = make([]int, 2)
+	return obj
+}
 func (p *PLCStruct) Reset() {
-	pitchL_Q8 = 0;
-        Arrays.MemSet(LTPCoef_Q14, (short) 0, SilkConstants.LTP_ORDER);
-        Arrays.MemSet(prevLPC_Q12, (short) 0, SilkConstants.MAX_LPC_ORDER);
-        last_frame_lost = 0;
-        rand_seed = 0;
-        randScale_Q14 = 0;
-        conc_energy = 0;
-        conc_energy_shift = 0;
-        prevLTP_scale_Q14 = 0;
-        Arrays.MemSet(prevGain_Q16, 0, 2);
-        fs_kHz = 0;
-        nb_subfr = 0;
-        subfr_length = 0;
+	p.pitchL_Q8 = 0
+	MemSetLen(p.LTPCoef_Q14, 0, SilkConstants.LTP_ORDER)
+	MemSetLen(p.prevLPC_Q12, 0, SilkConstants.MAX_LPC_ORDER)
+	p.last_frame_lost = 0
+	p.rand_seed = 0
+	p.randScale_Q14 = 0
+	p.conc_energy = 0
+	p.conc_energy_shift = 0
+	p.prevLTP_scale_Q14 = 0
+	MemSetLen(p.prevGain_Q16, 0, 2)
+	p.fs_kHz = 0
+	p.nb_subfr = 0
+	p.subfr_length = 0
 }

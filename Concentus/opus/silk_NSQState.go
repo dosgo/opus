@@ -64,6 +64,9 @@ type SilkNSQState struct {
 	rewhite_flag     int
 }
 
+func NewSilkNSQState() *SilkNSQState {
+	return &SilkNSQState{}
+}
 func (s *SilkNSQState) Reset() {
 	for i := range s.xq {
 		s.xq[i] = 0

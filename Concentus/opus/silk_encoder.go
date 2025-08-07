@@ -2,7 +2,7 @@ package opus
 
 type SilkEncoder struct {
 	state_Fxx                 []*SilkChannelEncoder
-	sStereo                   StereoEncodeState
+	sStereo                   *StereoEncodeState
 	nBitsUsedLBRR             int
 	nBitsExceeded             int
 	nChannelsAPI              int
@@ -15,6 +15,7 @@ type SilkEncoder struct {
 
 func NewSilkEncoder() SilkEncoder {
 	enc := SilkEncoder{}
+	enc.sStereo = NewStereoEncodeState()
 	enc.state_Fxx = make([]*SilkChannelEncoder, ENCODER_NUM_CHANNELS)
 	for i := 0; i < ENCODER_NUM_CHANNELS; i++ {
 		enc.state_Fxx[i] = NewSilkChannelEncoder()
@@ -45,6 +46,6 @@ func silk_init_encoder(psEnc *SilkChannelEncoder) int {
 	psEnc.variable_HP_smth1_Q15 = int(silk_LSHIFT(logVal-(16<<7), 8))
 	psEnc.variable_HP_smth2_Q15 = psEnc.variable_HP_smth1_Q15
 	psEnc.first_frame_after_reset = 1
-	ret += silk_VAD_Init(&psEnc.sVAD)
+	ret += silk_VAD_Init(psEnc.sVAD)
 	return ret
 }

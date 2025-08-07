@@ -1,5 +1,9 @@
 package opus
 
+import (
+	"fmt"
+)
+
 const QC = 10
 const QS = 14
 
@@ -8,7 +12,7 @@ func silk_autocorr(results []int, scale *BoxedValueInt, inputData []int16, input
 	scale.Val = _celt_autocorr(inputData, results, corrCount-1, inputDataSize)
 }
 
-func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
+func _celt_autocorrBak(x []int16, ac []int, lag int, n int) int {
 	d := int(0)
 	fastN := n - lag
 	shift := 0
@@ -61,6 +65,74 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 			shift2++
 		}
 		for i := 0; i <= lag; i++ {
+			ac[i] = SHR32(ac[i], shift2)
+		}
+		shift += shift2
+	}
+
+	return shift
+}
+
+func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
+	fmt.Printf("_celt_autocorr x: %s\r\n", IntSliceToMD5(x))
+	//panic("111")
+	var d int
+	var i, k int
+	var fastN = n - lag
+	var shift int
+	var xptr []int16
+	var xx = make([]int16, n)
+	OpusAssert(n > 0)
+	xptr = x
+
+	shift = 0
+
+	var ac0 int
+	ac0 = 1 + (n << 7)
+	if (n & 1) != 0 {
+		ac0 += SHR32(MULT16_16Short(xptr[0], xptr[0]), 9)
+	}
+	for i = (n & 1); i < n; i += 2 {
+		ac0 += SHR32(MULT16_16Short(xptr[i], xptr[i]), 9)
+		ac0 += SHR32(MULT16_16Short(xptr[i+1], xptr[i+1]), 9)
+	}
+	shift = celt_ilog2(ac0) - 30 + 10
+	shift = (shift) / 2
+	if shift > 0 {
+		for i = 0; i < n; i++ {
+			xx[i] = int16(PSHR32(int(xptr[i]), int(shift)))
+		}
+		xptr = xx
+	} else {
+		shift = 0
+	}
+	fmt.Printf("pitch_xcorr2 -2: %s\r\n", IntSliceToMD5(xptr))
+	pitch_xcorr2(xptr, xptr, ac, fastN, lag+1)
+	fmt.Printf("pitch_xcorr2 -1: %s shift:%d fastN:%d\n", IntSliceToMD5(xptr), shift, fastN)
+	for k = 0; k <= lag; k++ {
+		i = k + fastN
+		d = 0
+		for ; i < n; i++ {
+			d = MAC16_16Int(d, xptr[i], xptr[i-k])
+		}
+		ac[k] += d
+	}
+	shift = 2 * shift
+	if shift <= 0 {
+		ac[0] += SHL32(1, -shift)
+	}
+	if ac[0] < 268435456 {
+		var shift2 = 29 - EC_ILOG(int64(ac[0]))
+		for i = 0; i <= lag; i++ {
+			ac[i] = SHL32(ac[i], shift2)
+		}
+		shift -= shift2
+	} else if ac[0] >= 536870912 {
+		var shift2 = 1
+		if ac[0] >= 1073741824 {
+			shift2++
+		}
+		for i = 0; i <= lag; i++ {
 			ac[i] = SHR32(ac[i], shift2)
 		}
 		shift += shift2

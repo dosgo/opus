@@ -1,6 +1,10 @@
 package opus
 
-import "math"
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+)
 
 func silk_stereo_decode_pred(
 	psRangeDec *EntropyCoder,
@@ -69,15 +73,20 @@ func silk_stereo_find_predictor(
 	scale1 := BoxedValueInt{0}
 	scale2 := BoxedValueInt{0}
 	var corr, pred_Q13, pred2_Q10 int
-
+	//fmt.Printf("X:%+v \r\n y:%+v length:%d\r\n", x, y, length)
+	//xjson, _ := json.Marshal(x)
+	fmt.Printf("x md5:%s y:%s\r\n", IntSliceToMD5(x), IntSliceToMD5(y))
 	silk_sum_sqr_shift4(&nrgx, &scale1, x, length)
 	silk_sum_sqr_shift4(&nrgy, &scale2, y, length)
 	scale = silk_max_int(scale1.Val, scale2.Val)
+	fmt.Printf("scale1.Val: %d, scale2.Val: %d\n", scale1.Val, scale2.Val)
 	scale = scale + (scale & 1)
 	nrgy.Val = silk_RSHIFT32(nrgy.Val, scale-scale2.Val)
 	nrgx.Val = silk_RSHIFT32(nrgx.Val, scale-scale1.Val)
 	nrgx.Val = silk_max_int(nrgx.Val, 1)
+	fmt.Printf("scale: %d\n", scale)
 	corr = silk_inner_prod_aligned_scale(x, y, scale, length)
+	fmt.Printf("corr: %d, nrgx.Val: %d, \r\n", corr, nrgx.Val)
 	pred_Q13 = silk_DIV32_varQ(corr, nrgx.Val, 13)
 	pred_Q13 = silk_LIMIT(pred_Q13, -(1 << 14), 1<<14)
 	pred2_Q10 = silk_SMULWB(pred_Q13, pred_Q13)
@@ -132,6 +141,10 @@ func silk_stereo_LR_to_MS(
 		side[n] = int16(silk_SAT16(silk_RSHIFT_ROUND(diff, 1)))
 	}
 
+	//fmt.Printf("x1: %v\n", x1)
+	x1json, _ := json.Marshal(x1)
+	fmt.Printf("x1: %s\n", x1json)
+	fmt.Printf("side: %v\n", side)
 	copy(x1[mid:], state.sMid[:])
 	copy(side[:], state.sSide[:])
 	copy(state.sMid[:], x1[mid+frame_length:])
@@ -152,6 +165,7 @@ func silk_stereo_LR_to_MS(
 		LP_side[n] = int16(sum)
 		HP_side[n] = int16(int(side[n+1]) - sum)
 	}
+	fmt.Printf("LP_side:%+v\r\n", LP_side)
 
 	if frame_length == 10*fs_kHz {
 		is10msFrame = 1
@@ -335,10 +349,10 @@ func silk_stereo_quant_pred(
 	var i, j byte
 	var n int
 	var low_Q13, step_Q13, lvl_Q13, err_min_Q13, err_Q13, quant_pred_Q13 int
-
+	fmt.Printf("ix:%+v\r\n", ix)
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 3; j++ {
-			(ix)[i][j] = 0
+			ix[i][j] = 0
 		}
 	}
 

@@ -25,28 +25,39 @@ type SilkEncoderControl struct {
 	lastGainIndexPrev  byte
 }
 
+func NewSilkEncoderControl() *SilkEncoderControl {
+	s := &SilkEncoderControl{}
+	s.Gains_Q16 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	return s
+}
+
 func (s *SilkEncoderControl) Reset() {
-	  Arrays.MemSet(Gains_Q16, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(PredCoef_Q12[0], (short) 0, SilkConstants.MAX_LPC_ORDER);
-        Arrays.MemSet(PredCoef_Q12[1], (short) 0, SilkConstants.MAX_LPC_ORDER);
-        Arrays.MemSet(LTPCoef_Q14, (short) 0, SilkConstants.LTP_ORDER * SilkConstants.MAX_NB_SUBFR);
-        LTP_scale_Q14 = 0;
-        Arrays.MemSet(pitchL, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(AR1_Q13, (short) 0, SilkConstants.MAX_NB_SUBFR * SilkConstants.MAX_SHAPE_LPC_ORDER);
-        Arrays.MemSet(AR2_Q13, (short) 0, SilkConstants.MAX_NB_SUBFR * SilkConstants.MAX_SHAPE_LPC_ORDER);
-        Arrays.MemSet(LF_shp_Q14, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(GainsPre_Q14, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(HarmBoost_Q14, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(Tilt_Q14, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(HarmShapeGain_Q14, 0, SilkConstants.MAX_NB_SUBFR);
-        Lambda_Q10 = 0;
-        input_quality_Q14 = 0;
-        coding_quality_Q14 = 0;
-        sparseness_Q8 = 0;
-        predGain_Q16 = 0;
-        LTPredCodGain_Q7 = 0;
-        Arrays.MemSet(ResNrg, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(ResNrgQ, 0, SilkConstants.MAX_NB_SUBFR);
-        Arrays.MemSet(GainsUnq_Q16, 0, SilkConstants.MAX_NB_SUBFR);
-        lastGainIndexPrev = 0;
+	MemSetLen(s.Gains_Q16, 0, SilkConstants.MAX_NB_SUBFR)
+	MemSetLen(s.PredCoef_Q12[0], 0, SilkConstants.MAX_LPC_ORDER)
+	MemSetLen(s.PredCoef_Q12[1], 0, SilkConstants.MAX_LPC_ORDER)
+	MemSetLen(s.LTPCoef_Q14, 0, SilkConstants.LTP_ORDER*SilkConstants.MAX_NB_SUBFR)
+	s.LTP_scale_Q14 = 0
+	MemSetLen(s.pitchL, 0, SilkConstants.MAX_NB_SUBFR)
+	//	MemSetLen(s.AR1_Q13, 0, SilkConstants.MAX_NB_SUBFR*SilkConstants.MAX_SHAPE_LPC_ORDER)
+	s.AR1_Q13 = [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16{}
+	//MemSetLen(s.AR2_Q13, 0, SilkConstants.MAX_NB_SUBFR*SilkConstants.MAX_SHAPE_LPC_ORDER)
+	s.AR2_Q13 = [MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER]int16{}
+	MemSetLen(s.LF_shp_Q14, 0, SilkConstants.MAX_NB_SUBFR)
+	MemSetLen(s.GainsPre_Q14, 0, SilkConstants.MAX_NB_SUBFR)
+	MemSetLen(s.HarmBoost_Q14, 0, SilkConstants.MAX_NB_SUBFR)
+	MemSetLen(s.Tilt_Q14, 0, SilkConstants.MAX_NB_SUBFR)
+	MemSetLen(s.HarmShapeGain_Q14, 0, SilkConstants.MAX_NB_SUBFR)
+	s.Lambda_Q10 = 0
+	s.input_quality_Q14 = 0
+	s.coding_quality_Q14 = 0
+	s.sparseness_Q8 = 0
+	s.predGain_Q16 = 0
+	s.LTPredCodGain_Q7 = 0
+	//MemSetLen(s.ResNrg, 0, SilkConstants.MAX_NB_SUBFR)
+	s.ResNrg = [MAX_NB_SUBFR]int{}
+	s.ResNrgQ = [MAX_NB_SUBFR]int{}
+	s.GainsUnq_Q16 = [MAX_NB_SUBFR]int{}
+	//MemSetLen(s.ResNrgQ, 0, SilkConstants.MAX_NB_SUBFR)
+	//MemSetLen(s.GainsUnq_Q16, 0, SilkConstants.MAX_NB_SUBFR)
+	s.lastGainIndexPrev = 0
 }

@@ -10,7 +10,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	if encode_LBRR != 0 {
 		psIndices = psEncC.indices_LBRR[FrameIndex]
 	} else {
-		psIndices = &psEncC.indices
+		psIndices = psEncC.indices
 	}
 
 	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)

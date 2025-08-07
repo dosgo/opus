@@ -13,6 +13,9 @@ func OpusAssertMsg(condition bool, message string) {
 		panic(message)
 	}
 }
+func CapToUInt32(val int64) int64 {
+	return int64(0xFFFFFFFF & int(val))
+}
 
 func CapToUint(val int) int {
 	return int(uint(val))
@@ -1434,7 +1437,6 @@ func EC_MINI(a, b int64) int64 {
 	}
 	return a
 }
-
 
 func EC_ILOG(x int64) int {
 	if x == 0 {

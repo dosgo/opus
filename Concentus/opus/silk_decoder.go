@@ -46,7 +46,7 @@ type SilkDecoder struct {
 func NewSilkDecoder() SilkDecoder {
 	d := SilkDecoder{}
 	for c := 0; c < DECODER_NUM_CHANNELS; c++ {
-		d.channel_state[c] = &SilkChannelDecoder{}
+		d.channel_state[c] = NewSilkChannelDecoder()
 	}
 	return d
 }

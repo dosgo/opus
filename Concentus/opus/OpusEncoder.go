@@ -910,7 +910,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
 			fmt.Printf("data Buf:%s\r\n", formatSignedBytes(data))
-			fmt.Printf("st:%+v\r\n", st)
+
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			//dd, _ := json.Marshal(data)
 			fmt.Printf("pcm_buf:%+v\r\n", data)
