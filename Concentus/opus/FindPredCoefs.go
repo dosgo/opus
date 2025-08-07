@@ -56,7 +56,7 @@ func silk_find_pred_coefs(
 		boxed_periodicity := BoxedValueByte{psEnc.indices.PERIndex}
 		boxed_gain := BoxedValueInt{psEnc.sum_log_gain_Q7}
 
-		silk_quant_LTP_gains(psEncCtrl.LTPCoef_Q14, psEnc.indices.LTPIndex, boxed_periodicity,
+		silk_quant_LTP_gains(psEncCtrl.LTPCoef_Q14, psEnc.indices.LTPIndex, &boxed_periodicity,
 			&boxed_gain, WLTP, psEnc.mu_LTP_Q9, psEnc.LTPQuantLowComplexity, psEnc.nb_subfr)
 		psEnc.indices.PERIndex = boxed_periodicity.Val
 		psEnc.sum_log_gain_Q7 = boxed_gain.Val

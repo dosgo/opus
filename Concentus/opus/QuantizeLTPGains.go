@@ -5,7 +5,7 @@ import "math"
 func silk_quant_LTP_gains(
 	B_Q14 []int16,
 	cbk_index []byte,
-	periodicity_index BoxedValueByte,
+	periodicity_index *BoxedValueByte,
 	sum_log_gain_Q7 *BoxedValueInt,
 	W_Q18 []int,
 	mu_Q9 int,

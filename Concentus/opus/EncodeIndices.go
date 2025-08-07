@@ -27,7 +27,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0]), silk_delta_gain_iCDF[:], 8)
 	} else {
 		OpusAssert(psIndices.GainsIndices[0] >= 0 && psIndices.GainsIndices[0] < N_LEVELS_QGAIN)
-		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0])>>3, silk_gain_iCDF[psIndices.signalType][:], 8)
+		psRangeEnc.enc_icdf(silk_RSHIFT(int(psIndices.GainsIndices[0]), 3), silk_gain_iCDF[psIndices.signalType], 8)
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0])&7, silk_uniform8_iCDF[:], 8)
 	}
 
@@ -76,8 +76,8 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		}
 
 		if encode_absolute_lagIndex != 0 {
-			pitch_high_bits := int(psIndices.lagIndex) / (psEncC.fs_kHz >> 1)
-			pitch_low_bits := int(psIndices.lagIndex) - pitch_high_bits*(psEncC.fs_kHz>>1)
+			pitch_high_bits := silk_DIV32_16(int(psIndices.lagIndex), silk_RSHIFT(psEncC.fs_kHz, 1))
+			pitch_low_bits := int(psIndices.lagIndex) - silk_SMULBB(pitch_high_bits, silk_RSHIFT(psEncC.fs_kHz, 1))
 			OpusAssert(pitch_low_bits < psEncC.fs_kHz/2)
 			OpusAssert(pitch_high_bits < 32)
 			psRangeEnc.enc_icdf(pitch_high_bits, silk_pitch_lag_iCDF[:], 8)

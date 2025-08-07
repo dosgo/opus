@@ -923,7 +923,10 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 				sEncCtrl.Gains_Q16[i] = silk_LSHIFT_SAT32(silk_SMULWB(sEncCtrl.GainsUnq_Q16[i], int(gainMult_Q8)), 8)
 			}
 			s.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev
-			silk_gains_quant(s.indices.GainsIndices[:], sEncCtrl.Gains_Q16[:], &s.sShape.LastGainIndex, silk_SMULBB(condCoding, SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+			boxed_gainIndex := &BoxedValueByte{int8(s.sShape.LastGainIndex)}
+			silk_gains_quant(s.indices.GainsIndices, sEncCtrl.Gains_Q16,
+				boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
+			s.sShape.LastGainIndex = byte(boxed_gainIndex.Val)
 			gainsID = silk_gains_ID(s.indices.GainsIndices[:], s.nb_subfr)
 		}
 	}

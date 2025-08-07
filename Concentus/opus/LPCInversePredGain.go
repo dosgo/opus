@@ -37,7 +37,7 @@ import (
 
 const QA24 = 24
 
-func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
+func LPC_inverse_pred_gain_QA(A_QA [][]int, order int) int {
 	A_LIMIT := int(math.Floor(0.99975*float64(int(1)<<QA24) + 0.5))
 
 	var k, n, mult2Q int
@@ -87,9 +87,9 @@ func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
 }
 
 func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
-	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
+	//var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
 	var DC_resp int
-
+	Atmp_QA := InitTwoDimensionalArrayInt(2, SilkConstants.SILK_MAX_ORDER_LPC)
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
 		DC_resp += int(A_Q12[k])
@@ -98,15 +98,15 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
 	if DC_resp >= 4096 {
 		return 0
 	}
-	return LPC_inverse_pred_gain_QA(&Atmp_QA, order)
+	return LPC_inverse_pred_gain_QA(Atmp_QA, order)
 }
 
 func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int, order int) int {
-	var Atmp_QA [2][SILK_MAX_ORDER_LPC]int
+	Atmp_QA := InitTwoDimensionalArrayInt(2, SilkConstants.SILK_MAX_ORDER_LPC)
 	fmt.Printf("A_Q24: %v\n", A_Q24)
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
 		Atmp_QA[currentRowIndex][k] = silk_RSHIFT32(A_Q24[k], 24-QA24)
 	}
-	return LPC_inverse_pred_gain_QA(&Atmp_QA, order)
+	return LPC_inverse_pred_gain_QA(Atmp_QA, order)
 }

@@ -3,10 +3,7 @@ package opus
 func pitch_xcorr(_x []int, _y []int, xcorr []int, len int, max_pitch int) int {
 	var i int
 	maxcorr := int(1)
-	if max_pitch <= 0 {
-		panic("max_pitch must be greater than 0")
-	}
-
+	OpusAssert(max_pitch > 0)
 	sum0 := BoxedValueInt{0}
 	sum1 := BoxedValueInt{0}
 	sum2 := BoxedValueInt{0}
@@ -37,10 +34,8 @@ func pitch_xcorr(_x []int, _y []int, xcorr []int, len int, max_pitch int) int {
 func pitch_xcorr1(_x []int16, _x_ptr int, _y []int16, _y_ptr int, xcorr []int, len int, max_pitch int) int {
 	var i int
 	maxcorr := int(1)
-	if max_pitch <= 0 {
-		panic("max_pitch must be greater than 0")
-	}
 
+	OpusAssert(max_pitch > 0)
 	sum0 := BoxedValueInt{0}
 	sum1 := BoxedValueInt{0}
 	sum2 := BoxedValueInt{0}

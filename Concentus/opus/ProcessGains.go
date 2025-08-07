@@ -39,9 +39,7 @@ func silk_process_gains(
 		gain_squared = silk_ADD_SAT32(ResNrgPart, silk_SMMUL(gain, gain))
 		if gain_squared < math.MaxInt16 {
 			gain_squared = silk_SMLAWW(silk_LSHIFT(ResNrgPart, 16), gain, gain)
-			if gain_squared <= 0 {
-				panic("gain_squared should be positive")
-			}
+			OpusAssert(gain_squared > 0)
 			gain = silk_SQRT_APPROX(gain_squared)
 			if gain > math.MinInt32>>8 {
 				gain = math.MinInt32 >> 8
@@ -59,15 +57,15 @@ func silk_process_gains(
 	copy(psEncCtrl.GainsUnq_Q16[:], psEncCtrl.Gains_Q16[:psEnc.nb_subfr])
 	psEncCtrl.lastGainIndexPrev = psShapeSt.LastGainIndex
 
-	lastGainIndex := psShapeSt.LastGainIndex
+	boxed_lastGainIndex := &BoxedValueByte{int8(psShapeSt.LastGainIndex)}
 	silk_gains_quant(
 		psEnc.indices.GainsIndices[:],
 		psEncCtrl.Gains_Q16[:psEnc.nb_subfr],
-		&lastGainIndex,
+		boxed_lastGainIndex,
 		boolToInt(condCoding == CODE_CONDITIONALLY),
 		psEnc.nb_subfr,
 	)
-	psShapeSt.LastGainIndex = lastGainIndex
+	psShapeSt.LastGainIndex = byte(boxed_lastGainIndex.Val)
 
 	if psEnc.indices.signalType == TYPE_VOICED {
 		if psEncCtrl.LTPredCodGain_Q7+silk_RSHIFT(psEnc.input_tilt_Q15, 8) > int(math.Floor((1.0)*(1<<(7))+0.5)) {
