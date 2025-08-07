@@ -8,7 +8,7 @@ const (
 	MAX_RSHIFTS      = 32 - QA25
 )
 
-var SILK_CONST_FIND_LPC_COND_FAC_32 int = 42950
+//var SILK_CONST_FIND_LPC_COND_FAC_32 int = 42950
 
 func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedValueInt, A_Q16 []int, x []int16, x_ptr int, minInvGain_Q30 int, subfr_length int, nb_subfr int, D int) {
 	var k, n, s, lz, rshifts, reached_max_gain int
@@ -21,6 +21,8 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 	CAb := make([]int, SILK_MAX_ORDER_LPC+1)
 	xcorr := make([]int, SILK_MAX_ORDER_LPC)
 	var C0_64 int64
+
+	OpusAssert(subfr_length*nb_subfr <= MAX_FRAME_SIZE)
 
 	for i := range C_first_row {
 		C_first_row[i] = 0

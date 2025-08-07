@@ -48,15 +48,6 @@ func celt_lcg_rand(seed int) int {
 	return 1664525*seed + 1013904223
 }
 
-func bitexact_cosb(x int) int {
-	tmp := (4096 + x*x) >> 13
-	OpusAssert(tmp <= 32767)
-	x2 := tmp
-	x2 = (32767 - x2) + FRAC_MUL16(x2, (-7651+FRAC_MUL16(x2, (8277+FRAC_MUL16(-626, x2)))))
-	OpusAssert(x2 <= 32766)
-	return 1 + x2
-}
-
 func bitexact_cos(x int) int {
 	var tmp = 0
 	var x2 = 0
@@ -478,6 +469,7 @@ func haar1ZeroOffset(X []int, N0 int, stride int) {
 
 func compute_qn(N int, b int, offset int, pulse_cap int, stereo int) int {
 	exp2_table8 := []int16{16384, 17866, 19483, 21247, 23170, 25267, 27554, 30048}
+
 	N2 := 2*N - 1
 	if stereo != 0 && N == 2 {
 		N2--
@@ -1040,8 +1032,9 @@ func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, low
 	return cm
 }
 
-var bit_interleave_table = []int{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
-var bit_deinterleave_table = []int{0, 3, 12, 15, 48, 51, 60, 63, 192, 195, 204, 207, 240, 243, 252, 255}
+var bit_interleave_table = []byte{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3}
+
+var bit_deinterleave_table = []int16{0x00, 0x03, 0x0C, 0x0F, 0x30, 0x33, 0x3C, 0x3F, 0xC0, 0xC3, 0xCC, 0xCF, 0xF0, 0xF3, 0xFC, 0xFF}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
 
@@ -1103,7 +1096,7 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 		if idx2 < 0 {
 			fmt.Println("e")
 		}
-		fill = bit_interleave_table[fill&0xF] | bit_interleave_table[fill>>4]<<2
+		fill = int(bit_interleave_table[fill&0xF]) | int(bit_interleave_table[fill>>4])<<2
 	}
 
 	B >>= recombine
@@ -1151,7 +1144,7 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 		}
 
 		for k = 0; k < recombine; k++ {
-			cm = bit_deinterleave_table[cm]
+			cm = int(bit_deinterleave_table[cm])
 			haar1(X, X_ptr, N0>>k, 1<<k)
 		}
 		B <<= recombine
