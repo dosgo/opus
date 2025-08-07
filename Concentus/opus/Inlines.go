@@ -13,9 +13,6 @@ func OpusAssertMsg(condition bool, message string) {
 		panic(message)
 	}
 }
-func CapToUInt32(val int64) int64 {
-	return int64(0xFFFFFFFF & int(val))
-}
 
 func CapToUint(val int) int {
 	return int(uint(val))
@@ -765,7 +762,12 @@ func silk_MLA_ovflw(a32, b32, c32 int) int {
 func silk_SMLABB_ovflw(a32, b32, c32 int) int {
 	return silk_ADD32_ovflw(a32, int(b32)*int(c32))
 }
-
+func silk_SMLABB_ovflwNew(a32, b32, c32 int32) int32 {
+	b16 := int16(b32)
+	c16 := int16(c32)
+	product := int32(b16) * int32(c16)
+	return a32 + product
+}
 func silk_SMULBB(a32, b32 int) int {
 	return int(int(a32)) * int(int(b32))
 }
@@ -976,7 +978,7 @@ func silk_RSHIFT64(a int64, shift int) int64 {
 }
 
 func silk_RSHIFT_uint(a int64, shift int) int64 {
-	return int64(uint(a)) >> shift
+	return int64(CapToUInt32(a) >> shift)
 }
 
 func silk_ADD_LSHIFT(a, b, shift int) int {
@@ -996,7 +998,12 @@ func silk_ADD_RSHIFT32(a, b, shift int) int {
 }
 
 func silk_ADD_RSHIFT_uint(a, b int64, shift int) int64 {
-	return int64(uint(a)) + (int64(uint(b)) >> shift)
+	ret := CapToUInt32(a + (CapToUInt32(b) >> shift))
+	return ret
+	/* shift  > 0 */
+}
+func CapToUInt32(val int64) int64 {
+	return int64(0xFFFFFFFF & int(val))
 }
 
 func silk_SUB_LSHIFT32(a, b, shift int) int {
