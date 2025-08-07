@@ -35,8 +35,10 @@ import (
 	"math"
 )
 
+const QA24 = 24
+
 func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
-	A_LIMIT := int(math.Floor(0.99975*float64(int(1)<<QA) + 0.5))
+	A_LIMIT := int(math.Floor(0.99975*float64(int(1)<<QA24) + 0.5))
 
 	var k, n, mult2Q int
 	var invGain_Q30, rc_Q31, rc_mult1_Q30, rc_mult2, tmp_QA int
@@ -48,7 +50,7 @@ func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
 			return 0
 		}
 
-		rc_Q31 = 0 - silk_LSHIFT(A_QA[currentRowIndex][k], 31-QA)
+		rc_Q31 = 0 - silk_LSHIFT(A_QA[currentRowIndex][k], 31-QA24)
 
 		rc_mult1_Q30 = (1 << 30) - silk_SMMUL(rc_Q31, rc_Q31)
 		OpusAssert(rc_mult1_Q30 > (1 << 15))
@@ -74,7 +76,7 @@ func LPC_inverse_pred_gain_QA(A_QA *[2][SILK_MAX_ORDER_LPC]int, order int) int {
 		return 0
 	}
 
-	rc_Q31 = 0 - silk_LSHIFT(A_QA[currentRowIndex][0], 31-QA)
+	rc_Q31 = 0 - silk_LSHIFT(A_QA[currentRowIndex][0], 31-QA24)
 	rc_mult1_Q30 = (1 << 30) - silk_SMMUL(rc_Q31, rc_Q31)
 
 	invGain_Q30 = silk_LSHIFT(silk_SMMUL(invGain_Q30, rc_mult1_Q30), 2)
@@ -91,7 +93,7 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
 		DC_resp += int(A_Q12[k])
-		Atmp_QA[currentRowIndex][k] = silk_LSHIFT32(int(A_Q12[k]), QA-12)
+		Atmp_QA[currentRowIndex][k] = silk_LSHIFT32(int(A_Q12[k]), QA24-12)
 	}
 	if DC_resp >= 4096 {
 		return 0
@@ -104,7 +106,7 @@ func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int, order int) int {
 	fmt.Printf("A_Q24: %v\n", A_Q24)
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
-		Atmp_QA[currentRowIndex][k] = silk_RSHIFT32(A_Q24[k], 24-QA)
+		Atmp_QA[currentRowIndex][k] = silk_RSHIFT32(A_Q24[k], 24-QA24)
 	}
 	return LPC_inverse_pred_gain_QA(&Atmp_QA, order)
 }

@@ -943,8 +943,8 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > silk_SMULWB(int(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES), 1<<8) {
 		s.LBRR_flags[s.nFramesEncoded] = 1
 		psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
-		sNSQ_LBRR := &SilkNSQState{}
-		sNSQ_LBRR = s.sNSQ
+		sNSQ_LBRR := NewSilkNSQState()
+		sNSQ_LBRR.Assign(s.sNSQ)
 		psIndices_LBRR = s.indices
 		TempGains_Q16 := make([]int, s.nb_subfr)
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])

@@ -6,6 +6,7 @@ const (
 	MAX_STABILIZE_LOOPS   = 20
 	BIN_DIV_STEPS_A2NLSF  = 3
 	MAX_ITERATIONS_A2NLSF = 30
+	QA16                  = 16
 )
 
 func silk_NLSF_VQ(err_Q26 []int, in_Q15 []int16, pCB_Q8 []int16, K int, LPC_order int) {
@@ -447,9 +448,9 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 func silk_NLSF2A_find_poly(o []int, cLSF []int, cLSF_ptr int, dd int) {
 	for k := 1; k < dd; k++ {
 		ftmp := cLSF[cLSF_ptr+2*k]
-		o[k+1] = (o[k-1] << 1) - int(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[k]), QA))
+		o[k+1] = (o[k-1] << 1) - int(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[k]), QA16))
 		for n := k; n > 1; n-- {
-			o[n] += o[n-2] - int(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[n-1]), QA))
+			o[n] += o[n-2] - int(silk_RSHIFT_ROUND64(silk_SMULL(ftmp, o[n-1]), QA16))
 		}
 		o[1] -= ftmp
 	}
@@ -479,7 +480,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 		OpusAssert(f_int < LSF_COS_TAB_SZ)
 		cos_val := SilkTables.Silk_LSFCosTab_Q12[f_int]
 		delta := SilkTables.Silk_LSFCosTab_Q12[f_int+1] - cos_val
-		cos_LSF_QA[ordering[k]] = int(silk_RSHIFT_ROUND(int(cos_val)<<8+int(delta)*int(f_frac), 20-QA))
+		cos_LSF_QA[ordering[k]] = int(silk_RSHIFT_ROUND(int(cos_val)<<8+int(delta)*int(f_frac), 20-QA16))
 	}
 
 	dd := d / 2
@@ -487,11 +488,11 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 	Q := make([]int, dd+1)
 	a32_QA1 := make([]int, d)
 
-	P[0] = 1 << QA
+	P[0] = 1 << QA16
 	P[1] = -cos_LSF_QA[0]
 	silk_NLSF2A_find_poly(P, cos_LSF_QA, 0, dd)
 
-	Q[0] = 1 << QA
+	Q[0] = 1 << QA16
 	Q[1] = -cos_LSF_QA[1]
 	silk_NLSF2A_find_poly(Q, cos_LSF_QA, 1, dd)
 
@@ -512,7 +513,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 				idx = k
 			}
 		}
-		maxabs = int(silk_RSHIFT_ROUND(int(maxabs), int(QA+1-12)))
+		maxabs = int(silk_RSHIFT_ROUND(int(maxabs), int(QA16+1-12)))
 
 		if maxabs > math.MaxInt16 {
 			maxabs = silk_min_int(maxabs, 163838)
@@ -525,12 +526,12 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 
 	if i := 10; i == 10 {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))))
-			a32_QA1[k] = int(a_Q12[k]) << (QA + 1 - 12)
+			a_Q12[k] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA16+1-12)))))
+			a32_QA1[k] = int(a_Q12[k]) << (QA16 + 1 - 12)
 		}
 	} else {
 		for k := 0; k < d; k++ {
-			a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))
+			a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA16+1-12)))
 		}
 	}
 
@@ -538,7 +539,7 @@ func silk_NLSF2A(a_Q12 []int16, NLSF []int16, d int) {
 		if silk_LPC_inverse_pred_gain(a_Q12, d) < int((1.0/SilkConstants.MAX_PREDICTION_POWER_GAIN)*1073741824.0+0.5) {
 			silk_bwexpander_32(a32_QA1, d, 65536-int(2<<i))
 			for k := 0; k < d; k++ {
-				a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA+1-12)))
+				a_Q12[k] = int16(silk_RSHIFT_ROUND(int(a32_QA1[k]), int(QA16+1-12)))
 			}
 		} else {
 			break

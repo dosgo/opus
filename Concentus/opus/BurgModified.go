@@ -2,10 +2,10 @@ package opus
 
 const (
 	MAX_FRAME_SIZE   = 384
-	QA               = 25
+	QA25             = 25
 	N_BITS_HEAD_ROOM = 2
 	MIN_RSHIFTS      = -16
-	MAX_RSHIFTS      = 32 - QA
+	MAX_RSHIFTS      = 32 - QA25
 )
 
 var SILK_CONST_FIND_LPC_COND_FAC_32 int = 42950
@@ -87,8 +87,8 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 				x_offset = x_ptr + s*int(subfr_length)
 				x1 = -silk_LSHIFT32(int(x[x_offset+n]), 16-rshifts)
 				x2 = -silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), 16-rshifts)
-				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), QA-16)
-				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), QA-16)
+				tmp1 = silk_LSHIFT32(int(x[x_offset+n]), QA25-16)
+				tmp2 = silk_LSHIFT32(int(x[x_offset+int(subfr_length)-n-1]), QA25-16)
 				for k = 0; k < n; k++ {
 					C_first_row[k] = silk_SMLAWB(C_first_row[k], x1, int(x[x_offset+n-k-1]))
 					C_last_row[k] = silk_SMLAWB(C_last_row[k], x2, int(x[x_offset+int(subfr_length)-n+k]))
@@ -96,8 +96,8 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 					tmp1 = silk_SMLAWB(tmp1, Atmp_QA, int(x[x_offset+n-k-1]))
 					tmp2 = silk_SMLAWB(tmp2, Atmp_QA, int(x[x_offset+int(subfr_length)-n+k]))
 				}
-				tmp1 = silk_LSHIFT32(-tmp1, 32-QA-rshifts)
-				tmp2 = silk_LSHIFT32(-tmp2, 32-QA-rshifts)
+				tmp1 = silk_LSHIFT32(-tmp1, 32-QA25-rshifts)
+				tmp2 = silk_LSHIFT32(-tmp2, 32-QA25-rshifts)
 				for k = 0; k <= n; k++ {
 					CAf[k] = silk_SMLAWB(CAf[k], tmp1, int(x[x_offset+n-k]))
 					CAb[k] = silk_SMLAWB(CAb[k], tmp2, int(x[x_offset+int(subfr_length)-n+k-1]))
@@ -113,7 +113,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 				for k = 0; k < n; k++ {
 					C_first_row[k] = silk_MLA(C_first_row[k], x1, int(x[x_offset+n-k-1]))
 					C_last_row[k] = silk_MLA(C_last_row[k], x2, int(x[x_offset+int(subfr_length)-n+k]))
-					Atmp1 = silk_RSHIFT_ROUND(Af_QA[k], QA-17)
+					Atmp1 = silk_RSHIFT_ROUND(Af_QA[k], QA25-17)
 					tmp1 = silk_MLA(tmp1, int(x[x_offset+n-k-1]), Atmp1)
 					tmp2 = silk_MLA(tmp2, int(x[x_offset+int(subfr_length)-n+k]), Atmp1)
 				}
@@ -133,14 +133,14 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 		for k = 0; k < n; k++ {
 			Atmp_QA = Af_QA[k]
 			lz = silk_CLZ32(silk_abs(Atmp_QA)) - 1
-			if 32-QA < lz {
-				lz = 32 - QA
+			if 32-QA25 < lz {
+				lz = 32 - QA25
 			}
 			Atmp1 = Atmp_QA << uint(lz)
-			tmp1 = silk_ADD_LSHIFT32(tmp1, silk_SMMUL(C_last_row[n-k-1], Atmp1), 32-QA-lz)
-			tmp2 = silk_ADD_LSHIFT32(tmp2, silk_SMMUL(C_first_row[n-k-1], Atmp1), 32-QA-lz)
-			num = silk_ADD_LSHIFT32(num, silk_SMMUL(CAb[n-k], Atmp1), 32-QA-lz)
-			nrg = silk_ADD_LSHIFT32(nrg, silk_SMMUL(silk_ADD32(CAb[k+1], CAf[k+1]), Atmp1), 32-QA-lz)
+			tmp1 = silk_ADD_LSHIFT32(tmp1, silk_SMMUL(C_last_row[n-k-1], Atmp1), 32-QA25-lz)
+			tmp2 = silk_ADD_LSHIFT32(tmp2, silk_SMMUL(C_first_row[n-k-1], Atmp1), 32-QA25-lz)
+			num = silk_ADD_LSHIFT32(num, silk_SMMUL(CAb[n-k], Atmp1), 32-QA25-lz)
+			nrg = silk_ADD_LSHIFT32(nrg, silk_SMMUL(silk_ADD32(CAb[k+1], CAf[k+1]), Atmp1), 32-QA25-lz)
 		}
 		CAf[n+1] = tmp1
 		CAb[n+1] = tmp2
@@ -179,7 +179,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 			Af_QA[k] = silk_ADD_LSHIFT32(tmp1, silk_SMMUL(tmp2, rc_Q31), 1)
 			Af_QA[n-k-1] = silk_ADD_LSHIFT32(tmp2, silk_SMMUL(tmp1, rc_Q31), 1)
 		}
-		Af_QA[n] = silk_RSHIFT32(rc_Q31, 31-QA)
+		Af_QA[n] = silk_RSHIFT32(rc_Q31, 31-QA25)
 
 		if reached_max_gain != 0 {
 			for k = n + 1; k < int(D); k++ {
@@ -198,7 +198,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 
 	if reached_max_gain != 0 {
 		for k = 0; k < int(D); k++ {
-			A_Q16[k] = -silk_RSHIFT_ROUND(Af_QA[k], QA-16)
+			A_Q16[k] = -silk_RSHIFT_ROUND(Af_QA[k], QA25-16)
 		}
 		if rshifts > 0 {
 			for s = 0; s < int(nb_subfr); s++ {
@@ -217,7 +217,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 		nrg = CAf[0]
 		tmp1 = 1 << 16
 		for k = 0; k < int(D); k++ {
-			Atmp1 = silk_RSHIFT_ROUND(Af_QA[k], QA-16)
+			Atmp1 = silk_RSHIFT_ROUND(Af_QA[k], QA25-16)
 			nrg = silk_SMLAWW(nrg, CAf[k+1], Atmp1)
 			tmp1 = silk_SMLAWW(tmp1, Atmp1, Atmp1)
 			A_Q16[k] = -Atmp1
