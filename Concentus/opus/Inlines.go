@@ -1219,8 +1219,8 @@ func silk_SMLAWT(a32, b32, c32 int) int {
 }
 
 func silk_DIV32_varQ(a32, b32, Qres int) int {
-	OpusAssert(b32 != 0)
-	OpusAssert(Qres >= 0)
+	OpusAssertMsg(b32 != 0, "b32")
+	OpusAssertMsg(Qres >= 0, "Qres >= 0")
 	a_headrm := silk_CLZ32(silk_abs(a32)) - 1
 	a32_nrm := silk_LSHIFT(a32, a_headrm)
 	b_headrm := silk_CLZ32(silk_abs(b32)) - 1

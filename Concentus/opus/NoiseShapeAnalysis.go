@@ -228,8 +228,12 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		silk_bwexpander_32(AR1_Q24, psEnc.shapingLPCOrder, BWExp1_Q16)
 		pre_nrg_Q30 = silk_LPC_inverse_pred_gain_Q24(AR2_Q24, psEnc.shapingLPCOrder)
 		nrg = silk_LPC_inverse_pred_gain_Q24(AR1_Q24, psEnc.shapingLPCOrder)
-		pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Floor(0.7*float64(1<<15)))) << 1
-		psEncCtrl.GainsPre_Q14[k] = int(math.Floor(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+		//pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Floor(0.7*float64(1<<15)))) << 1
+		pre_nrg_Q30 = silk_LSHIFT32(silk_SMULWB(pre_nrg_Q30, (int(math.Floor(((0.7)*float64(1<<(15)) + 0.5))))), 1)
+
+		//psEncCtrl.GainsPre_Q14[k] = int(math.Floor(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*(1<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+
 		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
 		for i = 0; i < psEnc.shapingLPCOrder; i++ {
 			psEncCtrl.AR1_Q13[k*MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(AR1_Q24[i] >> 11))
