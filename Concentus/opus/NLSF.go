@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -191,6 +192,7 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 }
 
 func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
+	fmt.Printf("silk_NLSF_del_dec_quant\r\n")
 	const NLSF_QUANT_DEL_DEC_STATES = 128
 	const MAX_LPC_ORDER = 16
 	const NLSF_QUANT_MAX_AMPLITUDE_EXT = 10
