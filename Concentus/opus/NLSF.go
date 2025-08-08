@@ -1,6 +1,8 @@
 package opus
 
-import "math"
+import (
+	"math"
+)
 
 const (
 	MAX_STABILIZE_LOOPS   = 20

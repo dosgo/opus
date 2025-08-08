@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -159,17 +158,13 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	//strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(int64(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)<<16))
 	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(float64(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*float64(int64(1)<<(16))+0.5))
 
-	fmt.Printf("strength_Q16:%d psEncCtrl.predGain_Q16:%d\r\n", strength_Q16, psEncCtrl.predGain_Q16)
-
 	BWExp1_Q16 = silk_DIV32_varQ(((int)(float64(TuningParameters.BANDWIDTH_EXPANSION)*float64(int64(1)<<(16)) + 0.5)),
 		silk_SMLAWW(int(math.Floor(float64(1.0)*float64(int64(1)<<(16))+0.5)), strength_Q16, strength_Q16), 16)
 
 	BWExp2_Q16 = BWExp1_Q16
-	fmt.Printf("BWExp2_Q16 = BWExp1_Q16:%d\r\n", BWExp2_Q16)
+
 	delta_Q16 = silk_SMULWB(int(math.Round(1.0*float64(int64(1)<<(16)))+0.5)-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
 		int(float64(TuningParameters.LOW_RATE_BANDWIDTH_EXPANSION_DELTA)*float64(int64(1)<<(16))+0.5))
-	fmt.Printf("coding_quality_Q14:%d\r\n", psEncCtrl.coding_quality_Q14)
-	fmt.Printf("psEncCtrl.coding_quality_Q14:%d\r\n", psEncCtrl.coding_quality_Q14)
 
 	BWExp1_Q16 -= delta_Q16
 	BWExp2_Q16 += delta_Q16
@@ -237,6 +232,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		pre_nrg_Q30 = silk_LSHIFT32(silk_SMULWB(pre_nrg_Q30, (int(math.Floor(((0.7)*float64(1<<(15)) + 0.5))))), 1)
 
 		//psEncCtrl.GainsPre_Q14[k] = int(math.Floor(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+
 		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*(1<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
 
 		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)

@@ -31,7 +31,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -103,7 +102,6 @@ func silk_LPC_inverse_pred_gain(A_Q12 []int16, order int) int {
 
 func silk_LPC_inverse_pred_gain_Q24(A_Q24 []int, order int) int {
 	Atmp_QA := InitTwoDimensionalArrayInt(2, SilkConstants.SILK_MAX_ORDER_LPC)
-	fmt.Printf("A_Q24: %v\n", A_Q24)
 	currentRowIndex := order & 1
 	for k := 0; k < order; k++ {
 		Atmp_QA[currentRowIndex][k] = silk_RSHIFT32(A_Q24[k], 24-QA24)

@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -77,7 +76,6 @@ func silk_schur64(rc_Q16 []int, c []int, order int) int {
 	var k, n int
 	C := InitTwoDimensionalArrayInt(SilkConstants.SILK_MAX_ORDER_LPC+1, 2)
 	var Ctmp1_Q30, Ctmp2_Q30, rc_tmp_Q31 int
-	fmt.Printf("silk_schur64 c:" + fmt.Sprintf("%v", c))
 
 	OpusAssert(order == 6 || order == 8 || order == 10 || order == 12 || order == 14 || order == 16)
 

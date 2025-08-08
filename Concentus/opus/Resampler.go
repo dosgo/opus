@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 )
 
 const (
@@ -104,7 +103,7 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 
 	nSamples := S.Fs_in_kHz - S.inputDelay
 	delayBufPtr := S.delayBuf
-	fmt.Printf("delayBufPtr-1:%s nSamples:%d\r\n", IntSliceToMD5(delayBufPtr), S.inputDelay)
+
 	// System.arraycopy(input, input_ptr, delayBufPtr, S.inputDelay, nSamples);
 	copy(delayBufPtr[S.inputDelay:S.inputDelay+nSamples], input[input_ptr:input_ptr+nSamples])
 
@@ -116,13 +115,12 @@ func silk_resampler(S *SilkResamplerState, output []int16, output_ptr int, input
 		silk_resampler_private_IIR_FIR(S, output, output_ptr, delayBufPtr, 0, S.Fs_in_kHz)
 		silk_resampler_private_IIR_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
 	case USE_silk_resampler_private_down_FIR:
-		fmt.Printf("delayBufPtr:%s Fs_in_kHz:%d S.Fs_out_kHz:%d\r\n", IntSliceToMD5(delayBufPtr), S.Fs_in_kHz, S.Fs_out_kHz)
+
 		silk_resampler_private_down_FIR(S, output, output_ptr, delayBufPtr, 0, S.Fs_in_kHz)
 
-		fmt.Printf("silk_resampler output:%s\r\n", IntSliceToMD5(output))
 		//silk_resampler_private_down_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
 		silk_resampler_private_down_FIR(S, output, output_ptr+S.Fs_out_kHz, input, input_ptr+nSamples, inLen-S.Fs_in_kHz)
-		fmt.Printf("silk_resampler output2:%s\r\n", IntSliceToMD5(output))
+
 	default:
 		copy(output[output_ptr:output_ptr+S.Fs_in_kHz], delayBufPtr[:S.Fs_in_kHz])
 		copy(output[output_ptr+S.Fs_out_kHz:output_ptr+S.Fs_out_kHz+(inLen-S.Fs_in_kHz)], input[input_ptr+nSamples:input_ptr+nSamples+(inLen-S.Fs_in_kHz)])

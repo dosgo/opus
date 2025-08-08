@@ -588,7 +588,6 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			st.bandwidth = st.detected_bandwidth
 		}
 	}
-	fmt.Printf("lsb_depth:%d\r\n", lsb_depth)
 	celt_enc.SetLSBDepth(lsb_depth)
 	if st.mode == MODE_CELT_ONLY && st.bandwidth == OPUS_BANDWIDTH_MEDIUMBAND {
 		st.bandwidth = OPUS_BANDWIDTH_WIDEBAND

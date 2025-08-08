@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -15,7 +14,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	var rc_Q15 [MAX_FIND_PITCH_LPC_ORDER]int16
 	var A_Q24 [MAX_FIND_PITCH_LPC_ORDER]int
 	var A_Q12 [MAX_FIND_PITCH_LPC_ORDER]int16
-	fmt.Printf("silk_find_pitch_lags x:%s\r\n", IntSliceToMD5(x))
+
 	buf_len = psEnc.la_pitch + psEnc.frame_length + psEnc.ltp_mem_length
 
 	OpusAssert(buf_len >= psEnc.pitch_LPC_win_length)
@@ -31,13 +30,12 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	Wsig_ptr += psEnc.la_pitch
 	x_buf_ptr += psEnc.la_pitch
 	copy(Wsig[Wsig_ptr:], x[x_buf_ptr:x_buf_ptr+(psEnc.pitch_LPC_win_length-silk_LSHIFT(psEnc.la_pitch, 1))])
-	fmt.Printf("silk_find_pitch_lags Wsig-2:%s\r\n", IntSliceToMD5(Wsig))
+
 	Wsig_ptr += psEnc.pitch_LPC_win_length - silk_LSHIFT(psEnc.la_pitch, 1)
 	x_buf_ptr += psEnc.pitch_LPC_win_length - silk_LSHIFT(psEnc.la_pitch, 1)
 	silk_apply_sine_window(Wsig, Wsig_ptr, x, x_buf_ptr, 2, psEnc.la_pitch)
 
 	boxed_scale := BoxedValueInt{0}
-	fmt.Printf("silk_find_pitch_lags Wsig:%s\r\n", IntSliceToMD5(Wsig))
 
 	silk_autocorr(auto_corr[:], &boxed_scale, Wsig, psEnc.pitch_LPC_win_length, psEnc.pitchEstimationLPCOrder+1)
 	//	scale = boxed_scale.Val

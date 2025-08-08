@@ -1,6 +1,8 @@
 package opus
 
-import "math"
+import (
+	"math"
+)
 
 func silk_find_pred_coefs(
 	psEnc *SilkChannelEncoder,
@@ -74,9 +76,7 @@ func silk_find_pred_coefs(
 			x_ptr2 += psEnc.subfr_length
 		}
 
-		for i := 0; i < psEnc.nb_subfr*LTP_ORDER; i++ {
-			psEncCtrl.LTPCoef_Q14[i] = 0
-		}
+		MemSetLen(psEncCtrl.LTPCoef_Q14, 0, psEnc.nb_subfr*SilkConstants.LTP_ORDER)
 		psEncCtrl.LTPredCodGain_Q7 = 0
 		psEnc.sum_log_gain_Q7 = 0
 	}

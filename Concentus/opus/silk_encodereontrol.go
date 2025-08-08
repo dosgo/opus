@@ -28,6 +28,13 @@ type SilkEncoderControl struct {
 func NewSilkEncoderControl() *SilkEncoderControl {
 	s := &SilkEncoderControl{}
 	s.Gains_Q16 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	s.GainsPre_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	s.LF_shp_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	s.LTPCoef_Q14 = make([]int16, SilkConstants.LTP_ORDER*SilkConstants.MAX_NB_SUBFR)
+	s.HarmBoost_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	s.HarmShapeGain_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
+	s.Tilt_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
+
 	return s
 }
 

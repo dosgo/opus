@@ -650,6 +650,10 @@ func init() {
 	}
 	silk_NLSF_CB_WB.quantStepSize_Q16 = int16(math.Floor(0.15*65536 + 0.5))
 	silk_NLSF_CB_WB.invQuantStepSize_Q6 = int16(math.Floor(1.0/0.15*64 + 0.5))
+
+	//赋值
+	SilkTables.Silk_NLSF_CB_NB_MB = silk_NLSF_CB_NB_MB
+	SilkTables.Silk_NLSF_CB_WB = silk_NLSF_CB_WB
 }
 
 var SilkTables = struct {
