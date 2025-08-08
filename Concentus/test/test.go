@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
@@ -14,7 +16,9 @@ import (
 )
 
 func main() {
-
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 	encoder, err := opus.NewOpusEncoder(48000, 2, opus.OPUS_APPLICATION_AUDIO)
 	encoder.SetBitrate(96000)
 	encoder.SetForceMode(opus.MODE_SILK_ONLY)
@@ -73,6 +77,7 @@ func main() {
 	fmt.Printf("Time was: %+v ms\n", float64(elapsed)/1e6)
 
 }
+
 func formatSignedBytes(data []byte) string {
 	var builder strings.Builder
 	builder.WriteString("[")
