@@ -107,7 +107,6 @@ func silk_schur64(rc_Q16 []int, c []int, order int) int {
 
 		/* Get reflection coefficient: divide two Q30 values and get result in Q31 */
 		rc_tmp_Q31 = silk_DIV32_varQ(-C[k+1][0], C[0][1], 31)
-		fmt.Printf("rc_tmp_Q31:%d\r\n", rc_tmp_Q31)
 		/* Save the output */
 		rc_Q16[k] = silk_RSHIFT_ROUND(rc_tmp_Q31, 15)
 

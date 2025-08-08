@@ -122,6 +122,7 @@ func silk_stereo_LR_to_MS(
 	toMono int,
 	fs_kHz int,
 	frame_length int) {
+
 	var n, is10msFrame, denom_Q16, delta0_Q13, delta1_Q13 int
 	var sum, diff, smooth_coef_Q16, pred0_Q13, pred1_Q13 int
 	pred_Q13 := make([]int, 2)
@@ -185,21 +186,25 @@ func silk_stereo_LR_to_MS(
 	frac_Q16 = silk_SMLABB(*HP_ratio_Q14, *LP_ratio_Q14, 3)
 	frac_Q16 = silk_min(frac_Q16, int(math.Floor(1*float64(1<<16)+0.5)))
 
-	total_rate_bps -= map[bool]int{true: 1200, false: 600}[is10msFrame != 0]
+	if is10msFrame != 0 {
+		total_rate_bps -= 1200
+	} else {
+		total_rate_bps -= 600
+	}
+
 	if total_rate_bps < 1 {
 		total_rate_bps = 1
 	}
 	min_mid_rate_bps = silk_SMLABB(2000, fs_kHz, 900)
+
 	OpusAssert(min_mid_rate_bps < 32767)
 	frac_3_Q16 = silk_MUL(3, frac_Q16)
-	//	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(13*float64(1<<16)+0.5+frac_3_Q16), 16+3)
-	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(math.Floor((8+5)*(1<<(16))+0.5))+frac_3_Q16, 16+3)
+
+	mid_side_rates_bps[0] = silk_DIV32_varQ(total_rate_bps, int(math.Floor((8+5)*float64(int64(1)<<(16))+0.5))+frac_3_Q16, 16+3)
 
 	if mid_side_rates_bps[0] < min_mid_rate_bps {
 		mid_side_rates_bps[0] = min_mid_rate_bps
 		mid_side_rates_bps[1] = total_rate_bps - mid_side_rates_bps[0]
-		//	width_Q14 = silk_DIV32_varQ(silk_LSHIFT(mid_side_rates_bps[1], 1)-min_mid_rate_bps,
-		//	silk_SMULWB(int(1*float64(1<<16)+0.5+frac_3_Q16, min_mid_rate_bps), 14+2))
 
 		width_Q14 = silk_DIV32_varQ(silk_LSHIFT(mid_side_rates_bps[1], 1)-min_mid_rate_bps,
 			silk_SMULWB(int(math.Floor((1)*(1<<(16))+0.5))+frac_3_Q16, min_mid_rate_bps), 14+2)
@@ -349,7 +354,6 @@ func silk_stereo_quant_pred(
 	var i, j byte
 	var n int
 	var low_Q13, step_Q13, lvl_Q13, err_min_Q13, err_Q13, quant_pred_Q13 int
-	fmt.Printf("ix:%+v\r\n", ix)
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 3; j++ {
 			ix[i][j] = 0

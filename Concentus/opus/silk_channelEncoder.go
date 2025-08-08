@@ -747,6 +747,7 @@ func (s *SilkChannelEncoder) silk_control_SNR(TargetRate_bps int) int {
 	ret := SilkError.SILK_NO_ERROR
 	var frac_Q6 int
 	var rateTable []int
+	fmt.Printf(" TargetRate_bps -1:%d\r\n", TargetRate_bps)
 	TargetRate_bps = silk_LIMIT(TargetRate_bps, SilkConstants.MIN_TARGET_RATE_BPS, SilkConstants.MAX_TARGET_RATE_BPS)
 	if TargetRate_bps != s.TargetRate_bps {
 		s.TargetRate_bps = TargetRate_bps
@@ -764,6 +765,9 @@ func (s *SilkChannelEncoder) silk_control_SNR(TargetRate_bps int) int {
 			if TargetRate_bps <= rateTable[k] {
 				frac_Q6 = silk_DIV32(silk_LSHIFT(TargetRate_bps-rateTable[k-1], 6), rateTable[k]-rateTable[k-1])
 				s.SNR_dB_Q7 = silk_LSHIFT(int(SilkTables.Silk_SNR_table_Q1[k-1]), 6) + silk_MUL(frac_Q6, int(SilkTables.Silk_SNR_table_Q1[k]-SilkTables.Silk_SNR_table_Q1[k-1]))
+				fmt.Printf(" TargetRate_bps:%d\r\n", TargetRate_bps)
+
+				fmt.Printf(" this.SNR_dB_Q7:%d frac_Q6:%d\r\n", s.SNR_dB_Q7, frac_Q6)
 				break
 			}
 		}

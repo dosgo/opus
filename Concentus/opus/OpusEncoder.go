@@ -646,6 +646,13 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		return ret
 	}
 
+	if st.mode == MODE_SILK_ONLY && OpusBandwidthHelpers_GetOrdinal(curr_bandwidth) > OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
+		st.mode = MODE_HYBRID
+	}
+	if st.mode == MODE_HYBRID && OpusBandwidthHelpers_GetOrdinal(curr_bandwidth) <= OpusBandwidthHelpers_GetOrdinal(OPUS_BANDWIDTH_WIDEBAND) {
+		st.mode = MODE_SILK_ONLY
+	}
+
 	bytes_target = imin(max_data_bytes-redundancy_bytes, st.bitrate_bps*frame_size/(st.Fs*8)) - 1
 	data_ptr++
 	enc.enc_init(data, data_ptr, max_data_bytes-1)
@@ -697,6 +704,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		} else {
 			st.silk_mode.bitRate = total_bitRate
 		}
+
 		st.silk_mode.payloadSize_ms = 1000 * frame_size / st.Fs
 		st.silk_mode.nChannelsAPI = st.channels
 		st.silk_mode.nChannelsInternal = st.stream_channels

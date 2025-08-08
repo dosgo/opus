@@ -725,8 +725,14 @@ func silk_MUL(a32, b32 int) int {
 	return a32 * b32
 }
 
+/*
 func silk_MLA(a32, b32, c32 int) int {
 	ret := a32 + b32*c32
+	OpusAssert(int64(ret) == int64(a32)+int64(b32)*int64(c32))
+	return ret
+}*/
+func silk_MLA(a32, b32, c32 int) int {
+	ret := silk_ADD32((a32), ((b32) * (c32)))
 	OpusAssert(int64(ret) == int64(a32)+int64(b32)*int64(c32))
 	return ret
 }

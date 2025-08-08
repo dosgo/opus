@@ -54,6 +54,7 @@ func silk_Encode(
 	psRangeEnc *EntropyCoder,
 	nBytesOut *BoxedValueInt,
 	prefillFlag int) int {
+
 	ret := SilkError.SILK_NO_ERROR
 	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int
 	var nSamplesToBuffer, nSamplesToBufferMax, nBlocksOf10ms int
@@ -274,7 +275,10 @@ func silk_Encode(
 			OpusAssert(encControl.nChannelsInternal == 1 || psEnc.state_Fxx[1].inputBufIx == psEnc.state_Fxx[1].frame_length)
 
 			if psEnc.state_Fxx[0].nFramesEncoded == 0 && prefillFlag == 0 {
-				iCDF := []int16{0, int16(256 - (256 >> ((psEnc.state_Fxx[0].nFramesPerPacket + 1) * encControl.nChannelsInternal)))}
+				iCDF := make([]int16, 2)
+				iCDF[0] = int16(256 - silk_RSHIFT(256, (psEnc.state_Fxx[0].nFramesPerPacket+1)*encControl.nChannelsInternal))
+
+				//iCDF := []int16{0, int16(256 - (256 >> ((psEnc.state_Fxx[0].nFramesPerPacket + 1) * encControl.nChannelsInternal)))}
 				psRangeEnc.enc_icdf(0, iCDF, 8)
 
 				for n := 0; n < encControl.nChannelsInternal; n++ {
@@ -350,7 +354,7 @@ func silk_Encode(
 			}
 
 			if encControl.nChannelsInternal == 2 {
-				fmt.Printf("psEnc.sStereo.mid_only_flags:%v", psEnc.sStereo.mid_only_flags)
+
 				midOnlyFlag := psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]
 				silk_stereo_LR_to_MS(
 					psEnc.sStereo,
@@ -426,6 +430,7 @@ func silk_Encode(
 					channelRate_bps = TargetRate_bps
 				} else {
 					channelRate_bps = MStargetRates_bps[n]
+
 					if n == 0 && MStargetRates_bps[1] > 0 {
 						useCBR = 0
 						maxBits -= encControl.maxBits / (tot_blocks * 2)

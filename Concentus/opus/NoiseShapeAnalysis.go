@@ -104,8 +104,9 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 
 	SNR_adj_dB_Q7 = psEnc.SNR_dB_Q7
 	psEncCtrl.input_quality_Q14 = (psEnc.input_quality_bands_Q15[0] + psEnc.input_quality_bands_Q15[1]) >> 2
-	psEncCtrl.coding_quality_Q14 = silk_sigm_Q15((SNR_adj_dB_Q7-(20<<7))>>4) >> 1
+	//psEncCtrl.coding_quality_Q14 = silk_sigm_Q15((SNR_adj_dB_Q7-(20<<7))>>4) >> 1
 
+	psEncCtrl.coding_quality_Q14 = silk_RSHIFT(silk_sigm_Q15(silk_RSHIFT_ROUND(SNR_adj_dB_Q7-int(math.Floor(20.0*float64(int64(1)<<(7))+0.5)), 4)), 1)
 	if psEnc.useCBR == 0 {
 		b_Q8 = (1 << 8) - psEnc.speech_activity_Q8
 		b_Q8 = silk_SMULWB(b_Q8<<8, b_Q8)
@@ -155,13 +156,20 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		SNR_adj_dB_Q7 = silk_SMLAWB(SNR_adj_dB_Q7, int(TuningParameters.SPARSE_SNR_INCR_dB)<<15, psEncCtrl.sparseness_Q8-(1<<7))
 	}
 
-	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)<<16)
+	//strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(int64(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)<<16))
+	strength_Q16 = silk_SMULWB(psEncCtrl.predGain_Q16, int(float64(TuningParameters.FIND_PITCH_WHITE_NOISE_FRACTION)*float64(int64(1)<<(16))+0.5))
 
-	BWExp1_Q16 = silk_DIV32_varQ(int((TuningParameters.BANDWIDTH_EXPANSION)*(1<<(16))+0.5),
-		silk_SMLAWW(int(math.Floor(1.0*(1<<(16))+0.5)), strength_Q16, strength_Q16), 16)
+	fmt.Printf("strength_Q16:%d psEncCtrl.predGain_Q16:%d\r\n", strength_Q16, psEncCtrl.predGain_Q16)
+
+	BWExp1_Q16 = silk_DIV32_varQ(((int)(float64(TuningParameters.BANDWIDTH_EXPANSION)*float64(int64(1)<<(16)) + 0.5)),
+		silk_SMLAWW(int(math.Floor(float64(1.0)*float64(int64(1)<<(16))+0.5)), strength_Q16, strength_Q16), 16)
+
 	BWExp2_Q16 = BWExp1_Q16
-	delta_Q16 = silk_SMULWB(int(math.Floor((1.0)*(1<<(16))+0.5))-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
-		int((TuningParameters.LOW_RATE_BANDWIDTH_EXPANSION_DELTA)*(1<<(16))+0.5))
+	fmt.Printf("BWExp2_Q16 = BWExp1_Q16:%d\r\n", BWExp2_Q16)
+	delta_Q16 = silk_SMULWB(int(math.Round(1.0*float64(int64(1)<<(16)))+0.5)-silk_SMULBB(3, psEncCtrl.coding_quality_Q14),
+		int(float64(TuningParameters.LOW_RATE_BANDWIDTH_EXPANSION_DELTA)*float64(int64(1)<<(16))+0.5))
+	fmt.Printf("coding_quality_Q14:%d\r\n", psEncCtrl.coding_quality_Q14)
+	fmt.Printf("psEncCtrl.coding_quality_Q14:%d\r\n", psEncCtrl.coding_quality_Q14)
 
 	BWExp1_Q16 -= delta_Q16
 	BWExp2_Q16 += delta_Q16
@@ -190,20 +198,16 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			silk_warped_autocorr(auto_corr, &scale_boxed, x_windowed, warping_Q16, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 		} else {
 			// silk_autocorr(x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
-			fmt.Printf("silk_autocorr -2: %s scale:%d psEnc.shapeWinLength:%d psEnc.shapingLPCOrder:%d\n", IntSliceToMD5(x_windowed), scale, psEnc.shapeWinLength, psEnc.shapingLPCOrder)
 			silk_autocorr(auto_corr, &scale_boxed, x_windowed, psEnc.shapeWinLength, psEnc.shapingLPCOrder+1)
-			fmt.Printf("silk_autocorr -3: %v\n", auto_corr)
 		}
 		scale = scale_boxed.Val
 		auto_corr[0] = silk_ADD32(auto_corr[0], silk_max_32(silk_SMULWB(silk_RSHIFT(auto_corr[0], 4),
 			(int(math.Floor(float64(TuningParameters.SHAPE_WHITE_NOISE_FRACTION)*float64(int64(1)<<(20))+0.5)))), 1))
 
 		nrg = silk_schur64(refl_coef_Q16, auto_corr, psEnc.shapingLPCOrder)
-		fmt.Printf("silk_schur64 : %v psEnc.shapingLPCOrder:%d\r\n", auto_corr, psEnc.shapingLPCOrder)
+
 		OpusAssert(nrg >= 0)
 		silk_k2a_Q16(AR2_Q24, refl_coef_Q16, psEnc.shapingLPCOrder)
-		fmt.Printf("AR2_Q24 -1: %v\n", AR2_Q24)
-		fmt.Printf("refl_coef_Q16 -1: %v\n", refl_coef_Q16)
 		Qnrg = -scale
 		OpusAssert(Qnrg >= -12)
 		OpusAssert(Qnrg <= 30)
