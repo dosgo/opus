@@ -1,5 +1,10 @@
 package opus
 
+import (
+	"fmt"
+	"math"
+)
+
 func MemSetInt(array []int, value, length int) {
 	for i := 0; i < length; i++ {
 		array[i] = value
@@ -69,16 +74,16 @@ func silk_schur(rc_Q15 []int16, c []int, order int) int {
 }
 
 func silk_schur64(rc_Q16 []int, c []int, order int) int {
-	k, n := 0, 0
-	C := InitTwoDimensionalArrayInt(SILK_MAX_ORDER_LPC+1, 2)
-	Ctmp1_Q30, Ctmp2_Q30, rc_tmp_Q31 := 0, 0, 0
+	var k, n int
+	C := InitTwoDimensionalArrayInt(SilkConstants.SILK_MAX_ORDER_LPC+1, 2)
+	var Ctmp1_Q30, Ctmp2_Q30, rc_tmp_Q31 int
+	fmt.Printf("silk_schur64 c:" + fmt.Sprintf("%v", c))
 
-	if !(order == 6 || order == 8 || order == 10 || order == 12 || order == 14 || order == 16) {
-		panic("OpusAssert failed")
-	}
+	OpusAssert(order == 6 || order == 8 || order == 10 || order == 12 || order == 14 || order == 16)
 
+	/* Check for invalid input */
 	if c[0] <= 0 {
-		MemSetInt(rc_Q16, 0, order)
+		MemSetLen(rc_Q16, 0, order)
 		return 0
 	}
 
@@ -88,27 +93,34 @@ func silk_schur64(rc_Q16 []int, c []int, order int) int {
 	}
 
 	for k = 0; k < order; k++ {
-		if silk_abs_int(C[k+1][0]) >= C[0][1] {
+		/* Check that we won't be getting an unstable rc, otherwise stop here. */
+		if silk_abs_int32(C[k+1][0]) >= C[0][1] {
 			if C[k+1][0] > 0 {
-				rc_Q16[k] = -SILK_CONST_0_99_Q16
+				rc_Q16[k] = -int(math.Floor((.99)*float64(1<<(16)) + 0.5))
 			} else {
-				rc_Q16[k] = SILK_CONST_0_99_Q16
+				rc_Q16[k] = int(math.Floor((.99)*float64(1<<(16)) + 0.5))
+
 			}
 			k++
 			break
 		}
 
+		/* Get reflection coefficient: divide two Q30 values and get result in Q31 */
 		rc_tmp_Q31 = silk_DIV32_varQ(-C[k+1][0], C[0][1], 31)
+		fmt.Printf("rc_tmp_Q31:%d\r\n", rc_tmp_Q31)
+		/* Save the output */
 		rc_Q16[k] = silk_RSHIFT_ROUND(rc_tmp_Q31, 15)
 
+		/* Update correlations */
 		for n = 0; n < order-k; n++ {
 			Ctmp1_Q30 = C[n+k+1][0]
 			Ctmp2_Q30 = C[n][1]
+
+			/* Multiply and add the highest int32 */
 			C[n+k+1][0] = Ctmp1_Q30 + silk_SMMUL(silk_LSHIFT(Ctmp2_Q30, 1), rc_tmp_Q31)
 			C[n][1] = Ctmp2_Q30 + silk_SMMUL(silk_LSHIFT(Ctmp1_Q30, 1), rc_tmp_Q31)
 		}
 	}
-
 	for ; k < order; k++ {
 		rc_Q16[k] = 0
 	}

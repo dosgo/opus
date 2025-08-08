@@ -1,9 +1,5 @@
 package opus
 
-import (
-	"fmt"
-)
-
 const QC = 10
 const QS = 14
 
@@ -74,7 +70,7 @@ func _celt_autocorrBak(x []int16, ac []int, lag int, n int) int {
 }
 
 func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
-	fmt.Printf("_celt_autocorr x: %s\r\n", IntSliceToMD5(x))
+
 	//panic("111")
 	var d int
 	var i, k int
@@ -106,9 +102,9 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 	} else {
 		shift = 0
 	}
-	fmt.Printf("pitch_xcorr2 -2: %s\r\n", IntSliceToMD5(xptr))
+
 	pitch_xcorr2(xptr, xptr, ac, fastN, lag+1)
-	fmt.Printf("pitch_xcorr2 -1: %s shift:%d fastN:%d\n", IntSliceToMD5(xptr), shift, fastN)
+
 	for k = 0; k <= lag; k++ {
 		i = k + fastN
 		d = 0
@@ -117,10 +113,12 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 		}
 		ac[k] += d
 	}
+
 	shift = 2 * shift
 	if shift <= 0 {
 		ac[0] += SHL32(1, -shift)
 	}
+
 	if ac[0] < 268435456 {
 		var shift2 = 29 - EC_ILOG(int64(ac[0]))
 		for i = 0; i <= lag; i++ {
@@ -132,12 +130,12 @@ func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 		if ac[0] >= 1073741824 {
 			shift2++
 		}
+
 		for i = 0; i <= lag; i++ {
-			ac[i] = SHR32(ac[i], shift2)
+			ac[i] = int(SHR32(int(ac[i]), int(shift2)))
 		}
 		shift += shift2
 	}
-
 	return shift
 }
 

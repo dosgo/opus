@@ -106,6 +106,10 @@ func SHR32(a, shift int) int {
 	return a >> shift
 }
 
+func SHR321(a, shift int32) int32 {
+	return a >> shift
+}
+
 func SHL32(a, shift int) int {
 	return a << shift
 }
@@ -752,7 +756,7 @@ func silk_ADD32_ovflwLong(a, b int64) int {
 }
 
 func silk_SUB32_ovflw(a, b int) int {
-	return int(int64(a) - int64(b))
+	return int(a - b)
 }
 
 func silk_MLA_ovflw(a32, b32, c32 int) int {
@@ -773,7 +777,7 @@ func silk_SMULBB(a32, b32 int) int {
 }
 
 func silk_SMULWB(a32, b32 int) int {
-	return int((int64(a32) * int64(b32)) >> 16)
+	return int((int64(a32) * int64(int16(b32))) >> 16)
 }
 
 func silk_SMLABB(a32, b32, c32 int) int {
@@ -948,7 +952,7 @@ func silk_LSHIFT_ovflw(a, shift int) int {
 
 func silk_LSHIFT_SAT32(a, shift int) int {
 	limit1 := silk_RSHIFT32(math.MinInt32, shift)
-	limit2 := silk_RSHIFT32(math.MinInt32, shift)
+	limit2 := silk_RSHIFT32(math.MaxInt32, shift)
 	if a < limit1 {
 		a = limit1
 	} else if a > limit2 {
@@ -1217,25 +1221,53 @@ func silk_SMMUL(a32, b32 int) int {
 func silk_SMLAWT(a32, b32, c32 int) int {
 	return a32 + ((b32 >> 16) * (c32 >> 16)) + ((b32 & 0x0000FFFF) * (c32 >> 16) >> 16)
 }
-
+func silk_abs_int32(a int) int {
+	return (a ^ (a >> 31)) - (a >> 31)
+}
 func silk_DIV32_varQ(a32, b32, Qres int) int {
-	OpusAssertMsg(b32 != 0, "b32")
-	OpusAssertMsg(Qres >= 0, "Qres >= 0")
-	a_headrm := silk_CLZ32(silk_abs(a32)) - 1
-	a32_nrm := silk_LSHIFT(a32, a_headrm)
-	b_headrm := silk_CLZ32(silk_abs(b32)) - 1
-	b32_nrm := silk_LSHIFT(b32, b_headrm)
-	b32_inv := silk_DIV32_16(2147483647>>2, int(silk_RSHIFT(b32_nrm, 16)))
-	result := silk_SMULWB(a32_nrm, b32_inv)
+
+	var a_headrm, b_headrm, lshift int
+	var b32_inv, a32_nrm, b32_nrm, result int
+
+	OpusAssert(b32 != 0)
+	OpusAssert(Qres >= 0)
+
+	/* Compute number of bits head room and normalize inputs */
+	a_headrm = silk_CLZ32(silk_abs(a32)) - 1
+	a32_nrm = silk_LSHIFT(a32, a_headrm)
+	/* Q: a_headrm                  */
+	b_headrm = silk_CLZ32(silk_abs(b32)) - 1
+	b32_nrm = silk_LSHIFT(b32, b_headrm)
+	/* Q: b_headrm                  */
+
+	/* Inverse of b32, with 14 bits of precision */
+	b32_inv = silk_DIV32_16(math.MaxInt32>>2, silk_RSHIFT(b32_nrm, 16))
+	/* Q: 29 + 16 - b_headrm        */
+
+	/* First approximation */
+	result = silk_SMULWB(a32_nrm, b32_inv)
+	/* Q: 29 + a_headrm - b_headrm  */
+
+	/* Compute residual by subtracting product of denominator and first approximation */
+	/* It's OK to overflow because the final value of a32_nrm should always be small */
 	a32_nrm = silk_SUB32_ovflw(a32_nrm, silk_LSHIFT_ovflw(silk_SMMUL(b32_nrm, result), 3))
+	/* Q: a_headrm   */
+
+	/* Refinement */
 	result = silk_SMLAWB(result, a32_nrm, b32_inv)
-	lshift := 29 + a_headrm - b_headrm - Qres
+	/* Q: 29 + a_headrm - b_headrm  */
+
+	/* Convert to Qres domain */
+	lshift = 29 + a_headrm - b_headrm - Qres
 	if lshift < 0 {
 		return silk_LSHIFT_SAT32(result, -lshift)
 	} else if lshift < 32 {
 		return silk_RSHIFT(result, lshift)
+	} else {
+		/* Avoid undefined result */
+		return 0
 	}
-	return 0
+
 }
 
 func silk_INVERSE32_varQ(b32, Qres int) int {
@@ -1446,6 +1478,23 @@ func EC_MINI(a, b int64) int64 {
 }
 
 func EC_ILOG(x int64) int {
+	if x == 0 {
+		return 1
+	}
+	x |= (x >> 1)
+	x |= (x >> 2)
+	x |= (x >> 4)
+	x |= (x >> 8)
+	x |= (x >> 16)
+	y := x - ((x >> 1) & 0x55555555)
+	y = (((y >> 2) & 0x33333333) + (y & 0x33333333))
+	y = (((y >> 4) + y) & 0x0f0f0f0f)
+	y += (y >> 8)
+	y += (y >> 16)
+	y = (y & 0x0000003f)
+	return int(y)
+}
+func EC_ILOGNEw(x int64) int {
 	if x == 0 {
 		return 1
 	}

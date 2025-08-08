@@ -195,7 +195,8 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			fmt.Printf("silk_autocorr -3: %v\n", auto_corr)
 		}
 		scale = scale_boxed.Val
-		auto_corr[0] = silk_ADD32(auto_corr[0], silk_max_32(silk_SMULWB(auto_corr[0]>>4, int(TuningParameters.SHAPE_WHITE_NOISE_FRACTION)<<20), 1))
+		auto_corr[0] = silk_ADD32(auto_corr[0], silk_max_32(silk_SMULWB(silk_RSHIFT(auto_corr[0], 4),
+			(int(math.Floor(float64(TuningParameters.SHAPE_WHITE_NOISE_FRACTION)*float64(int64(1)<<(20))+0.5)))), 1))
 
 		nrg = silk_schur64(refl_coef_Q16, auto_corr, psEnc.shapingLPCOrder)
 		fmt.Printf("silk_schur64 : %v psEnc.shapingLPCOrder:%d\r\n", auto_corr, psEnc.shapingLPCOrder)
