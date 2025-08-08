@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -265,24 +266,42 @@ func silk_stereo_LR_to_MS(
 	pred1_Q13 = -int(state.pred_prev_Q13[1])
 	w_Q24 = silk_LSHIFT(int(state.width_prev_Q14), 10)
 	denom_Q16 = silk_DIV32_16(1<<16, SilkConstants.STEREO_INTERP_LEN_MS*fs_kHz)
+	//delta0_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[0]-int(state.pred_prev_Q13[0]), denom_Q16), 16)
 	delta0_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[0]-int(state.pred_prev_Q13[0]), denom_Q16), 16)
 	delta1_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[1]-int(state.pred_prev_Q13[1]), denom_Q16), 16)
+	fmt.Printf("state.pred_prev_Q13:%+v\r\n", state.pred_prev_Q13)
+	fmt.Printf("pred_Q13:%+v\r\n", pred_Q13)
+	fmt.Printf("denom_Q16:%d\r\n", denom_Q16)
 	deltaw_Q24 = silk_LSHIFT(silk_SMULWB(width_Q14-int(state.width_prev_Q14), denom_Q16), 10)
+	fmt.Printf("side:%s\r\n", IntSliceToMD5(side))
+	fmt.Printf("x1:%s\r\n", IntSliceToMD5(x1))
+	fmt.Printf("deltaw_Q24:%d\r\n", deltaw_Q24)
+	fmt.Printf("delta0_Q13:%d\r\n", delta0_Q13)
+	fmt.Printf("delta1_Q13:%d\r\n", delta1_Q13)
+	fmt.Printf("mid:%d\r\n", mid)
+	fmt.Printf("w_Q24:%d\r\n", w_Q24)
 	for n = 0; n < SilkConstants.STEREO_INTERP_LEN_MS*fs_kHz; n++ {
 		pred0_Q13 += delta0_Q13
 		pred1_Q13 += delta1_Q13
 		w_Q24 += deltaw_Q24
-		sum = silk_LSHIFT(silk_ADD_LSHIFT(int(x1[mid+n])+int(x1[mid+n+2]), int(x1[mid+n+1]), 1), 9)
+		//dosgo int32
+		sum = int(int32(silk_LSHIFT(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(x1[mid+n+1]), 1), 9)))
+
+		/* Q11 */
 		sum = silk_SMLAWB(silk_SMULWB(w_Q24, int(side[n+1])), sum, pred0_Q13)
+		//fmt.Printf("sum:%d\r\n", sum)
+		/* Q8  */
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[mid+n+1]), 11), pred1_Q13)
+		//fmt.Printf("sum:%d\r\n", sum)
+		/* Q8  */
 		x2[x2_ptr+n-1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
 	}
-
+	fmt.Printf("x2:%s\r\n", IntSliceToMD5(x2))
 	pred0_Q13 = -pred_Q13[0]
 	pred1_Q13 = -pred_Q13[1]
 	w_Q24 = silk_LSHIFT(width_Q14, 10)
 	for n = SilkConstants.STEREO_INTERP_LEN_MS * fs_kHz; n < frame_length; n++ {
-		sum = silk_LSHIFT(silk_ADD_LSHIFT(int(x1[mid+n])+int(x1[mid+n+2]), int(x1[mid+n+1]), 1), 9)
+		sum = int(int32(silk_LSHIFT(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(int32(x1[mid+n+1])), 1), 9)))
 		sum = silk_SMLAWB(silk_SMULWB(w_Q24, int(side[n+1])), sum, pred0_Q13)
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[mid+n+1]), 11), pred1_Q13)
 		x2[x2_ptr+n-1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
@@ -355,7 +374,7 @@ func silk_stereo_quant_pred(
 
 	for n = 0; n < 2; n++ {
 		done := false
-		err_min_Q13 = math.MinInt32
+		err_min_Q13 = math.MaxInt32
 		for i = 0; !done && i < byte(SilkConstants.STEREO_QUANT_TAB_SIZE)-1; i++ {
 			low_Q13 = int(SilkTables.Silk_stereo_pred_quant_Q13[i])
 			step_Q13 = silk_SMULWB(int(SilkTables.Silk_stereo_pred_quant_Q13[i+1])-low_Q13,
@@ -369,6 +388,7 @@ func silk_stereo_quant_pred(
 					quant_pred_Q13 = lvl_Q13
 					(ix)[n][0] = i
 					(ix)[n][1] = j
+					//fmt.Printf("ixdddd\r\n'")
 				} else {
 					done = true
 				}

@@ -329,6 +329,7 @@ class Stereo {
             pred_Q13[1] = Inlines.silk_RSHIFT(Inlines.silk_SMULBB(state.smth_width_Q14, pred_Q13[1]), 14);
             silk_stereo_quant_pred(pred_Q13, ix);
             width_Q14 = state.smth_width_Q14;
+            System.out.println(" pred_Q13 not 0");
         }
 
         /* Make sure to keep on encoding until the tapered output has been transmitted */
@@ -357,6 +358,7 @@ class Stereo {
         delta0_Q13 = 0 - Inlines.silk_RSHIFT_ROUND(Inlines.silk_SMULBB(pred_Q13[0] - state.pred_prev_Q13[0], denom_Q16), 16);
         delta1_Q13 = 0 - Inlines.silk_RSHIFT_ROUND(Inlines.silk_SMULBB(pred_Q13[1] - state.pred_prev_Q13[1], denom_Q16), 16);
         deltaw_Q24 = Inlines.silk_LSHIFT(Inlines.silk_SMULWB(width_Q14 - state.width_prev_Q14, denom_Q16), 10);
+
         for (n = 0; n < SilkConstants.STEREO_INTERP_LEN_MS * fs_kHz; n++) {
             pred0_Q13 += delta0_Q13;
             pred1_Q13 += delta1_Q13;

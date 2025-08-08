@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -202,6 +203,8 @@ func silk_Encode(
 				0,
 				nSamplesFromInput)
 
+			fmt.Printf("silk_resampler psEnc.state_Fxx[0].inputBuf md5:%+v \r\n", (psEnc.state_Fxx[0].inputBuf))
+
 			psEnc.state_Fxx[0].inputBufIx += nSamplesToBuffer
 
 			nSamplesToBuffer = psEnc.state_Fxx[1].frame_length - psEnc.state_Fxx[1].inputBufIx
@@ -218,6 +221,8 @@ func silk_Encode(
 				buf,
 				0,
 				nSamplesFromInput)
+
+			fmt.Printf("silk_resampler psEnc.state_Fxx[1].inputBuf 1 md5:%+v \r\n", (psEnc.state_Fxx[1].inputBuf))
 
 			psEnc.state_Fxx[1].inputBufIx += nSamplesToBuffer
 		} else if encControl.nChannelsAPI == 2 && encControl.nChannelsInternal == 1 {
@@ -355,6 +360,7 @@ func silk_Encode(
 			if encControl.nChannelsInternal == 2 {
 
 				midOnlyFlag := psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]
+
 				silk_stereo_LR_to_MS(
 					psEnc.sStereo,
 					psEnc.state_Fxx[0].inputBuf,
@@ -369,6 +375,8 @@ func silk_Encode(
 					encControl.toMono,
 					psEnc.state_Fxx[0].fs_kHz,
 					psEnc.state_Fxx[0].frame_length)
+				fmt.Printf("silk_stereo_LR_to_MS psEnc.state_Fxx[0].inputBuf:%+v\r\n", psEnc.state_Fxx[0].inputBuf)
+				fmt.Printf("silk_stereo_LR_to_MS psEnc.state_Fxx[1].inputBuf:%+v\r\n", psEnc.state_Fxx[1].inputBuf)
 
 				psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded] = midOnlyFlag
 

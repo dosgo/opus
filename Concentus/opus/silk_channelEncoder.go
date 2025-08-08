@@ -772,7 +772,7 @@ func (s *SilkChannelEncoder) silk_control_SNR(TargetRate_bps int) int {
 }
 
 func (s *SilkChannelEncoder) silk_encode_do_VAD() {
-	fmt.Printf("silk_encode_do_VAD\r\n")
+
 	fmt.Printf("silk_encode_do_VAD -1 s.inputBuf:%+v\r\n", s.inputBuf)
 	silk_VAD_GetSA_Q8(s, s.inputBuf[:], 1)
 	fmt.Printf("silk_encode_do_VAD s.inputBuf:%+v\r\n", s.inputBuf)

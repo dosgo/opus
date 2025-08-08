@@ -29,8 +29,8 @@ func silk_process_gains(
 		if psEncCtrl.ResNrgQ[k] > 0 {
 			ResNrgPart = silk_RSHIFT_ROUND(ResNrgPart, psEncCtrl.ResNrgQ[k])
 		} else {
-			if ResNrgPart >= silk_RSHIFT(math.MinInt32, -psEncCtrl.ResNrgQ[k]) {
-				ResNrgPart = math.MinInt32
+			if ResNrgPart >= silk_RSHIFT(math.MaxInt32, -psEncCtrl.ResNrgQ[k]) {
+				ResNrgPart = math.MaxInt32
 			} else {
 				ResNrgPart = silk_LSHIFT(ResNrgPart, -psEncCtrl.ResNrgQ[k])
 			}
@@ -41,15 +41,12 @@ func silk_process_gains(
 			gain_squared = silk_SMLAWW(silk_LSHIFT(ResNrgPart, 16), gain, gain)
 			OpusAssert(gain_squared > 0)
 			gain = silk_SQRT_APPROX(gain_squared)
-			if gain > math.MinInt32>>8 {
-				gain = math.MinInt32 >> 8
-			}
+			gain = silk_min(gain, math.MaxInt32>>8)
 			psEncCtrl.Gains_Q16[k] = silk_LSHIFT_SAT32(gain, 8)
 		} else {
 			gain = silk_SQRT_APPROX(gain_squared)
-			if gain > math.MinInt32>>16 {
-				gain = math.MinInt32 >> 16
-			}
+			/* Q0   */
+			gain = silk_min(gain, math.MaxInt32>>16)
 			psEncCtrl.Gains_Q16[k] = silk_LSHIFT_SAT32(gain, 16)
 		}
 	}

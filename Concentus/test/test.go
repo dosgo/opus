@@ -55,7 +55,7 @@ func main() {
 		fmt.Printf("imput md5:%s\r\n", ByteSliceToMD5(inBuf))
 		//encoder.PrintAllFields()
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
-
+		os.Exit(0)
 		//encoder.ResetState()
 
 		if i == 4 {
