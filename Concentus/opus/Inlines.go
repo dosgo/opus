@@ -944,6 +944,10 @@ func silk_LSHIFT32(a, shift int) int {
 	return a << shift
 }
 
+func silk_LSHIFT32_32(a, shift int) int32 {
+	return int32(a << shift)
+}
+
 func silk_LSHIFT64(a int64, shift int) int64 {
 	return a << shift
 }

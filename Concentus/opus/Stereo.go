@@ -285,7 +285,7 @@ func silk_stereo_LR_to_MS(
 		pred1_Q13 += delta1_Q13
 		w_Q24 += deltaw_Q24
 		//dosgo int32
-		sum = int(int32(silk_LSHIFT(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(x1[mid+n+1]), 1), 9)))
+		sum = int((silk_LSHIFT32_32(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(x1[mid+n+1]), 1), 9)))
 
 		/* Q11 */
 		sum = silk_SMLAWB(silk_SMULWB(w_Q24, int(side[n+1])), sum, pred0_Q13)
@@ -301,7 +301,7 @@ func silk_stereo_LR_to_MS(
 	pred1_Q13 = -pred_Q13[1]
 	w_Q24 = silk_LSHIFT(width_Q14, 10)
 	for n = SilkConstants.STEREO_INTERP_LEN_MS * fs_kHz; n < frame_length; n++ {
-		sum = int(int32(silk_LSHIFT(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(int32(x1[mid+n+1])), 1), 9)))
+		sum = int((silk_LSHIFT32_32(silk_ADD_LSHIFT(int(int32(x1[mid+n])+int32(x1[mid+n+2])), int(int32(x1[mid+n+1])), 1), 9)))
 		sum = silk_SMLAWB(silk_SMULWB(w_Q24, int(side[n+1])), sum, pred0_Q13)
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[mid+n+1]), 11), pred1_Q13)
 		x2[x2_ptr+n-1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
@@ -336,7 +336,7 @@ func silk_stereo_MS_to_LR(
 	for n = 0; n < SilkConstants.STEREO_INTERP_LEN_MS*fs_kHz; n++ {
 		pred0_Q13 += delta0_Q13
 		pred1_Q13 += delta1_Q13
-		sum = silk_LSHIFT(silk_ADD_LSHIFT(int(x1[x1_ptr+n])+int(x1[x1_ptr+n+2]), int(x1[x1_ptr+n+1]), 1), 9)
+		sum = int((silk_LSHIFT32_32(silk_ADD_LSHIFT(int(int32(x1[x1_ptr+n])+int32(x1[x1_ptr+n+2])), int(x1[x1_ptr+n+1]), 1), 9)))
 		sum = silk_SMLAWB(silk_LSHIFT(int(x2[x2_ptr+n+1]), 8), sum, pred0_Q13)
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[x1_ptr+n+1]), 11), pred1_Q13)
 		x2[x2_ptr+n+1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
@@ -344,7 +344,7 @@ func silk_stereo_MS_to_LR(
 	pred0_Q13 = pred_Q13[0]
 	pred1_Q13 = pred_Q13[1]
 	for n = SilkConstants.STEREO_INTERP_LEN_MS * fs_kHz; n < frame_length; n++ {
-		sum = silk_LSHIFT(silk_ADD_LSHIFT(int(x1[x1_ptr+n])+int(x1[x1_ptr+n+2]), int(x1[x1_ptr+n+1]), 1), 9)
+		sum = int(silk_LSHIFT32_32(silk_ADD_LSHIFT(int(int32(x1[x1_ptr+n])+int32(x1[x1_ptr+n+2])), int(x1[x1_ptr+n+1]), 1), 9))
 		sum = silk_SMLAWB(silk_LSHIFT(int(x2[x2_ptr+n+1]), 8), sum, pred0_Q13)
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[x1_ptr+n+1]), 11), pred1_Q13)
 		x2[x2_ptr+n+1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
