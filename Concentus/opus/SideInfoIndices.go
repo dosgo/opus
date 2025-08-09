@@ -5,7 +5,7 @@ import "bytes"
 type SideInfoIndices struct {
 	GainsIndices      []byte
 	LTPIndex          []byte
-	NLSFIndices       []byte
+	NLSFIndices       []int8
 	lagIndex          int16
 	contourIndex      int8
 	signalType        byte
@@ -20,13 +20,15 @@ func NewSideInfoIndices() *SideInfoIndices {
 	obj := &SideInfoIndices{}
 	obj.GainsIndices = make([]byte, SilkConstants.MAX_NB_SUBFR)
 	obj.LTPIndex = make([]byte, SilkConstants.MAX_NB_SUBFR)
-	obj.NLSFIndices = make([]byte, SilkConstants.MAX_LPC_ORDER+1)
+	obj.NLSFIndices = make([]int8, SilkConstants.MAX_LPC_ORDER+1)
 	return obj
 }
 func (si *SideInfoIndices) Reset() {
 	copy(si.GainsIndices, bytes.Repeat([]byte{0}, len(si.GainsIndices)))
 	copy(si.LTPIndex, bytes.Repeat([]byte{0}, len(si.LTPIndex)))
-	copy(si.NLSFIndices, bytes.Repeat([]byte{0}, len(si.NLSFIndices)))
+	for i := range si.NLSFIndices {
+		si.NLSFIndices[i] = 0
+	}
 	si.lagIndex = 0
 	si.contourIndex = 0
 	si.signalType = 0

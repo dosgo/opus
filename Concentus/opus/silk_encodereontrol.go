@@ -34,7 +34,8 @@ func NewSilkEncoderControl() *SilkEncoderControl {
 	s.HarmBoost_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
 	s.HarmShapeGain_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
 	s.Tilt_Q14 = make([]int, SilkConstants.MAX_NB_SUBFR)
-
+	s.PredCoef_Q12 = InitTwoDimensionalArrayShort(2, SilkConstants.MAX_LPC_ORDER)
+	s.pitchL = make([]int, SilkConstants.MAX_NB_SUBFR)
 	return s
 }
 

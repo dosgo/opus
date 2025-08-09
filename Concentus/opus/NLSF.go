@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -68,7 +67,7 @@ func silk_NLSF_VQ_weights_laroia(pNLSFW_Q_OUT []int16, pNLSF_Q15 []int16, D int)
 	OpusAssert(pNLSFW_Q_OUT[D-1] > 0)
 }
 
-func silk_NLSF_residual_dequant(x_Q10 []int16, indices []byte, indices_ptr int, pred_coef_Q8 []int16, quant_step_size_Q16 int, order int16) {
+func silk_NLSF_residual_dequant(x_Q10 []int16, indices []int8, indices_ptr int, pred_coef_Q8 []int16, quant_step_size_Q16 int, order int16) {
 	var pred_Q10, out_Q10 int
 
 	out_Q10 = 0
@@ -166,7 +165,7 @@ func silk_NLSF_stabilize(NLSF_Q15 []int16, NDeltaMin_Q15 []int16, L int) {
 	}
 }
 
-func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCodebook) {
+func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []int8, psNLSF_CB *NLSFCodebook) {
 	pred_Q8 := make([]int16, psNLSF_CB.order)
 	ec_ix := make([]int16, psNLSF_CB.order)
 	res_Q10 := make([]int16, psNLSF_CB.order)
@@ -191,14 +190,8 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 	silk_NLSF_stabilize(pNLSF_Q15, psNLSF_CB.deltaMin_Q15, int(psNLSF_CB.order))
 }
 
-func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
-	fmt.Printf("silk_NLSF_del_dec_quant indices md5:%s \r\n", ByteSliceToMD5(indices))
-
-	fmt.Printf("silk_NLSF_del_dec_quant w_Q5:%+v \r\n", w_Q5)
-	fmt.Printf("silk_NLSF_del_dec_quant x_Q10:%+v \r\n", x_Q10)
-
-	fmt.Printf("silk_NLSF_del_dec_quant pred_coef_Q8 :%+v\r\n ", pred_coef_Q8)
-	fmt.Printf("silk_NLSF_del_dec_quant mu_Q20 :%d\r\n ", mu_Q20)
+func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
+	//fmt.Printf("silk_NLSF_del_dec_quant indices md5:%s \r\n", ByteSliceToMD5(indices))
 
 	var nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
 	var pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5 int
@@ -243,7 +236,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 	nStates = 1
 	RD_Q25[0] = 0
 	prev_out_Q10[0] = 0
-	fmt.Printf("silk_NLSF_del_dec_quant ind-1:%+v \r\n", ind)
+
 	ord := int(order)
 	for i := ord - 1; ; i-- {
 		pred_coef_Q16 = int(pred_coef_Q8[i]) << 8
@@ -292,7 +285,6 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			diff_Q10 = in_Q10 - out1_Q10
 			RD_Q25[j+nStates] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int(w_Q5[i])), mu_Q20, rate1_Q5)
 		}
-		fmt.Printf("silk_NLSF_del_dec_quant RD_Q25:%+v \r\n", RD_Q25)
 
 		if nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1) {
 			// double number of states and copy
@@ -323,7 +315,6 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 					ind_sort[j] = j
 				}
 			}
-			fmt.Printf("silk_NLSF_del_dec_quant RD_max_Q25:%+v \r\n", RD_max_Q25)
 			for {
 				min_max_Q25 = math.MaxInt32
 				max_min_Q25 = 0
@@ -350,8 +341,6 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 				prev_out_Q10[ind_max_min] = prev_out_Q10[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
 				RD_min_Q25[ind_max_min] = 0
 				RD_max_Q25[ind_min_max] = math.MaxInt32
-				fmt.Printf("ind_max_min:%d\r\n", ind_max_min)
-				fmt.Printf("ind_min_max:%d\r\n", ind_min_max)
 				copy(ind[ind_max_min], ind[ind_min_max])
 			}
 
@@ -372,34 +361,33 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			ind_tmp = j
 		}
 	}
-	fmt.Printf("silk_NLSF_del_dec_quant ind_tmp:%d\r\n", ind_tmp)
-	fmt.Printf("silk_NLSF_del_dec_quant ind:%+v \r\n", ind)
+
 	//panic("eeee")
 	for j := 0; j < ord; j++ {
-		indices[j] = ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]
+		//indices[j] = byte(int8(ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]))
+		indices[j] = int8(ind[ind_tmp&(SilkConstants.NLSF_QUANT_DEL_DEC_STATES-1)][j])
+
 		OpusAssert(int(indices[j]) >= -NLSF_QUANT_MAX_AMPLITUDE_EXT)
 		OpusAssert(int(indices[j]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
 	}
 
-	indices[0] += byte(ind_tmp >> NLSF_QUANT_DEL_DEC_STATES_LOG2)
+	indices[0] = int8(int(indices[0]) + silk_RSHIFT(ind_tmp, SilkConstants.NLSF_QUANT_DEL_DEC_STATES_LOG2))
+
 	OpusAssert(int(indices[0]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
 	OpusAssert(min_Q25 >= 0)
 	return min_Q25
 }
 
-func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCodebook, pW_QW []int16, NLSF_mu_Q20 int, nSurvivors int, signalType int) int {
-
-	fmt.Printf("silk_NLSF_encode pW_QW:%+v\r\n", pW_QW)
-	fmt.Printf("silk_NLSF_encode NLSF_mu_Q20:%d\r\n", NLSF_mu_Q20)
+func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCodebook, pW_QW []int16, NLSF_mu_Q20 int, nSurvivors int, signalType int) int {
 
 	var ind1, prob_Q8, bits_q7 int
 	var W_tmp_Q9 int
 	err_Q26 := make([]int, psNLSF_CB.nVectors)
 	RD_Q25 := make([]int, nSurvivors)
 	tempIndices1 := make([]int, nSurvivors)
-	tempIndices2 := make([][]byte, nSurvivors)
+	tempIndices2 := make([][]int8, nSurvivors)
 	for i := range tempIndices2 {
-		tempIndices2[i] = make([]byte, MAX_LPC_ORDER)
+		tempIndices2[i] = make([]int8, MAX_LPC_ORDER)
 	}
 	res_Q15 := make([]int16, psNLSF_CB.order)
 	res_Q10 := make([]int16, psNLSF_CB.order)
@@ -453,7 +441,7 @@ func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 
 	bestIndex := make([]int, 1)
 	silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1)
-	NLSFIndices[0] = byte(tempIndices1[bestIndex[0]])
+	NLSFIndices[0] = int8(tempIndices1[bestIndex[0]])
 	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]])
 
 	silk_NLSF_decode(pNLSF_Q15, NLSFIndices, psNLSF_CB)

@@ -174,7 +174,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 }
 
 func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN *BoxedValueInt, lostFlag, condCoding int) int {
-	thisCtrl := SilkDecoderControl{}
+	thisCtrl := NewSilkDecoderControl()
 	L := d.frame_length
 	thisCtrl.LTP_scale_Q14 = 0
 
@@ -185,21 +185,21 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 		pulses := make([]int16, (L+SHELL_CODEC_FRAME_LENGTH-1)&^(SHELL_CODEC_FRAME_LENGTH-1))
 		silk_decode_indices(d, psRangeDec, d.nFramesDecoded, lostFlag, condCoding)
 		silk_decode_pulses(psRangeDec, pulses, int(d.indices.signalType), int(d.indices.quantOffsetType), d.frame_length)
-		silk_decode_parameters(d, &thisCtrl, condCoding)
-		silk_decode_core(d, &thisCtrl, pOut, pOut_ptr, pulses)
-		silk_PLC(d, &thisCtrl, pOut, pOut_ptr, 0)
+		silk_decode_parameters(d, thisCtrl, condCoding)
+		silk_decode_core(d, thisCtrl, pOut, pOut_ptr, pulses)
+		silk_PLC(d, thisCtrl, pOut, pOut_ptr, 0)
 		d.lossCnt = 0
 		d.prevSignalType = int(d.indices.signalType)
 		OpusAssert(d.prevSignalType >= 0 && d.prevSignalType <= 2)
 		d.first_frame_after_reset = 0
 	} else {
-		silk_PLC(d, &thisCtrl, pOut, pOut_ptr, 1)
+		silk_PLC(d, thisCtrl, pOut, pOut_ptr, 1)
 	}
 
 	mv_len := d.ltp_mem_length - d.frame_length
 	copy(d.outBuf[:mv_len], d.outBuf[d.frame_length:d.frame_length+mv_len])
 	copy(d.outBuf[mv_len:], pOut[pOut_ptr:pOut_ptr+d.frame_length])
-	silk_CNG(d, &thisCtrl, pOut, pOut_ptr, L)
+	silk_CNG(d, thisCtrl, pOut, pOut_ptr, L)
 	silk_PLC_glue_frames(d, pOut, pOut_ptr, L)
 	d.lagPrev = thisCtrl.pitchL[d.nb_subfr-1]
 	pN.Val = L

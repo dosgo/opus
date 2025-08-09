@@ -219,13 +219,19 @@ func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec *Entro
 }
 
 func renormalise_vector(X []int, X_ptr int, N int, gain int) {
-	xptr := X_ptr
-	E := CeltConstants.EPSILON + celt_inner_prod_int(X, X_ptr, X, X_ptr, N)
+	var i int
+	var k int
+	var E int
+	var g int
+	var t int
+	var xptr int
+	E = CeltConstants.EPSILON + celt_inner_prod_int(X, X_ptr, X, X_ptr, N)
+	k = celt_ilog2(E) >> 1
+	t = VSHR32(E, 2*(k-7))
+	g = MULT16_16_P15Int(celt_rsqrt_norm(t), gain)
 
-	k := celt_ilog2(E) >> 1
-	t := VSHR32(E, 2*(k-7))
-	g := MULT16_16_P15Int(celt_rsqrt_norm(t), gain)
-	for i := 0; i < N; i++ {
+	xptr = X_ptr
+	for i = 0; i < N; i++ {
 		X[xptr] = int(EXTRACT16(PSHR32(MULT16_16(g, X[xptr]), k+1)))
 		xptr++
 	}
