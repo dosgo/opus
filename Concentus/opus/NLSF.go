@@ -192,12 +192,13 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []byte, psNLSF_CB *NLSFCode
 }
 
 func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
-	fmt.Printf("silk_NLSF_del_dec_quant\r\n")
-	const NLSF_QUANT_DEL_DEC_STATES = 128
-	const MAX_LPC_ORDER = 16
-	const NLSF_QUANT_MAX_AMPLITUDE_EXT = 10
-	const NLSF_QUANT_MAX_AMPLITUDE = 16
-	const NLSF_QUANT_DEL_DEC_STATES_LOG2 = 7
+	fmt.Printf("silk_NLSF_del_dec_quant indices md5:%s \r\n", ByteSliceToMD5(indices))
+
+	fmt.Printf("silk_NLSF_del_dec_quant w_Q5:%+v \r\n", w_Q5)
+	fmt.Printf("silk_NLSF_del_dec_quant x_Q10:%+v \r\n", x_Q10)
+
+	fmt.Printf("silk_NLSF_del_dec_quant pred_coef_Q8 :%+v\r\n ", pred_coef_Q8)
+	fmt.Printf("silk_NLSF_del_dec_quant mu_Q20 :%d\r\n ", mu_Q20)
 
 	var nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
 	var pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5 int
@@ -242,7 +243,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 	nStates = 1
 	RD_Q25[0] = 0
 	prev_out_Q10[0] = 0
-
+	fmt.Printf("silk_NLSF_del_dec_quant ind-1:%+v \r\n", ind)
 	ord := int(order)
 	for i := ord - 1; ; i-- {
 		pred_coef_Q16 = int(pred_coef_Q8[i]) << 8
@@ -291,15 +292,20 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			diff_Q10 = in_Q10 - out1_Q10
 			RD_Q25[j+nStates] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int(w_Q5[i])), mu_Q20, rate1_Q5)
 		}
+		fmt.Printf("silk_NLSF_del_dec_quant RD_Q25:%+v \r\n", RD_Q25)
 
 		if nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1) {
+			// double number of states and copy
 			for j := 0; j < nStates; j++ {
-				ind[j+nStates][i] = ind[j][i] + 1
+				ind[j+nStates][i] = (byte)(ind[j][i] + 1)
 			}
-			nStates <<= 1
-			for j := nStates; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
-				copy(ind[j], ind[j-nStates])
+			nStates = silk_LSHIFT(nStates, 1)
+
+			for j := nStates; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
+				ind[j][i] = ind[j-nStates][i]
 			}
+			//fmt.Printf(" nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1)\r\n")
+			//fmt.Printf("nStates <= (NLSF_QUANT_DEL_DEC_STATES ind:%+v \r\n", ind)
 		} else if i > 0 {
 			for j := 0; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
 				if RD_Q25[j] > RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES] {
@@ -317,7 +323,7 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 					ind_sort[j] = j
 				}
 			}
-
+			fmt.Printf("silk_NLSF_del_dec_quant RD_max_Q25:%+v \r\n", RD_max_Q25)
 			for {
 				min_max_Q25 = math.MaxInt32
 				max_min_Q25 = 0
@@ -344,6 +350,8 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 				prev_out_Q10[ind_max_min] = prev_out_Q10[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
 				RD_min_Q25[ind_max_min] = 0
 				RD_max_Q25[ind_min_max] = math.MaxInt32
+				fmt.Printf("ind_max_min:%d\r\n", ind_max_min)
+				fmt.Printf("ind_min_max:%d\r\n", ind_min_max)
 				copy(ind[ind_max_min], ind[ind_min_max])
 			}
 
@@ -364,7 +372,9 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 			ind_tmp = j
 		}
 	}
-
+	fmt.Printf("silk_NLSF_del_dec_quant ind_tmp:%d\r\n", ind_tmp)
+	fmt.Printf("silk_NLSF_del_dec_quant ind:%+v \r\n", ind)
+	//panic("eeee")
 	for j := 0; j < ord; j++ {
 		indices[j] = ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]
 		OpusAssert(int(indices[j]) >= -NLSF_QUANT_MAX_AMPLITUDE_EXT)
@@ -378,8 +388,9 @@ func silk_NLSF_del_dec_quant(indices []byte, x_Q10 []int16, w_Q5 []int16, pred_c
 }
 
 func silk_NLSF_encode(NLSFIndices []byte, pNLSF_Q15 []int16, psNLSF_CB *NLSFCodebook, pW_QW []int16, NLSF_mu_Q20 int, nSurvivors int, signalType int) int {
-	const NLSF_VQ_MAX_SURVIVORS = 16
-	const MAX_LPC_ORDER = 16
+
+	fmt.Printf("silk_NLSF_encode pW_QW:%+v\r\n", pW_QW)
+	fmt.Printf("silk_NLSF_encode NLSF_mu_Q20:%d\r\n", NLSF_mu_Q20)
 
 	var ind1, prob_Q8, bits_q7 int
 	var W_tmp_Q9 int
@@ -596,117 +607,161 @@ func silk_A2NLSF_init(a_Q16 []int, P []int, Q []int, dd int) {
 }
 
 func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
-	const SILK_MAX_ORDER_LPC = 16
-	const LSF_COS_TAB_SZ = 128
-
-	dd := d / 2
-	P := make([]int, SILK_MAX_ORDER_LPC/2+1)
-	Q := make([]int, SILK_MAX_ORDER_LPC/2+1)
+	var i, k, m, dd, root_ix, ffrac int
+	var xlo, xhi, xmid int
+	var ylo, yhi, ymid, thr int
+	var nom, den int
+	P := make([]int, SilkConstants.SILK_MAX_ORDER_LPC/2+1)
+	Q := make([]int, SilkConstants.SILK_MAX_ORDER_LPC/2+1)
 	PQ := [2][]int{P, Q}
+	var p []int
+
+	/* Store pointers to array */
+	PQ[0] = P
+	PQ[1] = Q
+
+	dd = silk_RSHIFT(d, 1)
 
 	silk_A2NLSF_init(a_Q16, P, Q, dd)
 
-	p := P
-	xlo := int(SilkTables.Silk_LSFCosTab_Q12[0])
-	ylo := silk_A2NLSF_eval_poly(p, xlo, dd)
+	/* Find roots, alternating between P and Q */
+	p = P
+	/* Pointer to polynomial */
 
-	root_ix := 0
+	xlo = int(SilkTables.Silk_LSFCosTab_Q12[0])
+	/* Q12*/
+	ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
+
 	if ylo < 0 {
+		/* Set the first NLSF to zero and move on to the next */
 		NLSF[0] = 0
 		p = Q
+		/* Pointer to polynomial */
 		ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
 		root_ix = 1
+		/* Index of current root */
+	} else {
+		root_ix = 0
+		/* Index of current root */
 	}
-
-	k := 1
-	i := 0
-	thr := 0
+	k = 1
+	/* Loop counter */
+	i = 0
+	/* Counter for bandwidth expansions applied */
+	thr = 0
 	for {
-		xhi := int(SilkTables.Silk_LSFCosTab_Q12[k])
-		yhi := silk_A2NLSF_eval_poly(p, xhi, dd)
+		/* Evaluate polynomial */
+		xhi = int(SilkTables.Silk_LSFCosTab_Q12[k])
+		/* Q12 */
+		yhi = silk_A2NLSF_eval_poly(p, xhi, dd)
 
-		if (ylo <= 0 && yhi >= int(thr)) || (ylo >= 0 && yhi <= -int(thr)) {
+		/* Detect zero crossing */
+		if (ylo <= 0 && yhi >= thr) || (ylo >= 0 && yhi <= -thr) {
 			if yhi == 0 {
+				/* If the root lies exactly at the end of the current       */
+				/* interval, look for the next root in the next interval    */
 				thr = 1
 			} else {
 				thr = 0
 			}
+			/* Binary division */
+			ffrac = -256
+			for m = 0; m < BIN_DIV_STEPS_A2NLSF; m++ {
+				/* Evaluate polynomial */
+				xmid = silk_RSHIFT_ROUND(xlo+xhi, 1)
+				ymid = silk_A2NLSF_eval_poly(p, xmid, dd)
 
-			ffrac := -256
-			for m := 0; m < BIN_DIV_STEPS_A2NLSF; m++ {
-				xmid := (xlo + xhi) / 2
-				ymid := silk_A2NLSF_eval_poly(p, xmid, dd)
-
+				/* Detect zero crossing */
 				if (ylo <= 0 && ymid >= 0) || (ylo >= 0 && ymid <= 0) {
+					/* Reduce frequency */
 					xhi = xmid
 					yhi = ymid
 				} else {
+					/* Increase frequency */
 					xlo = xmid
 					ylo = ymid
-					ffrac += 128 >> m
+					ffrac = silk_ADD_RSHIFT(ffrac, 128, m)
 				}
 			}
 
-			if silk_abs(int(ylo)) < 65536 {
-				den := ylo - yhi
-				nom := (ylo << (8 - BIN_DIV_STEPS_A2NLSF)) + den/2
+			/* Interpolate */
+			if silk_abs(ylo) < 65536 {
+				/* Avoid dividing by zero */
+				den = ylo - yhi
+				nom = silk_LSHIFT(ylo, 8-BIN_DIV_STEPS_A2NLSF) + silk_RSHIFT(den, 1)
 				if den != 0 {
-					ffrac += int(nom / den)
+					ffrac += silk_DIV32(nom, den)
 				}
 			} else {
-				ffrac += int(ylo / ((ylo - yhi) >> (8 - BIN_DIV_STEPS_A2NLSF)))
+				/* No risk of dividing by zero because abs(ylo - yhi) >= abs(ylo) >= 65536 */
+				ffrac += silk_DIV32(ylo, silk_RSHIFT(ylo-yhi, 8-BIN_DIV_STEPS_A2NLSF))
 			}
+			NLSF[root_ix] = int16(silk_min_32(silk_LSHIFT(k, 8)+ffrac, math.MaxInt16))
 
-			NLSF[root_ix] = int16(silk_min_32(int(k)<<8+int(ffrac), math.MaxInt16))
-			OpusAssert(int(NLSF[root_ix]) >= 0)
+			OpusAssert(NLSF[root_ix] >= 0)
 
 			root_ix++
+			/* Next root */
 			if root_ix >= d {
+				/* Found all roots */
 				break
 			}
 
+			/* Alternate pointer to polynomial */
 			p = PQ[root_ix&1]
+
+			/* Evaluate polynomial */
 			xlo = int(SilkTables.Silk_LSFCosTab_Q12[k-1])
-			ylo = int(1-(root_ix&2)) << 12
+			/* Q12*/
+			ylo = silk_LSHIFT(1-(root_ix&2), 12)
 		} else {
+			/* Increment loop counter */
 			k++
 			xlo = xhi
 			ylo = yhi
 			thr = 0
 
-			if k > LSF_COS_TAB_SZ {
+			if k > SilkConstants.LSF_COS_TAB_SZ {
 				i++
 				if i > MAX_ITERATIONS_A2NLSF {
-					NLSF[0] = int16(((1 << 15) / (d + 1)))
-					for k := 1; k < d; k++ {
-						NLSF[k] = int16((k + 1) * int(NLSF[0]))
+					/* Set NLSFs to white spectrum and exit */
+					NLSF[0] = int16(silk_DIV32_16(1<<15, (d + 1)))
+					for k = 1; k < d; k++ {
+						NLSF[k] = int16(silk_SMULBB(k+1, int(NLSF[0])))
 					}
 					return
 				}
 
-				silk_bwexpander_32(a_Q16, d, 65536-int(10+i)*int(i))
+				/* Error: Apply progressively more bandwidth expansion and run again */
+				silk_bwexpander_32(a_Q16, d, 65536-silk_SMULBB(10+i, i))
+				/* 10_Q16 = 0.00015*/
+
 				silk_A2NLSF_init(a_Q16, P, Q, dd)
 				p = P
+				/* Pointer to polynomial */
 				xlo = int(SilkTables.Silk_LSFCosTab_Q12[0])
+				/* Q12*/
 				ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
 				if ylo < 0 {
+					/* Set the first NLSF to zero and move on to the next */
 					NLSF[0] = 0
 					p = Q
+					/* Pointer to polynomial */
 					ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
 					root_ix = 1
+					/* Index of current root */
 				} else {
 					root_ix = 0
+					/* Index of current root */
 				}
 				k = 1
+				/* Reset loop counter */
 			}
 		}
 	}
 }
 
 func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLSF_Q15 []int16, prev_NLSFq_Q15 []int16) {
-	const MAX_PREDICTION_POWER_GAIN = 10000
-	const MAX_LPC_ORDER = 16
-	const NLSF_MSVQ_SURVIVORS = 16
 
 	var doInterpolate bool
 	var NLSF_mu_Q20, i_sqr_Q15 int
@@ -718,9 +773,11 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 	OpusAssert(psEncC.speech_activity_Q8 <= 256)
 	OpusAssert(psEncC.useInterpolatedNLSFs == 1 || psEncC.indices.NLSFInterpCoef_Q2 == 4)
 
-	NLSF_mu_Q20 = silk_SMLAWB(31457, -26843, int(psEncC.speech_activity_Q8))
+	NLSF_mu_Q20 = silk_SMLAWB(int(math.Floor((0.003)*float64(int64(1)<<(20))+0.5)), int((math.Floor((-0.001)*float64(int64(1)<<(28)) + 0.5))), psEncC.speech_activity_Q8)
+
 	if psEncC.nb_subfr == 2 {
-		NLSF_mu_Q20 += NLSF_mu_Q20 >> 1
+		/* Multiply by 1.5 for 10 ms packets */
+		NLSF_mu_Q20 = silk_ADD_RSHIFT(NLSF_mu_Q20, NLSF_mu_Q20, 1)
 	}
 
 	OpusAssert(NLSF_mu_Q20 > 0)
@@ -732,6 +789,7 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 	if doInterpolate {
 		silk_interpolate(pNLSF0_temp_Q15, prev_NLSFq_Q15, pNLSF_Q15, int(psEncC.indices.NLSFInterpCoef_Q2), psEncC.predictLPCOrder)
 		silk_NLSF_VQ_weights_laroia(pNLSFW0_temp_QW, pNLSF0_temp_Q15, psEncC.predictLPCOrder)
+
 		i_sqr_Q15 = int(psEncC.indices.NLSFInterpCoef_Q2*psEncC.indices.NLSFInterpCoef_Q2) << 11
 		for i := 0; i < psEncC.predictLPCOrder; i++ {
 			pNLSFW_QW[i] = int16(silk_SMLAWB(int(pNLSFW_QW[i])>>1, int(pNLSFW0_temp_QW[i]), i_sqr_Q15))
@@ -741,7 +799,7 @@ func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLS
 
 	silk_NLSF_encode(
 		psEncC.indices.NLSFIndices, pNLSF_Q15, psEncC.psNLSF_CB, pNLSFW_QW,
-		NLSF_mu_Q20, NLSF_MSVQ_SURVIVORS, int(psEncC.indices.signalType),
+		NLSF_mu_Q20, psEncC.NLSF_MSVQ_Survivors, int(psEncC.indices.signalType),
 	)
 
 	silk_NLSF2A(PredCoef_Q12[1], pNLSF_Q15, psEncC.predictLPCOrder)

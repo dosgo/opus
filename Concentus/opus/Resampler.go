@@ -427,3 +427,9 @@ func IntSliceToMD5(slice []int16) string {
 	hash := hasher.Sum(nil)
 	return hex.EncodeToString(hash)
 }
+func ByteSliceToMD5(slice []byte) string {
+	hasher := md5.New()
+	hasher.Write(slice)
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
+}
