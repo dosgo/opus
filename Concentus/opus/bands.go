@@ -876,6 +876,7 @@ func quant_band_n1(ctx *band_ctx, X []int, X_ptr int, Y []int, Y_ptr int, b int,
 }
 
 func quant_partition(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, gain int, fill int) int {
+	fmt.Printf("quant_partition X:%+v\r\n", X)
 	var cache_ptr int
 	var q int
 	var curr_bits int
@@ -1037,7 +1038,7 @@ var bit_interleave_table = []byte{0, 1, 1, 1, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3
 var bit_deinterleave_table = []int16{0x00, 0x03, 0x0C, 0x0F, 0x30, 0x33, 0x3C, 0x3F, 0xC0, 0xC3, 0xCC, 0xCF, 0xF0, 0xF3, 0xFC, 0xFF}
 
 func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband []int, lowband_ptr int, LM int, lowband_out []int, lowband_out_ptr int, gain int, lowband_scratch []int, lowband_scratch_ptr int, fill int) int {
-
+	fmt.Printf("quant_band x:%+v\r\n", X)
 	N0 := N
 	N_B := N
 	var N_B0 int
@@ -1127,6 +1128,7 @@ func quant_band(ctx *band_ctx, X []int, X_ptr int, N int, b int, B int, lowband 
 			deinterleave_hadamard(lowband, lowband_ptr, N_B>>recombine, B0<<recombine, longBlocks)
 		}
 	}
+	fmt.Printf("quant_band x:%+v\r\n", X)
 	cm = quant_partition(ctx, X, X_ptr, N, b, B, lowband, lowband_ptr, LM, gain, fill)
 
 	if resynth != 0 {

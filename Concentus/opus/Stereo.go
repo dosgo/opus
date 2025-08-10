@@ -9,10 +9,7 @@ func silk_stereo_decode_pred(
 	psRangeDec *EntropyCoder,
 	pred_Q13 []int) {
 	var n int
-	ix := make([][]int, 2)
-	for i := range ix {
-		ix[i] = make([]int, 3)
-	}
+	ix := InitTwoDimensionalArrayInt(2, 3)
 	var low_Q13, step_Q13 int
 
 	n = psRangeDec.dec_icdf(SilkTables.Silk_stereo_pred_joint_iCDF[:], 8)

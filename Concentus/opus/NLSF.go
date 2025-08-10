@@ -385,10 +385,8 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	err_Q26 := make([]int, psNLSF_CB.nVectors)
 	RD_Q25 := make([]int, nSurvivors)
 	tempIndices1 := make([]int, nSurvivors)
-	tempIndices2 := make([][]int8, nSurvivors)
-	for i := range tempIndices2 {
-		tempIndices2[i] = make([]int8, MAX_LPC_ORDER)
-	}
+	tempIndices2 := InitTwoDimensionalArrayByte(nSurvivors, SilkConstants.MAX_LPC_ORDER)
+
 	res_Q15 := make([]int16, psNLSF_CB.order)
 	res_Q10 := make([]int16, psNLSF_CB.order)
 	NLSF_tmp_Q15 := make([]int16, psNLSF_CB.order)

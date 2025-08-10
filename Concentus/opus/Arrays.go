@@ -24,10 +24,10 @@ func InitTwoDimensionalArrayShort(x, y int) [][]int16 {
 	return arr
 }
 
-func InitTwoDimensionalArrayByte(x, y int) [][]byte {
-	arr := make([][]byte, x)
+func InitTwoDimensionalArrayByte(x, y int) [][]int8 {
+	arr := make([][]int8, x)
 	for i := range arr {
-		arr[i] = make([]byte, y)
+		arr[i] = make([]int8, y)
 	}
 	return arr
 }
