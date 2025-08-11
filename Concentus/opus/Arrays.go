@@ -1,5 +1,12 @@
 package opus
 
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"strings"
+)
+
 func InitTwoDimensionalArrayInt(x, y int) [][]int {
 	arr := make([][]int, x)
 	for i := range arr {
@@ -73,4 +80,34 @@ func MemSetWithOffset[T any](array []T, value T, offset, length int) {
 
 func MemMove[T any](array []T, src_idx, dst_idx, length int) {
 	copy(array[dst_idx:dst_idx+length], array[src_idx:src_idx+length])
+}
+
+func PrintFuncArgs(args ...interface{}) {
+	// 获取调用信息
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		fmt.Println("无法获取函数信息")
+		return
+	}
+
+	// 获取函数名
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		fmt.Println("无法获取函数名")
+		return
+	}
+
+	// 提取简单函数名
+	fullName := fn.Name()
+	funcName := fullName
+	if idx := strings.LastIndex(fullName, "."); idx != -1 {
+		funcName = fullName[idx+1:]
+	}
+
+	// 打印函数名和参数
+	fmt.Printf("%s args:", funcName)
+	for i, arg := range args {
+		fmt.Printf("param %d: %v\n", i+1, arg)
+	}
+	os.Exit(0)
 }

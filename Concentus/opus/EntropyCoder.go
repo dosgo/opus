@@ -1,5 +1,9 @@
 package opus
 
+import (
+	"fmt"
+)
+
 const (
 	EC_WINDOW_SIZE = 32
 	EC_UINT_BITS   = 8
@@ -323,8 +327,9 @@ var i = 0
 
 func (ec *EntropyCoder) enc_normalize() {
 	/*If the range is too small, output some bits and rescale it.*/
+
 	for ec.rng <= EC_CODE_BOT {
-		ec.enc_carry_out(int(ec.val >> EC_CODE_SHIFT))
+		ec.enc_carry_out(int(int32(ec.val >> EC_CODE_SHIFT)))
 		/*Move the next-to-high-order symbol into the high-order position.*/
 		ec.val = CapToUInt32((ec.val << EC_SYM_BITS) & (EC_CODE_TOP - 1))
 		ec.rng = CapToUInt32(ec.rng << EC_SYM_BITS)
@@ -402,7 +407,14 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	} else {
 		ec.rng = CapToUInt32(ec.rng - (r * int64(_icdf[_s])))
 	}
+
 	ec.enc_normalize()
+
+	//fmt.Printf("enc_icdf ec:%+v\r\n", ec)
+	fmt.Printf("this.rng :%d \r\n", ec.rng)
+	fmt.Printf("this. nbits_total : %d\r\n", ec.nbits_total)
+
+	//os.Exit(0)
 }
 
 func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ftb int) {

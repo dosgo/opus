@@ -266,17 +266,9 @@ func silk_stereo_LR_to_MS(
 	//delta0_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[0]-int(state.pred_prev_Q13[0]), denom_Q16), 16)
 	delta0_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[0]-int(state.pred_prev_Q13[0]), denom_Q16), 16)
 	delta1_Q13 = 0 - silk_RSHIFT_ROUND(silk_SMULBB(pred_Q13[1]-int(state.pred_prev_Q13[1]), denom_Q16), 16)
-	fmt.Printf("state.pred_prev_Q13:%+v\r\n", state.pred_prev_Q13)
-	fmt.Printf("pred_Q13:%+v\r\n", pred_Q13)
-	fmt.Printf("denom_Q16:%d\r\n", denom_Q16)
+
 	deltaw_Q24 = silk_LSHIFT(silk_SMULWB(width_Q14-int(state.width_prev_Q14), denom_Q16), 10)
-	fmt.Printf("side:%s\r\n", IntSliceToMD5(side))
-	fmt.Printf("x1:%s\r\n", IntSliceToMD5(x1))
-	fmt.Printf("deltaw_Q24:%d\r\n", deltaw_Q24)
-	fmt.Printf("delta0_Q13:%d\r\n", delta0_Q13)
-	fmt.Printf("delta1_Q13:%d\r\n", delta1_Q13)
-	fmt.Printf("mid:%d\r\n", mid)
-	fmt.Printf("w_Q24:%d\r\n", w_Q24)
+
 	for n = 0; n < SilkConstants.STEREO_INTERP_LEN_MS*fs_kHz; n++ {
 		pred0_Q13 += delta0_Q13
 		pred1_Q13 += delta1_Q13

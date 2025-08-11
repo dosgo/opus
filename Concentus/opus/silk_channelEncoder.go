@@ -795,6 +795,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 }
 
 func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
+	fmt.Printf("psRangeEnc:%+v\r\n", psRangeEnc)
 	sEncCtrl := NewSilkEncoderControl()
 	var iter, maxIter, found_upper, found_lower, ret int
 	var x_frame int
@@ -813,15 +814,13 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 	s.indices.Seed = byte(s.frameCounter & 3)
 	s.frameCounter++
 	x_frame = s.ltp_mem_length
-	fmt.Printf("silk_encode_frame  inputBuf-1:%+v\r\n", (s.inputBuf[:]))
 
 	s.sLP.silk_LP_variable_cutoff(s.inputBuf[:], 1, s.frame_length)
-	fmt.Printf("silk_encode_frame s.x_buf:-1:%s \r\n", IntSliceToMD5(s.x_buf[:]))
-	fmt.Printf("silk_encode_frame  inputBuf:%+v\r\n", (s.inputBuf[:]))
 
 	copy(s.x_buf[x_frame+SilkConstants.LA_SHAPE_MS*s.fs_kHz:], s.inputBuf[1:1+s.frame_length])
 
 	if s.prefillFlag == 0 {
+		fmt.Printf("eeeee\r\n")
 		var xfw_Q3 []int
 		var res_pitch []int16
 		var ec_buf_copy []byte
@@ -842,8 +841,8 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 		gainsID = silk_gains_ID(s.indices.GainsIndices[:], s.nb_subfr)
 		gainsID_lower = -1
 		gainsID_upper = -1
-		*sRangeEnc_copy = *psRangeEnc
-		sNSQ_copy = s.sNSQ
+		sRangeEnc_copy.Assign(psRangeEnc)
+		sNSQ_copy.Assign(s.sNSQ)
 		seed_copy = s.indices.Seed
 		ec_prevLagIndex_copy = s.ec_prevLagIndex
 		ec_prevSignalType_copy = s.ec_prevSignalType
@@ -855,8 +854,8 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 				nBits = nBits_upper
 			} else {
 				if iter > 0 {
-					*psRangeEnc = *sRangeEnc_copy
-					s.sNSQ = sNSQ_copy
+					psRangeEnc.Assign(sRangeEnc_copy)
+					s.sNSQ.Assign(sNSQ_copy)
 					s.indices.Seed = seed_copy
 					s.ec_prevLagIndex = ec_prevLagIndex_copy
 					s.ec_prevSignalType = ec_prevSignalType_copy
@@ -867,18 +866,20 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
+				fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
 				silk_encode_pulses(psRangeEnc, int(s.indices.signalType), int(s.indices.quantOffsetType), s.pulses, s.frame_length)
 				nBits = psRangeEnc.tell()
+				fmt.Printf("nBits:%d\r\n", nBits)
 				if useCBR == 0 && iter == 0 && nBits <= maxBits {
 					break
 				}
 			}
 			if iter == maxIter {
 				if found_lower != 0 && (gainsID == gainsID_lower || nBits > maxBits) {
-					*psRangeEnc = *sRangeEnc_copy2
-					copy(psRangeEnc.buf, ec_buf_copy)
-					psRangeEnc.offs = sRangeEnc_copy2.offs
-					s.sNSQ = sNSQ_copy2
+					psRangeEnc.Assign(sRangeEnc_copy2)
+					OpusAssert(sRangeEnc_copy2.offs <= 1275)
+					psRangeEnc.write_buffer(ec_buf_copy, 0, 0, sRangeEnc_copy2.offs)
+					s.sNSQ.Assign(sNSQ_copy2)
 					s.sShape.LastGainIndex = LastGainIndex_copy2
 				}
 				break
@@ -900,9 +901,12 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 				gainMult_lower = int(gainMult_Q8)
 				if gainsID != gainsID_lower {
 					gainsID_lower = gainsID
-					*sRangeEnc_copy2 = *psRangeEnc
-					copy(ec_buf_copy, psRangeEnc.buf)
-					sNSQ_copy2 = s.sNSQ
+					/* Copy part of the output state */
+					sRangeEnc_copy2.Assign(psRangeEnc)
+					OpusAssert(psRangeEnc.offs <= 1275)
+
+					copy(ec_buf_copy, psRangeEnc.get_buffer()[:psRangeEnc.offs])
+					sNSQ_copy2.Assign(s.sNSQ)
 					LastGainIndex_copy2 = s.sShape.LastGainIndex
 				}
 			} else {
@@ -927,6 +931,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 			for i := int(0); i < s.nb_subfr; i++ {
 				sEncCtrl.Gains_Q16[i] = silk_LSHIFT_SAT32(silk_SMULWB(sEncCtrl.GainsUnq_Q16[i], int(gainMult_Q8)), 8)
 			}
+
 			s.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev
 			boxed_gainIndex := &BoxedValueByte{int8(s.sShape.LastGainIndex)}
 			silk_gains_quant(s.indices.GainsIndices, sEncCtrl.Gains_Q16,
@@ -948,16 +953,17 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 }
 
 func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_Q3 []int, condCoding int) {
+	sNSQ_LBRR := NewSilkNSQState()
+	psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
+	TempGains_Q16 := make([]int, s.nb_subfr)
 	if s.LBRR_enabled != 0 && s.speech_activity_Q8 > silk_SMULWB(int(TuningParameters.LBRR_SPEECH_ACTIVITY_THRES), 1<<8) {
 		s.LBRR_flags[s.nFramesEncoded] = 1
-		psIndices_LBRR := s.indices_LBRR[s.nFramesEncoded]
-		sNSQ_LBRR := NewSilkNSQState()
+
 		sNSQ_LBRR.Assign(s.sNSQ)
-		psIndices_LBRR = s.indices
-		TempGains_Q16 := make([]int, s.nb_subfr)
+		psIndices_LBRR.Assign(s.indices)
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
-			psIndices_LBRR.GainsIndices[0] = byte(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
+			psIndices_LBRR.GainsIndices[0] = int8(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
 		}
 
 		boxed_gainIndex := BoxedValueByte{int8(s.LBRRprevLastGainIndex)}

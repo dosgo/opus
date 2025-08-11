@@ -269,6 +269,7 @@ func (st *OpusEncoder) user_bitrate_to_bitrate(frame_size, max_data_bytes int) i
 }
 
 func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, data []byte, data_ptr, out_data_bytes, lsb_depth int, analysis_pcm []int16, analysis_pcm_ptr, analysis_size, c1, c2, analysis_channels, float_api int) int {
+
 	silk_enc := &st.SilkEncoder
 	celt_enc := &st.Celt_Encoder
 	enc := NewEntropyCoder()
@@ -655,6 +656,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	bytes_target = imin(max_data_bytes-redundancy_bytes, st.bitrate_bps*frame_size/(st.Fs*8)) - 1
 	data_ptr++
 	enc.enc_init(data, data_ptr, max_data_bytes-1)
+
 	pcm_buf = make([]int16, (total_buffer+frame_size)*st.channels)
 	copy(pcm_buf[:total_buffer*st.channels], st.delay_buffer[(st.encoder_buffer-total_buffer)*st.channels:(st.encoder_buffer-total_buffer)*st.channels+total_buffer*st.channels])
 	hp_freq_smth1 = 0
@@ -663,6 +665,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		hp_freq_smth1 = int(silk_enc.state_Fxx[0].variable_HP_smth1_Q15)
 	}
+
 	st.variable_HP_smth2_Q15 = silk_SMLAWB(st.variable_HP_smth2_Q15, hp_freq_smth1-st.variable_HP_smth2_Q15, int(TuningParameters.VARIABLE_HP_SMTH_COEF2*(1<<16)+0.5))
 	cutoff_Hz = silk_log2lin(st.variable_HP_smth2_Q15 >> 8)
 	if st.application == OPUS_APPLICATION_VOIP {
@@ -744,6 +747,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		if st.use_vbr == 0 {
 			st.silk_mode.useCBR = 1
 		}
+
 		nBytes = imin(1275, max_data_bytes-1-redundancy_bytes)
 		st.silk_mode.maxBits = nBytes * 8
 		if st.mode == MODE_HYBRID {
@@ -796,44 +800,63 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	celt_enc.SetEndBand(endband)
 	celt_enc.SetChannels(st.stream_channels)
+
 	start_band = 0
 	if st.mode == MODE_SILK_ONLY {
 		start_band = 17
 	}
 	nb_compr_bytes = 0
 	if st.mode != MODE_SILK_ONLY {
+		var celt_pred int = 2
+		celt_enc.SetVBR(false)
+		/* We may still decide to disable prediction later */
+		if st.silk_mode.reducedDependency != 0 {
+			celt_pred = 0
+		}
+		celt_enc.SetPrediction(celt_pred)
+
 		if st.mode == MODE_HYBRID {
-			len := (enc.tell() + 7) >> 3
+			var _len int
+			fmt.Printf("enc:%+v\r\n", enc)
+			_len = (enc.tell() + 7) >> 3
+			fmt.Printf("_len:%d\r\n", _len)
+
 			if redundancy != 0 {
 				if st.mode == MODE_HYBRID {
-					len += 3
+					_len += 3
 				} else {
-					len += 1
+					_len += 1
 				}
+
 			}
 			if st.use_vbr != 0 {
-				nb_compr_bytes = len + bytes_target - (st.silk_mode.bitRate*frame_size)/(8*st.Fs)
+				nb_compr_bytes = _len + bytes_target - (st.silk_mode.bitRate*frame_size)/(8*st.Fs)
 			} else {
-				if len > bytes_target {
-					nb_compr_bytes = len
-				} else {
-					nb_compr_bytes = bytes_target
+				/* check if SILK used up too much */
+				nb_compr_bytes = bytes_target
+				if _len > bytes_target {
+					nb_compr_bytes = _len
 				}
+
 			}
 		} else if st.use_vbr != 0 {
-			bonus := 0
+			var bonus int = 0
 			if st.analysis.enabled && st.variable_duration == OPUS_FRAMESIZE_VARIABLE && frame_size != st.Fs/50 {
 				bonus = (60*st.stream_channels + 40) * (st.Fs/frame_size - 50)
+				if analysis_info.valid != 0 {
+					bonus = (bonus * int(1.0+.5*float64(analysis_info.tonality)))
+				}
 			}
 			celt_enc.SetVBR(true)
 			celt_enc.SetVBRConstraint(st.vbr_constraint != 0)
 			celt_enc.SetBitrate(st.bitrate_bps + bonus)
-			fmt.Printf("SetVBRConstraint st.vbr_constraint:%d st.bitrate_bps:%d  bonus:%d\r\n", st.vbr_constraint, st.bitrate_bps, bonus)
+
 			nb_compr_bytes = max_data_bytes - 1 - redundancy_bytes
 		} else {
 			nb_compr_bytes = bytes_target
 		}
 	}
+	fmt.Printf("nb_compr_bytes:%d\r\n", nb_compr_bytes)
 	tmp_prefill = make([]int16, st.channels*st.Fs/400)
 	if st.mode != MODE_SILK_ONLY && st.mode != st.prev_mode && (st.prev_mode != MODE_AUTO && st.prev_mode != MODE_UNKNOWN) {
 		copy(tmp_prefill, st.delay_buffer[(st.encoder_buffer-total_buffer-st.Fs/400)*st.channels:(st.encoder_buffer-total_buffer-st.Fs/400)*st.channels+st.channels*st.Fs/400])
@@ -988,6 +1011,7 @@ func formatSignedBytes(data []byte) string {
 	return builder.String()
 }
 func (st *OpusEncoder) Encode(in_pcm []int16, pcm_offset, frame_size int, out_data []byte, out_data_offset, max_data_bytes int) (int, error) {
+
 	if out_data_offset+max_data_bytes > len(out_data) {
 		return 0, errors.New("Output buffer is too small")
 	}

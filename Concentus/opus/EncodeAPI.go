@@ -54,7 +54,7 @@ func silk_Encode(
 	psRangeEnc *EntropyCoder,
 	nBytesOut *BoxedValueInt,
 	prefillFlag int) int {
-
+	fmt.Printf("psEnc.ddd:%d\r\n", psEnc.nBitsExceeded)
 	ret := SilkError.SILK_NO_ERROR
 	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int
 	var nSamplesToBuffer, nSamplesToBufferMax, nBlocksOf10ms int
@@ -203,8 +203,6 @@ func silk_Encode(
 				0,
 				nSamplesFromInput)
 
-			fmt.Printf("silk_resampler psEnc.state_Fxx[0].inputBuf md5:%+v \r\n", (psEnc.state_Fxx[0].inputBuf))
-
 			psEnc.state_Fxx[0].inputBufIx += nSamplesToBuffer
 
 			nSamplesToBuffer = psEnc.state_Fxx[1].frame_length - psEnc.state_Fxx[1].inputBufIx
@@ -221,8 +219,6 @@ func silk_Encode(
 				buf,
 				0,
 				nSamplesFromInput)
-
-			fmt.Printf("silk_resampler psEnc.state_Fxx[1].inputBuf 1 md5:%+v \r\n", (psEnc.state_Fxx[1].inputBuf))
 
 			psEnc.state_Fxx[1].inputBufIx += nSamplesToBuffer
 		} else if encControl.nChannelsAPI == 2 && encControl.nChannelsInternal == 1 {
@@ -457,6 +453,7 @@ func silk_Encode(
 					}
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)
+					fmt.Printf("nBytesOut %d\r\n", nBytesOut.Val)
 					OpusAssert(ret == SilkError.SILK_NO_ERROR)
 				}
 
@@ -491,6 +488,7 @@ func silk_Encode(
 				}
 
 				psEnc.nBitsExceeded += nBytesOut.Val * 8
+				fmt.Printf("psEnc.ddd-2:%d\r\n", psEnc.nBitsExceeded)
 				psEnc.nBitsExceeded -= (encControl.bitRate * encControl.payloadSize_ms) / 1000
 				if psEnc.nBitsExceeded < 0 {
 					psEnc.nBitsExceeded = 0
@@ -525,6 +523,7 @@ func silk_Encode(
 
 		curr_block++
 	}
+	fmt.Printf("psEnc:%+v\r\n", psEnc)
 
 	psEnc.nPrevChannelsInternal = encControl.nChannelsInternal
 

@@ -1,5 +1,9 @@
 package opus
 
+import (
+	"fmt"
+)
+
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
 	var i, k, typeOffset int
 	var encode_absolute_lagIndex, delta_lagIndex int
@@ -14,6 +18,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	}
 
 	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)
+
 	OpusAssert(typeOffset >= 0 && typeOffset < 6)
 	OpusAssert(encode_LBRR == 0 || typeOffset >= 2)
 	if encode_LBRR != 0 || typeOffset >= 2 {
@@ -21,6 +26,8 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	} else {
 		psRangeEnc.enc_icdf(typeOffset, silk_type_offset_no_VAD_iCDF[:], 8)
 	}
+
+	fmt.Printf("silk_encode_indices psRangeEnc :%+v typeOffset:%d\r\n", psRangeEnc, typeOffset)
 
 	if condCoding == CODE_CONDITIONALLY {
 		OpusAssert(psIndices.GainsIndices[0] >= 0 && psIndices.GainsIndices[0] < MAX_DELTA_GAIN_QUANT-MIN_DELTA_GAIN_QUANT+1)
@@ -30,9 +37,10 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		psRangeEnc.enc_icdf(silk_RSHIFT(int(psIndices.GainsIndices[0]), 3), silk_gain_iCDF[psIndices.signalType], 8)
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0])&7, silk_uniform8_iCDF[:], 8)
 	}
-
+	fmt.Printf("psIndices.GainsIndices:%+v\r\n", psIndices.GainsIndices)
 	for i = 1; i < psEncC.nb_subfr; i++ {
 		OpusAssert(psIndices.GainsIndices[i] >= 0 && psIndices.GainsIndices[i] < MAX_DELTA_GAIN_QUANT-MIN_DELTA_GAIN_QUANT+1)
+		fmt.Printf("psIndices.GainsIndices[i]:%d i:%d\r\n", psIndices.GainsIndices[i], i)
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[i]), silk_delta_gain_iCDF[:], 8)
 	}
 

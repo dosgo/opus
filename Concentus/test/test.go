@@ -57,7 +57,9 @@ func main() {
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 
 		//encoder.ResetState()
-
+		if err == nil {
+			os.Exit(0)
+		}
 		if i == 4 {
 			fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
 		}

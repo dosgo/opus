@@ -15,15 +15,15 @@ func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec *EntropyCoder, Fr
 	psDec.indices.quantOffsetType = byte(Ix & 1)
 
 	if condCoding == SilkConstants.CODE_CONDITIONALLY {
-		psDec.indices.GainsIndices[0] = byte(psRangeDec.dec_icdf(SilkTables.Silk_delta_gain_iCDF, 8))
+		psDec.indices.GainsIndices[0] = int8(psRangeDec.dec_icdf(SilkTables.Silk_delta_gain_iCDF, 8))
 	} else {
 		tmp := psRangeDec.dec_icdf(SilkTables.Silk_gain_iCDF[psDec.indices.signalType], 8)
-		psDec.indices.GainsIndices[0] = byte(tmp << 3)
-		psDec.indices.GainsIndices[0] += byte(psRangeDec.dec_icdf(SilkTables.Silk_uniform8_iCDF, 8))
+		psDec.indices.GainsIndices[0] = int8(tmp << 3)
+		psDec.indices.GainsIndices[0] += int8(psRangeDec.dec_icdf(SilkTables.Silk_uniform8_iCDF, 8))
 	}
 
 	for i = 1; i < psDec.nb_subfr; i++ {
-		psDec.indices.GainsIndices[i] = byte(psRangeDec.dec_icdf(SilkTables.Silk_delta_gain_iCDF, 8))
+		psDec.indices.GainsIndices[i] = int8(psRangeDec.dec_icdf(SilkTables.Silk_delta_gain_iCDF, 8))
 	}
 
 	psDec.indices.NLSFIndices[0] = int8(psRangeDec.dec_icdf_offset(psDec.psNLSF_CB.CB1_iCDF, (int(psDec.indices.signalType) >> 1 * int(psDec.psNLSF_CB.nVectors)), 8))
