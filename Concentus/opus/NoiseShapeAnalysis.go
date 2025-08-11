@@ -241,8 +241,8 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		fmt.Printf("AR2_Q24:%+v\r\n", AR2_Q24)
 
 		for i = 0; i < psEnc.shapingLPCOrder; i++ {
-			psEncCtrl.AR1_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND32(int32(AR1_Q24[i]), 11))))
-			psEncCtrl.AR2_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND32(int32(AR2_Q24[i]), 11))))
+			psEncCtrl.AR1_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(AR1_Q24[i]), 11))))
+			psEncCtrl.AR2_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(AR2_Q24[i]), 11))))
 		}
 		fmt.Printf("psEncCtrl.AR1_Q13:%+v\r\n", psEncCtrl.AR1_Q13)
 		fmt.Printf("psEncCtrl.AR2_Q13:%+v\r\n", psEncCtrl.AR2_Q13)
