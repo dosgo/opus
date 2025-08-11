@@ -3,6 +3,7 @@ package opus
 import (
 	"fmt"
 	"math"
+	"os"
 )
 
 type SilkChannelEncoder struct {
@@ -84,8 +85,8 @@ type SilkChannelEncoder struct {
 	LBRR_GainIncreases            int
 	indices_LBRR                  []*SideInfoIndices
 	pulses_LBRR                   [MAX_FRAMES_PER_PACKET][]int8
-	sShape                        SilkShapeState
-	sPrefilt                      SilkPrefilterState
+	sShape                        *SilkShapeState
+	sPrefilt                      *SilkPrefilterState
 	x_buf                         [2*MAX_FRAME_LENGTH + LA_SHAPE_MAX]int16
 	LTPCorr_Q15                   int
 }
@@ -93,6 +94,8 @@ type SilkChannelEncoder struct {
 func NewSilkChannelEncoder() *SilkChannelEncoder {
 	obj := &SilkChannelEncoder{}
 
+	obj.sShape = &SilkShapeState{}
+	obj.sPrefilt = &SilkPrefilterState{}
 	/*
 	   /* State of second smoother                                         */
 	obj.sLP = NewSilkLPState()
@@ -833,7 +836,9 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 		silk_process_gains(s, sEncCtrl, condCoding)
 		xfw_Q3 = make([]int, s.frame_length)
 		silk_prefilter(s, sEncCtrl, xfw_Q3, s.x_buf[:], x_frame)
+		fmt.Printf("xfw_Q3-1:%+v d\r\n", xfw_Q3)
 		s.silk_LBRR_encode(sEncCtrl, xfw_Q3, condCoding)
+		fmt.Printf("xfw_Q3-2:%+v d\r\n", xfw_Q3)
 		maxIter = 6
 		gainMult_Q8 = int16(silk_SMULWB(1, 1<<8))
 		found_lower = 0
@@ -860,15 +865,21 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 					s.ec_prevLagIndex = ec_prevLagIndex_copy
 					s.ec_prevSignalType = ec_prevSignalType_copy
 				}
+				fmt.Printf("s.pulses -1:%+v\r\n", s.pulses)
 				if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
 					s.sNSQ.silk_NSQ_del_dec(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
+					fmt.Printf("eeee121312\r\n")
 				} else {
+					fmt.Printf("xfw_Q3:%+v s.nStatesDelayedDecision:%d  s.warping_Q16:%d\r\n", xfw_Q3, s.nStatesDelayedDecision, s.warping_Q16)
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
-				fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
+				//	fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
+
 				silk_encode_pulses(psRangeEnc, int(s.indices.signalType), int(s.indices.quantOffsetType), s.pulses, s.frame_length)
+				os.Exit(0)
 				nBits = psRangeEnc.tell()
+
 				fmt.Printf("nBits:%d\r\n", nBits)
 				if useCBR == 0 && iter == 0 && nBits <= maxBits {
 					break
@@ -949,6 +960,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 	s.prevSignalType = s.indices.signalType
 	s.first_frame_after_reset = 0
 	pnBytesOut.Val = int(uint(psRangeEnc.tell()+7) >> 3)
+
 	return ret
 }
 

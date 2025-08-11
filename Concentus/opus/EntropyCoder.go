@@ -426,9 +426,13 @@ func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ft
 	r := CapToUInt32(ec.rng >> _ftb)
 	if _s > 0 {
 		ec.val = ec.val + CapToUInt32(ec.rng-CapToUInt32(r*int64(_icdf[icdf_ptr+_s-1])))
-		ec.rng = CapToUInt32(r * int64(_icdf[icdf_ptr+_s-1]-_icdf[icdf_ptr+_s]))
+		ec.rng = CapToUInt32(r * CapToUInt32(int64(_icdf[icdf_ptr+_s-1]-_icdf[icdf_ptr+_s])))
 	} else {
-		ec.rng = CapToUInt32(ec.rng - (r * int64(_icdf[icdf_ptr+_s])))
+		ec.rng = CapToUInt32(ec.rng - r*int64(_icdf[icdf_ptr+_s]))
+	}
+
+	if ec.rng == 2446923 {
+		fmt.Printf("okoko  _s:%d _ftb:%d icdf_ptr:%d\r\n", _s, _ftb, icdf_ptr)
 	}
 	fmt.Printf("offset this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("offset this. nbits_total : %d\r\n", ec.nbits_total)

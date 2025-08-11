@@ -1,7 +1,9 @@
 package opus
 
 import (
+	"fmt"
 	"math"
+	"os"
 )
 
 func warped_gain(coefs_Q24 []int, lambda_Q16 int, order int) int {
@@ -236,10 +238,15 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*(1<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
 
 		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
+		fmt.Printf("AR2_Q24:%+v\r\n", AR2_Q24)
+
 		for i = 0; i < psEnc.shapingLPCOrder; i++ {
-			psEncCtrl.AR1_Q13[k*MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(AR1_Q24[i] >> 11))
-			psEncCtrl.AR2_Q13[k*MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(AR2_Q24[i] >> 11))
+			psEncCtrl.AR1_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND32(int32(AR1_Q24[i]), 11))))
+			psEncCtrl.AR2_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND32(int32(AR2_Q24[i]), 11))))
 		}
+		fmt.Printf("psEncCtrl.AR1_Q13:%+v\r\n", psEncCtrl.AR1_Q13)
+		fmt.Printf("psEncCtrl.AR2_Q13:%+v\r\n", psEncCtrl.AR2_Q13)
+		os.Exit(0)
 	}
 
 	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Floor(0.16*float64(1<<16)))))

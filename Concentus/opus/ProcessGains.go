@@ -79,12 +79,13 @@ func silk_process_gains(
 	}
 
 	quant_offset_Q10 = int(SilkTables.Silk_Quantization_Offsets_Q10[psEnc.indices.signalType>>1][psEnc.indices.quantOffsetType])
-	psEncCtrl.Lambda_Q10 = int(TuningParameters.LAMBDA_OFFSET*1024) +
-		silk_SMULBB(int(TuningParameters.LAMBDA_DELAYED_DECISIONS*1024), psEnc.nStatesDelayedDecision) +
-		silk_SMULWB(int(TuningParameters.LAMBDA_SPEECH_ACT*262144), psEnc.speech_activity_Q8) +
-		silk_SMULWB(int(TuningParameters.LAMBDA_INPUT_QUALITY*4096), psEncCtrl.input_quality_Q14) +
-		silk_SMULWB(int(TuningParameters.LAMBDA_CODING_QUALITY*4096), psEncCtrl.coding_quality_Q14) +
-		silk_SMULWB(int(TuningParameters.LAMBDA_QUANT_OFFSET*65536), quant_offset_Q10)
+	psEncCtrl.Lambda_Q10 = int(float64(TuningParameters.LAMBDA_OFFSET)*float64(int64(1)<<(10))+0.5) +
+		silk_SMULBB(int(float64(TuningParameters.LAMBDA_DELAYED_DECISIONS)*float64(int64(1)<<(10))+0.5), psEnc.nStatesDelayedDecision) +
+		silk_SMULWB(int(float64(TuningParameters.LAMBDA_SPEECH_ACT)*float64(int64(1)<<(18))+0.5), psEnc.speech_activity_Q8) +
+
+		silk_SMULWB(int(float64(TuningParameters.LAMBDA_INPUT_QUALITY)*float64(int64(1)<<(12))+0.5), psEncCtrl.input_quality_Q14) +
+		silk_SMULWB(int(float64(TuningParameters.LAMBDA_CODING_QUALITY)*float64(int64(1)<<(12))+0.5), psEncCtrl.coding_quality_Q14) +
+		silk_SMULWB(int(float64(TuningParameters.LAMBDA_QUANT_OFFSET)*float64(int64(1)<<(16))+0.5), quant_offset_Q10)
 
 	if psEncCtrl.Lambda_Q10 <= 0 || psEncCtrl.Lambda_Q10 >= (2*1024) {
 		panic("Lambda_Q10 out of range")

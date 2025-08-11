@@ -832,10 +832,11 @@ func silk_SAT8(a int) int {
 }
 
 func silk_SAT16(a int) int {
-	if a > 32767 {
-		return 32767
-	} else if a < -32768 {
-		return -32768
+	if a > math.MaxInt16 {
+		return math.MaxInt16
+	}
+	if (a) < math.MinInt16 {
+		return math.MinInt16
 	}
 	return a
 }
@@ -1026,6 +1027,14 @@ func silk_SUB_LSHIFT32(a, b, shift int) int {
 
 func silk_SUB_RSHIFT32(a, b, shift int) int {
 	return a - (b >> shift)
+}
+
+func silk_RSHIFT_ROUND32(a, shift int32) int32 {
+	if shift == 1 {
+		return (a >> 1) + (a & 1)
+	}
+
+	return ((a >> (shift - 1)) + 1) >> 1
 }
 
 func silk_RSHIFT_ROUND(a, shift int) int {
