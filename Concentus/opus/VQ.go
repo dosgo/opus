@@ -219,7 +219,7 @@ func alg_unquant(X []int, X_ptr int, N int, K int, spread int, B int, dec *Entro
 }
 
 func renormalise_vector(X []int, X_ptr int, N int, gain int) {
-	PrintFuncArgs(X, X_ptr, N, gain)
+	//PrintFuncArgs(X, X_ptr, N, gain)
 
 	var i int
 	var k int

@@ -1121,7 +1121,7 @@ func (this *CeltEncoder) celt_encode_with_ecOld(pcm []int16, pcm_ptr int, frame_
 }
 
 func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_size int, compressed []byte, compressed_ptr int, nbCompressedBytes int, enc *EntropyCoder) int {
-	PrintFuncArgs(pcm, pcm_ptr, frame_size, compressed, compressed_ptr, nbCompressedBytes, enc)
+	//PrintFuncArgs(pcm, pcm_ptr, frame_size, compressed, compressed_ptr, nbCompressedBytes, enc)
 
 	var i, c, N int
 	var bits int

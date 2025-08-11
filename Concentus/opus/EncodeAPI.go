@@ -453,7 +453,6 @@ func silk_Encode(
 					}
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)
-					fmt.Printf("nBytesOut %d\r\n", nBytesOut.Val)
 					OpusAssert(ret == SilkError.SILK_NO_ERROR)
 				}
 
@@ -488,7 +487,6 @@ func silk_Encode(
 				}
 
 				psEnc.nBitsExceeded += nBytesOut.Val * 8
-				fmt.Printf("psEnc.ddd-2:%d\r\n", psEnc.nBitsExceeded)
 				psEnc.nBitsExceeded -= (encControl.bitRate * encControl.payloadSize_ms) / 1000
 				if psEnc.nBitsExceeded < 0 {
 					psEnc.nBitsExceeded = 0
@@ -523,7 +521,6 @@ func silk_Encode(
 
 		curr_block++
 	}
-	fmt.Printf("psEnc:%+v\r\n", psEnc)
 
 	psEnc.nPrevChannelsInternal = encControl.nChannelsInternal
 

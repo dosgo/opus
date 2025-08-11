@@ -1,7 +1,9 @@
 package opus
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 )
 
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
@@ -37,21 +39,33 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		psRangeEnc.enc_icdf(silk_RSHIFT(int(psIndices.GainsIndices[0]), 3), silk_gain_iCDF[psIndices.signalType], 8)
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0])&7, silk_uniform8_iCDF[:], 8)
 	}
-	fmt.Printf("psIndices.GainsIndices:%+v\r\n", psIndices.GainsIndices)
+
 	for i = 1; i < psEncC.nb_subfr; i++ {
 		OpusAssert(psIndices.GainsIndices[i] >= 0 && psIndices.GainsIndices[i] < MAX_DELTA_GAIN_QUANT-MIN_DELTA_GAIN_QUANT+1)
 		fmt.Printf("psIndices.GainsIndices[i]:%d i:%d\r\n", psIndices.GainsIndices[i], i)
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[i]), silk_delta_gain_iCDF[:], 8)
+
 	}
 
 	nVectors := int(psEncC.psNLSF_CB.nVectors)
 	if psIndices.signalType>>1 != 0 {
 		nVectors *= 2
 	}
+	dd, _ := json.Marshal(psEncC.psNLSF_CB.CB1_iCDF)
+	fmt.Printf("psEncC.psNLSF_CB.CB1_iCDF%s\r\n", dd)
+	fmt.Printf("psEncC.psNLSF_CB.nVectors:%d\r\n", nVectors)
+
+	fmt.Printf("psIndices.signalType:%d\r\n", psIndices.signalType)
+
 	psRangeEnc.enc_icdf_offset(int(psIndices.NLSFIndices[0]), psEncC.psNLSF_CB.CB1_iCDF, nVectors, 8)
 	silk_NLSF_unpack(ec_ix, pred_Q8, psEncC.psNLSF_CB, int(psIndices.NLSFIndices[0]))
 	OpusAssert(int(psEncC.psNLSF_CB.order) == psEncC.predictLPCOrder)
 
+	dd1, _ := json.Marshal(psIndices.NLSFIndices)
+	fmt.Printf("psIndices.NLSFIndices:%s\r\n", dd1)
+	fmt.Printf(" ec_ix:%+v\r\n", ec_ix)
+	dd2, _ := json.Marshal(psEncC.psNLSF_CB.ec_iCDF)
+	fmt.Printf("psEncC.psNLSF_CB.ec_iCDF:%s\r\n", dd2)
 	for i = 0; i < int(psEncC.psNLSF_CB.order); i++ {
 		if psIndices.NLSFIndices[i+1] >= NLSF_QUANT_MAX_AMPLITUDE {
 			psRangeEnc.enc_icdf_offset(2*NLSF_QUANT_MAX_AMPLITUDE, psEncC.psNLSF_CB.ec_iCDF, int(ec_ix[i]), 8)
@@ -68,7 +82,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		OpusAssert(psIndices.NLSFInterpCoef_Q2 >= 0 && psIndices.NLSFInterpCoef_Q2 < 5)
 		psRangeEnc.enc_icdf(int(psIndices.NLSFInterpCoef_Q2), silk_NLSF_interpolation_factor_iCDF[:], 8)
 	}
-
+	os.Exit(0)
 	if psIndices.signalType == TYPE_VOICED {
 		encode_absolute_lagIndex = 1
 		if condCoding == CODE_CONDITIONALLY && psEncC.ec_prevSignalType == TYPE_VOICED {
