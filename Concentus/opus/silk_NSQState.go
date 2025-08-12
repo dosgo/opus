@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 type NSQ_del_dec_struct struct {
 	sLPC_Q14  []int
 	RandState [DECISION_DELAY]int
@@ -175,7 +177,8 @@ func (s *SilkNSQState) silk_NSQ(
 		}
 
 		s.silk_nsq_scale_states(psEncC, x_Q3, x_Q3_ptr, x_sc_Q10, sLTP, sLTP_Q15, k, LTP_scale_Q14, Gains_Q16, pitchL, int(psIndices.signalType))
-
+		fmt.Printf("x_sc_Q10:%+v\r\n", x_sc_Q10)
+		fmt.Printf("sLTP_Q15:%+v\r\n", sLTP_Q15)
 		s.silk_noise_shape_quantizer(
 			int(psIndices.signalType),
 			x_sc_Q10,

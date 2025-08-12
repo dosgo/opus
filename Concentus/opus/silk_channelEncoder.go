@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -871,7 +872,25 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 					s.sNSQ.silk_NSQ_del_dec(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 					fmt.Printf("eeee121312\r\n")
 				} else {
-					fmt.Printf("xfw_Q3:%+v s.nStatesDelayedDecision:%d  s.warping_Q16:%d\r\n", xfw_Q3, s.nStatesDelayedDecision, s.warping_Q16)
+					xfw_Q3str, _ := json.Marshal(xfw_Q3)
+					fmt.Printf("xfw_Q3:%s s.nStatesDelayedDecision:%d  s.warping_Q16:%d\r\n", xfw_Q3str, s.nStatesDelayedDecision, s.warping_Q16)
+
+					LTPCoef_Q14, _ := json.Marshal(sEncCtrl.LTPCoef_Q14)
+					fmt.Printf("sEncCtrl.LTPCoef_Q14:%s \r\n", LTPCoef_Q14)
+
+					AR2_Q13, _ := json.Marshal(sEncCtrl.AR2_Q13)
+					fmt.Printf("sEncCtrl.AR2_Q13:%s \r\n", AR2_Q13)
+
+					Tilt_Q14, _ := json.Marshal(sEncCtrl.Tilt_Q14)
+					fmt.Printf("sEncCtrl.Tilt_Q14:%s \r\n", Tilt_Q14)
+					LF_shp_Q14, _ := json.Marshal(sEncCtrl.LF_shp_Q14)
+					fmt.Printf("sEncCtrl.LF_shp_Q14:%s \r\n", LF_shp_Q14)
+					Gains_Q16, _ := json.Marshal(sEncCtrl.Gains_Q16)
+					fmt.Printf("sEncCtrl.Gains_Q16:%s \r\n", Gains_Q16)
+
+					fmt.Printf("sEncCtrl.Lambda_Q10:%d \r\n", sEncCtrl.Lambda_Q10)
+					fmt.Printf("sEncCtrl.LTP_scale_Q14:%d \r\n", sEncCtrl.LTP_scale_Q14)
+
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
