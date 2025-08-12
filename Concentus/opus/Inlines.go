@@ -962,14 +962,7 @@ func silk_LSHIFT_ovflw(a, shift int) int {
 }
 
 func silk_LSHIFT_SAT32(a, shift int) int {
-	limit1 := silk_RSHIFT32(math.MinInt32, shift)
-	limit2 := silk_RSHIFT32(math.MaxInt32, shift)
-	if a < limit1 {
-		a = limit1
-	} else if a > limit2 {
-		a = limit2
-	}
-	return a << shift
+	return (silk_LSHIFT32(silk_LIMIT((a), silk_RSHIFT32(math.MinInt32, (shift)), silk_RSHIFT32(math.MaxInt32, (shift))), (shift)))
 }
 
 func silk_RSHIFT8(a byte, shift int) byte {
@@ -1308,6 +1301,7 @@ func silk_INVERSE32_varQ(b32, Qres int) int {
 }
 
 func silk_SMLAWB(a32, b32, c32 int) int {
+
 	return a32 + silk_SMULWB(b32, c32)
 }
 

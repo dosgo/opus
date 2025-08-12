@@ -42,12 +42,12 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	if condCoding == SilkConstants.CODE_CONDITIONALLY {
 		/* conditional coding */
 		OpusAssert(psIndices.GainsIndices[0] >= 0 && psIndices.GainsIndices[0] < MAX_DELTA_GAIN_QUANT-MIN_DELTA_GAIN_QUANT+1)
-		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0]), silk_delta_gain_iCDF, 8)
+		psRangeEnc.enc_icdf(int((psIndices.GainsIndices[0])), silk_delta_gain_iCDF, 8)
 	} else {
 		/* independent coding, in two stages: MSB bits followed by 3 LSBs */
 		OpusAssert(psIndices.GainsIndices[0] >= 0 && psIndices.GainsIndices[0] < N_LEVELS_QGAIN)
 		psRangeEnc.enc_icdf(silk_RSHIFT(int(psIndices.GainsIndices[0]), 3), silk_gain_iCDF[psIndices.signalType], 8)
-		psRangeEnc.enc_icdf(int(int32(psIndices.GainsIndices[0])&7), silk_uniform8_iCDF, 8)
+		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0]&7), silk_uniform8_iCDF, 8)
 	}
 	/* remaining subframes */
 

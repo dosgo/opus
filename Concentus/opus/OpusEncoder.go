@@ -817,9 +817,8 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 
 		if st.mode == MODE_HYBRID {
 			var _len int
-			fmt.Printf("enc:%+v\r\n", enc)
+
 			_len = (enc.tell() + 7) >> 3
-			fmt.Printf("_len:%d\r\n", _len)
 
 			if redundancy != 0 {
 				if st.mode == MODE_HYBRID {

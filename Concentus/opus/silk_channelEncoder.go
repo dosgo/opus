@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 )
 
 type SilkChannelEncoder struct {
@@ -799,7 +798,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 }
 
 func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRangeEnc *EntropyCoder, condCoding int, maxBits int, useCBR int) int {
-	fmt.Printf("psRangeEnc:%+v\r\n", psRangeEnc)
+
 	sEncCtrl := NewSilkEncoderControl()
 	var iter, maxIter, found_upper, found_lower, ret int
 	var x_frame int
@@ -893,11 +892,12 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
+				fmt.Printf("s.indices:%+v\r\n", s.indices)
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
 				//	fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
 
 				silk_encode_pulses(psRangeEnc, int(s.indices.signalType), int(s.indices.quantOffsetType), s.pulses, s.frame_length)
-				os.Exit(0)
+				//	os.Exit(0)
 				nBits = psRangeEnc.tell()
 
 				fmt.Printf("nBits:%d\r\n", nBits)
@@ -965,6 +965,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 
 			s.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev
 			boxed_gainIndex := &BoxedValueByte{int8(s.sShape.LastGainIndex)}
+
 			silk_gains_quant(s.indices.GainsIndices, sEncCtrl.Gains_Q16,
 				boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
 			s.sShape.LastGainIndex = byte(boxed_gainIndex.Val)
@@ -996,6 +997,7 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
 			psIndices_LBRR.GainsIndices[0] = int8(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
+			fmt.Printf("psIndices_LBRR.GainsIndices[0]:%d\r\n", psIndices_LBRR.GainsIndices[0])
 		}
 
 		boxed_gainIndex := BoxedValueByte{int8(s.LBRRprevLastGainIndex)}

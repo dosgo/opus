@@ -352,7 +352,6 @@ var silk_uniform4_iCDF = []int16{192, 128, 64, 0}
 var silk_uniform5_iCDF = []int16{205, 154, 102, 51, 0}
 var silk_uniform6_iCDF = []int16{213, 171, 128, 85, 43, 0}
 var silk_uniform8_iCDF = []int16{224, 192, 160, 128, 96, 64, 32, 0}
-
 var silk_NLSF_EXT_iCDF = []int16{100, 40, 16, 7, 3, 1, 0}
 
 var silk_Transition_LP_B_Q28 = [][]int{

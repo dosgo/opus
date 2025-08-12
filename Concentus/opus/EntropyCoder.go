@@ -412,8 +412,8 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	//fmt.Printf("enc_icdf ec:%+v\r\n", ec)
 	fmt.Printf("this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("this. nbits_total : %d\r\n", ec.nbits_total)
-	if old == 82166701 {
-		//PrintFuncArgs()
+	if ec.rng == 2026355 {
+		//PrintFuncArgs(_s, _icdf, _ftb)
 		panic("eeee")
 	}
 	ec.enc_normalize()
@@ -431,14 +431,11 @@ func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ft
 		ec.rng = CapToUInt32(ec.rng - r*int64(_icdf[icdf_ptr+_s]))
 	}
 
-	if old == 82166701 {
-		//PrintFuncArgs()
-		panic("eeee")
-	}
 	fmt.Printf("offset this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("offset this. nbits_total : %d\r\n", ec.nbits_total)
 	ec.enc_normalize()
 	fmt.Printf("offset enc_normalize this.rng: %d\r\n", ec.rng)
+
 }
 
 func (ec *EntropyCoder) enc_uint(_fl int64, _ft int64) {

@@ -451,6 +451,12 @@ func silk_Encode(
 							condCoding = CODE_CONDITIONALLY
 						}
 					}
+					fmt.Printf("nBytesOut:%d\r\n", nBytesOut.Val)
+					fmt.Printf("condCoding:%d\r\n", condCoding)
+					fmt.Printf("maxBits:%d\r\n", maxBits)
+					fmt.Printf("useCBR:%d\n", useCBR)
+					fmt.Printf("psRangeEnc.buf:%+v\n", psRangeEnc.buf)
+					fmt.Printf("psEnc.state_Fxx[n].SNR_dB_Q7:%d\n", psEnc.state_Fxx[n].SNR_dB_Q7)
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)
 					OpusAssert(ret == SilkError.SILK_NO_ERROR)

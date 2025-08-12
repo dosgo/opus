@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 type NSQ_del_dec_struct struct {
 	sLPC_Q14  []int
 	RandState [DECISION_DELAY]int
@@ -177,8 +175,7 @@ func (s *SilkNSQState) silk_NSQ(
 		}
 
 		s.silk_nsq_scale_states(psEncC, x_Q3, x_Q3_ptr, x_sc_Q10, sLTP, sLTP_Q15, k, LTP_scale_Q14, Gains_Q16, pitchL, int(psIndices.signalType))
-		fmt.Printf("x_sc_Q10:%+v\r\n", x_sc_Q10)
-		fmt.Printf("sLTP_Q15:%+v\r\n", sLTP_Q15)
+
 		s.silk_noise_shape_quantizer(
 			int(psIndices.signalType),
 			x_sc_Q10,
@@ -410,7 +407,6 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 
 		/* Update states */
 		psLPC_Q14 += 1
-		fmt.Printf("psLPC_Q14:%d\r\n", psLPC_Q14)
 		s.sLPC_Q14[psLPC_Q14] = xq_Q14
 		sLF_AR_shp_Q14 = silk_SUB_LSHIFT32(xq_Q14, n_AR_Q12, 2)
 		s.sLF_AR_shp_Q14 = sLF_AR_shp_Q14
@@ -427,7 +423,6 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 
 	/* Update LPC synth buffer */
 	//System.arraycopy(s.sLPC_Q14, length, s.sLPC_Q14, 0, SilkConstants.NSQ_LPC_BUF_LENGTH)
-	fmt.Printf("length:%d\r\n", length)
 	copy(s.sLPC_Q14[0:], s.sLPC_Q14[length:length+32])
 
 }

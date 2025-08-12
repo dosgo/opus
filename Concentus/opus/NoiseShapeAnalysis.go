@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -233,10 +232,9 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		//fmt.Printf("nrg:%+v\r\n", nrg)
 		//pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Floor(0.7*float64(1<<15)))) << 1
 		pre_nrg_Q30 = silk_LSHIFT32(silk_SMULWB(pre_nrg_Q30, int(math.Floor((0.7)*float64(int64(1)<<(15))+0.5))), 1)
-		fmt.Printf("pre_nrg_Q30new:%+v\r\n", pre_nrg_Q30)
+
 		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*float64(int64(1)<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
-		fmt.Printf("silk_DIV32_varQ(pre_nrg_Q30, nrg, 14):%+v\r\n", silk_DIV32_varQ(pre_nrg_Q30, nrg, 14))
-		fmt.Printf("psEncCtrl.GainsPre_Q14[k]:%d\r\n", psEncCtrl.GainsPre_Q14[k])
+
 		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
 		//fmt.Printf("AR2_Q24:%+v\r\n", AR2_Q24)
 
@@ -244,12 +242,10 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			psEncCtrl.AR1_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(AR1_Q24[i]), 11))))
 			psEncCtrl.AR2_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(AR2_Q24[i]), 11))))
 		}
-		fmt.Printf("psEncCtrl.AR1_Q13:%+v\r\n", psEncCtrl.AR1_Q13)
-		fmt.Printf("psEncCtrl.AR2_Q13:%+v\r\n", psEncCtrl.AR2_Q13)
+
 	}
-	fmt.Printf("psEncCtrl.GainsPre_Q14-2:%+v\r\n", psEncCtrl.GainsPre_Q14)
+
 	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Floor(0.16*float64(1<<16)))))
-	fmt.Printf("gain_mult_Q16-1:%d\r\n", gain_mult_Q16)
 
 	OpusAssert(gain_mult_Q16 > 0)
 	for k = 0; k < psEnc.nb_subfr; k++ {
@@ -260,7 +256,6 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	gain_mult_Q16 = int(math.Floor(1.0*float64(int64(1)<<(16))+0.5)) + silk_RSHIFT_ROUND(silk_MLA(int(float64(TuningParameters.INPUT_TILT)*float64(int64(1)<<(26))+0.5),
 		psEncCtrl.coding_quality_Q14, int(float64(TuningParameters.HIGH_RATE_INPUT_TILT)*float64(int64(1)<<(12))+0.5)), 10)
 
-	fmt.Printf("gain_mult_Q16:%d\r\n", gain_mult_Q16)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.GainsPre_Q14[k] = silk_SMULWB(gain_mult_Q16, psEncCtrl.GainsPre_Q14[k])
 	}
