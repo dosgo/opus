@@ -1,8 +1,8 @@
 package opus
 
 import (
+	"encoding/json"
 	"fmt"
-	"os"
 )
 
 func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, pulses_in_ptr int, max_pulses int, _len int) int {
@@ -63,7 +63,7 @@ func silk_encode_pulses(
 		abs_pulses[i+3] = silk_abs(int(pulses[i+3]))
 	}
 	fmt.Printf("abs_pulses:+%v\r\n", abs_pulses)
-	os.Exit(0)
+	//os.Exit(0)
 	sum_pulses = make([]int, iter)
 	nRshifts = make([]int, iter)
 	abs_pulses_ptr = 0
@@ -106,7 +106,7 @@ func silk_encode_pulses(
 	}
 
 	psRangeEnc.enc_icdf(RateLevelIndex, SilkTables.Silk_rate_levels_iCDF[signalType>>1], 8)
-	fmt.Printf("sum_pulses:+%v\r\n", sum_pulses)
+	fmt.Printf("sum_pulses:%v\r\n", sum_pulses)
 	for i = 0; i < iter; i++ {
 		if nRshifts[i] == 0 {
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[RateLevelIndex], 8)
@@ -118,6 +118,11 @@ func silk_encode_pulses(
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[SilkConstants.N_RATE_LEVELS-1], 8)
 		}
 	}
+	fmt.Printf("sum_pulses1:%v\r\n", sum_pulses)
+	abs_pulsesstr, _ := json.Marshal(abs_pulses)
+	fmt.Printf("abs_pulses:%s\r\n", abs_pulsesstr)
+
+	//os.Exit(0)
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
 			silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)

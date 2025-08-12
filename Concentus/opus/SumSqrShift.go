@@ -39,8 +39,8 @@ func silk_sum_sqr_shift5(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 	len--
 
 	for i = 0; i < len; i += 2 {
-		nrg = int(int32(silk_SMLABB_ovflw(nrg, int(x[x_ptr+i]), int(x[x_ptr+i]))))
-		nrg = int(int32(silk_SMLABB_ovflw(nrg, int(x[x_ptr+i+1]), int(x[x_ptr+i+1]))))
+		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i]), int32(x[x_ptr+i]))))
+		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1]))))
 		if nrg < 0 {
 			nrg = int(int32((silk_RSHIFT_uint(int64(nrg), 2))))
 			shft = 2
@@ -51,7 +51,7 @@ func silk_sum_sqr_shift5(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 
 	for ; i < len; i += 2 {
 		nrg_tmp = silk_SMULBB(int(x[x_ptr+i]), int(x[x_ptr+i]))
-		nrg_tmp = silk_SMLABB_ovflw(nrg_tmp, int(x[x_ptr+i+1]), int(x[x_ptr+i+1]))
+		nrg_tmp = int(silk_SMLABB_ovflw(int32(nrg_tmp), int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1])))
 		nrg = int(int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), shft)))
 		if nrg < 0 {
 			nrg = int(int32(silk_RSHIFT_uint(int64(nrg), 2)))
@@ -82,8 +82,8 @@ func silk_sum_sqr_shift4Bak(energy *BoxedValueInt, shift *BoxedValueInt, x []int
 	len--
 
 	for i = 0; i < len; i += 2 {
-		nrg = silk_SMLABB_ovflw(nrg, int(x[i]), int(x[i]))
-		nrg = silk_SMLABB_ovflw(nrg, int(x[i+1]), int(x[i+1]))
+		nrg = int(silk_SMLABB_ovflw(int32(nrg), int32(x[i]), int32(x[i])))
+		nrg = int(silk_SMLABB_ovflw(int32(nrg), int32(x[i+1]), int32(x[i+1])))
 		if nrg < 0 {
 			nrg = int(silk_RSHIFT_uint(int64(nrg), 2))
 			shft = 2
@@ -94,7 +94,7 @@ func silk_sum_sqr_shift4Bak(energy *BoxedValueInt, shift *BoxedValueInt, x []int
 
 	for ; i < len; i += 2 {
 		nrg_tmp = silk_SMULBB(int(x[i]), int(x[i]))
-		nrg_tmp = silk_SMLABB_ovflw(nrg_tmp, int(x[i+1]), int(x[i+1]))
+		nrg_tmp = int(silk_SMLABB_ovflw(int32(nrg_tmp), int32(x[i+1]), int32(x[i+1])))
 		nrg = int(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), shft))
 		if nrg < 0 {
 			nrg = int(silk_RSHIFT_uint(int64(nrg), 2))
@@ -126,9 +126,9 @@ func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 	len--
 
 	for i = 0; i < len; i += 2 {
-		nrg = int(int32(silk_SMLABB_ovflw(int(nrg), int(x[i]), int(x[i]))))
+		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[i]), int32(x[i]))))
 		//fmt.Printf("nrg0: %d,x[i]:%d\n", nrg, x[i])
-		nrg = int(int32(silk_SMLABB_ovflw(int(nrg), int(x[i+1]), int(x[i+1]))))
+		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[i+1]), int32(x[i+1]))))
 		//fmt.Printf("nrg01: %d,x[i+1]:%d\n", nrg, x[i+1])
 		if nrg < 0 {
 			/* Scale down */
@@ -142,7 +142,7 @@ func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 
 	for ; i < len; i += 2 {
 		nrg_tmp = int(int32(silk_SMULBB(int(x[i]), int(x[i]))))
-		nrg_tmp = int(int32(silk_SMLABB_ovflw(int(nrg_tmp), int(x[i+1]), int(x[i+1]))))
+		nrg_tmp = int(int32(silk_SMLABB_ovflw(int32(nrg_tmp), int32(x[i+1]), int32(x[i+1]))))
 		nrg = int(int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), shft)))
 		if nrg < 0 {
 			/* Scale down */

@@ -753,8 +753,8 @@ func silk_SMULL(a32, b32 int) int64 {
 	return int64(a32) * int64(b32)
 }
 
-func silk_ADD32_ovflw(a, b int) int {
-	return int(int64(a) + int64(b))
+func silk_ADD32_ovflw(a, b int32) int32 {
+	return int32(int64(a) + int64(b))
 }
 
 func silk_ADD32_ovflwLong(a, b int64) int {
@@ -765,12 +765,12 @@ func silk_SUB32_ovflw(a, b int) int {
 	return int(a - b)
 }
 
-func silk_MLA_ovflw(a32, b32, c32 int) int {
+func silk_MLA_ovflw(a32, b32, c32 int32) int32 {
 	return silk_ADD32_ovflw(a32, b32*c32)
 }
 
-func silk_SMLABB_ovflw(a32, b32, c32 int) int {
-	return silk_ADD32_ovflw(a32, int(b32)*int(c32))
+func silk_SMLABB_ovflw(a32, b32, c32 int32) int32 {
+	return silk_ADD32_ovflw(a32, int32(b32)*int32(c32))
 }
 func silk_SMLABB_ovflwNew(a32, b32, c32 int32) int32 {
 	b16 := int16(b32)
@@ -1230,7 +1230,7 @@ func silk_sign(a int) int {
 }
 
 func silk_RAND(seed int) int {
-	return silk_MLA_ovflw(907633515, seed, 196314165)
+	return int(silk_MLA_ovflw(907633515, int32(seed), 196314165))
 }
 
 func silk_SMMUL(a32, b32 int) int {

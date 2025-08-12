@@ -55,7 +55,7 @@ func (s *NSQ_sample_struct) Assign(other *NSQ_sample_struct) {
 type SilkNSQState struct {
 	xq               [2 * MAX_FRAME_LENGTH]int16
 	sLTP_shp_Q14     [2 * MAX_FRAME_LENGTH]int
-	sLPC_Q14         [MAX_SUB_FRAME_LENGTH + NSQ_LPC_BUF_LENGTH]int
+	sLPC_Q14         [MAX_SUB_FRAME_LENGTH + 32]int
 	sAR2_Q14         [MAX_SHAPE_LPC_ORDER]int
 	sLF_AR_shp_Q14   int
 	lagPrev          int
@@ -245,18 +245,23 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 	var exc_Q14, LPC_exc_Q14, xq_Q14, Gain_Q10 int
 	var tmp1, tmp2, sLF_AR_shp_Q14 int
 	var psLPC_Q14 int
-	var shp_lag_ptr, pred_lag_ptr int
+	var shp_lag_ptr int
+	var pred_lag_ptr int
 
-	shp_lag_ptr = s.sLTP_shp_buf_idx - lag + HARM_SHAPE_FIR_TAPS/2
-	pred_lag_ptr = s.sLTP_buf_idx - lag + LTP_ORDER/2
+	shp_lag_ptr = s.sLTP_shp_buf_idx - lag + SilkConstants.HARM_SHAPE_FIR_TAPS/2
+	pred_lag_ptr = s.sLTP_buf_idx - lag + SilkConstants.LTP_ORDER/2
 	Gain_Q10 = silk_RSHIFT(Gain_Q16, 6)
 
-	psLPC_Q14 = NSQ_LPC_BUF_LENGTH - 1
+	/* Set up short term AR state */
+	psLPC_Q14 = SilkConstants.NSQ_LPC_BUF_LENGTH - 1
 
 	for i = 0; i < length; i++ {
+		/* Generate dither */
 		s.rand_seed = silk_RAND(s.rand_seed)
 
+		/* Short-term prediction */
 		OpusAssert(predictLPCOrder == 10 || predictLPCOrder == 16)
+		/* Avoids introducing a bias because Inlines.silk_SMLAWB() always rounds to -inf */
 		LPC_pred_Q10 = silk_RSHIFT(predictLPCOrder, 1)
 		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, s.sLPC_Q14[psLPC_Q14-0], int(a_Q12[0]))
 		LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, s.sLPC_Q14[psLPC_Q14-1], int(a_Q12[1]))
@@ -277,19 +282,24 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 			LPC_pred_Q10 = silk_SMLAWB(LPC_pred_Q10, s.sLPC_Q14[psLPC_Q14-15], int(a_Q12[15]))
 		}
 
-		if signalType == TYPE_VOICED {
+		/* Long-term prediction */
+		if signalType == SilkConstants.TYPE_VOICED {
+			/* Unrolled loop */
+			/* Avoids introducing a bias because Inlines.silk_SMLAWB() always rounds to -inf */
 			LTP_pred_Q13 = 2
 			LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr], int(b_Q14[b_Q14_ptr]))
 			LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr-1], int(b_Q14[b_Q14_ptr+1]))
 			LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr-2], int(b_Q14[b_Q14_ptr+2]))
 			LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr-3], int(b_Q14[b_Q14_ptr+3]))
 			LTP_pred_Q13 = silk_SMLAWB(LTP_pred_Q13, sLTP_Q15[pred_lag_ptr-4], int(b_Q14[b_Q14_ptr+4]))
-			pred_lag_ptr++
+			pred_lag_ptr += 1
 		} else {
 			LTP_pred_Q13 = 0
 		}
 
+		/* Noise shape feedback */
 		OpusAssert((shapingLPCOrder & 1) == 0)
+		/* check that order is even */
 		tmp2 = s.sLPC_Q14[psLPC_Q14]
 		tmp1 = s.sAR2_Q14[0]
 		s.sAR2_Q14[0] = tmp2
@@ -299,62 +309,76 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 			tmp2 = s.sAR2_Q14[j-1]
 			s.sAR2_Q14[j-1] = tmp1
 			n_AR_Q12 = silk_SMLAWB(n_AR_Q12, tmp1, int(AR_shp_Q13[AR_shp_Q13_ptr+j-1]))
-			tmp1 = s.sAR2_Q14[j]
-			s.sAR2_Q14[j] = tmp2
+			tmp1 = s.sAR2_Q14[j+0]
+			s.sAR2_Q14[j+0] = tmp2
 			n_AR_Q12 = silk_SMLAWB(n_AR_Q12, tmp2, int(AR_shp_Q13[AR_shp_Q13_ptr+j]))
 		}
 		s.sAR2_Q14[shapingLPCOrder-1] = tmp1
 		n_AR_Q12 = silk_SMLAWB(n_AR_Q12, tmp1, int(AR_shp_Q13[AR_shp_Q13_ptr+shapingLPCOrder-1]))
 
 		n_AR_Q12 = silk_LSHIFT32(n_AR_Q12, 1)
+		/* Q11 . Q12 */
 		n_AR_Q12 = silk_SMLAWB(n_AR_Q12, s.sLF_AR_shp_Q14, Tilt_Q14)
 
 		n_LF_Q12 = silk_SMULWB(s.sLTP_shp_Q14[s.sLTP_shp_buf_idx-1], LF_shp_Q14)
 		n_LF_Q12 = silk_SMLAWT(n_LF_Q12, s.sLF_AR_shp_Q14, LF_shp_Q14)
 
-		OpusAssert(lag > 0 || signalType != TYPE_VOICED)
+		OpusAssert(lag > 0 || signalType != SilkConstants.TYPE_VOICED)
 
+		/* Combine prediction and noise shaping signals */
 		tmp1 = silk_SUB32(silk_LSHIFT32(LPC_pred_Q10, 2), n_AR_Q12)
+		/* Q12 */
 		tmp1 = silk_SUB32(tmp1, n_LF_Q12)
+		/* Q12 */
 		if lag > 0 {
+			/* Symmetric, packed FIR coefficients */
 			n_LTP_Q13 = silk_SMULWB(silk_ADD32(s.sLTP_shp_Q14[shp_lag_ptr], s.sLTP_shp_Q14[shp_lag_ptr-2]), HarmShapeFIRPacked_Q14)
 			n_LTP_Q13 = silk_SMLAWT(n_LTP_Q13, s.sLTP_shp_Q14[shp_lag_ptr-1], HarmShapeFIRPacked_Q14)
 			n_LTP_Q13 = silk_LSHIFT(n_LTP_Q13, 1)
-			shp_lag_ptr++
+			shp_lag_ptr += 1
 
 			tmp2 = silk_SUB32(LTP_pred_Q13, n_LTP_Q13)
+			/* Q13 */
 			tmp1 = silk_ADD_LSHIFT32(tmp2, tmp1, 1)
+			/* Q13 */
 			tmp1 = silk_RSHIFT_ROUND(tmp1, 3)
+			/* Q10 */
 		} else {
 			tmp1 = silk_RSHIFT_ROUND(tmp1, 2)
+			/* Q10 */
 		}
 
 		r_Q10 = silk_SUB32(x_sc_Q10[i], tmp1)
+		/* residual error Q10 */
+
+		/* Flip sign depending on dither */
 		if s.rand_seed < 0 {
 			r_Q10 = -r_Q10
 		}
 		r_Q10 = silk_LIMIT_32(r_Q10, -(31 << 10), 30<<10)
 
+		/* Find two quantization level candidates and measure their rate-distortion */
 		q1_Q10 = silk_SUB32(r_Q10, offset_Q10)
 		q1_Q0 = silk_RSHIFT(q1_Q10, 10)
 		if q1_Q0 > 0 {
-			q1_Q10 = silk_SUB32(silk_LSHIFT(q1_Q0, 10), QUANT_LEVEL_ADJUST_Q10)
+			q1_Q10 = silk_SUB32(silk_LSHIFT(q1_Q0, 10), SilkConstants.QUANT_LEVEL_ADJUST_Q10)
 			q1_Q10 = silk_ADD32(q1_Q10, offset_Q10)
 			q2_Q10 = silk_ADD32(q1_Q10, 1024)
 			rd1_Q20 = silk_SMULBB(q1_Q10, Lambda_Q10)
 			rd2_Q20 = silk_SMULBB(q2_Q10, Lambda_Q10)
 		} else if q1_Q0 == 0 {
 			q1_Q10 = offset_Q10
-			q2_Q10 = silk_ADD32(q1_Q10, 1024-QUANT_LEVEL_ADJUST_Q10)
+			q2_Q10 = silk_ADD32(q1_Q10, 1024-SilkConstants.QUANT_LEVEL_ADJUST_Q10)
 			rd1_Q20 = silk_SMULBB(q1_Q10, Lambda_Q10)
 			rd2_Q20 = silk_SMULBB(q2_Q10, Lambda_Q10)
 		} else if q1_Q0 == -1 {
 			q2_Q10 = offset_Q10
-			q1_Q10 = silk_SUB32(q2_Q10, 1024-QUANT_LEVEL_ADJUST_Q10)
+			q1_Q10 = silk_SUB32(q2_Q10, 1024-SilkConstants.QUANT_LEVEL_ADJUST_Q10)
 			rd1_Q20 = silk_SMULBB(-q1_Q10, Lambda_Q10)
 			rd2_Q20 = silk_SMULBB(q2_Q10, Lambda_Q10)
 		} else {
-			q1_Q10 = silk_ADD32(silk_LSHIFT(q1_Q0, 10), QUANT_LEVEL_ADJUST_Q10)
+			/* Q1_Q0 < -1 */
+			q1_Q10 = silk_ADD32(silk_LSHIFT(q1_Q0, 10), SilkConstants.QUANT_LEVEL_ADJUST_Q10)
 			q1_Q10 = silk_ADD32(q1_Q10, offset_Q10)
 			q2_Q10 = silk_ADD32(q1_Q10, 1024)
 			rd1_Q20 = silk_SMULBB(-q1_Q10, Lambda_Q10)
@@ -371,17 +395,22 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 
 		pulses[pulses_ptr+i] = int8(silk_RSHIFT_ROUND(q1_Q10, 10))
 
+		/* Excitation */
 		exc_Q14 = silk_LSHIFT(q1_Q10, 4)
 		if s.rand_seed < 0 {
 			exc_Q14 = -exc_Q14
 		}
 
+		/* Add predictions */
 		LPC_exc_Q14 = silk_ADD_LSHIFT32(exc_Q14, LTP_pred_Q13, 1)
 		xq_Q14 = silk_ADD_LSHIFT32(LPC_exc_Q14, LPC_pred_Q10, 4)
 
+		/* Scale XQ back to normal level before saving */
 		xq[xq_ptr+i] = int16(silk_SAT16(silk_RSHIFT_ROUND(silk_SMULWW(xq_Q14, Gain_Q10), 8)))
 
-		psLPC_Q14++
+		/* Update states */
+		psLPC_Q14 += 1
+		fmt.Printf("psLPC_Q14:%d\r\n", psLPC_Q14)
 		s.sLPC_Q14[psLPC_Q14] = xq_Q14
 		sLF_AR_shp_Q14 = silk_SUB_LSHIFT32(xq_Q14, n_AR_Q12, 2)
 		s.sLF_AR_shp_Q14 = sLF_AR_shp_Q14
@@ -391,8 +420,16 @@ func (s *SilkNSQState) silk_noise_shape_quantizer(
 		s.sLTP_shp_buf_idx++
 		s.sLTP_buf_idx++
 
-		s.rand_seed = silk_ADD32_ovflw(s.rand_seed, int(pulses[pulses_ptr+i]))
+		/* Make dither dependent on quantized signal */
+		s.rand_seed = int(silk_ADD32_ovflw(int32(s.rand_seed), int32(pulses[pulses_ptr+i])))
+
 	}
+
+	/* Update LPC synth buffer */
+	//System.arraycopy(s.sLPC_Q14, length, s.sLPC_Q14, 0, SilkConstants.NSQ_LPC_BUF_LENGTH)
+	fmt.Printf("length:%d\r\n", length)
+	copy(s.sLPC_Q14[0:], s.sLPC_Q14[length:length+32])
+
 }
 
 func (s *SilkNSQState) silk_nsq_scale_states(
@@ -415,46 +452,55 @@ func (s *SilkNSQState) silk_nsq_scale_states(
 	inv_gain_Q31 = silk_INVERSE32_varQ(silk_max(Gains_Q16[subfr], 1), 47)
 	OpusAssert(inv_gain_Q31 != 0)
 
+	/* Calculate gain adjustment factor */
 	if Gains_Q16[subfr] != s.prev_gain_Q16 {
 		gain_adj_Q16 = silk_DIV32_varQ(s.prev_gain_Q16, Gains_Q16[subfr], 16)
 	} else {
-		gain_adj_Q16 = 1 << 16
+		gain_adj_Q16 = int(int32(1) << 16)
 	}
 
+	/* Scale input */
 	inv_gain_Q23 = silk_RSHIFT_ROUND(inv_gain_Q31, 8)
 	for i = 0; i < psEncC.subfr_length; i++ {
 		x_sc_Q10[i] = silk_SMULWW(x_Q3[x_Q3_ptr+i], inv_gain_Q23)
 	}
 
+	/* Save inverse gain */
 	s.prev_gain_Q16 = Gains_Q16[subfr]
 
+	/* After rewhitening the LTP state is un-scaled, so scale with inv_gain_Q16 */
 	if s.rewhite_flag != 0 {
 		if subfr == 0 {
+			/* Do LTP downscaling */
 			inv_gain_Q31 = silk_LSHIFT(silk_SMULWB(inv_gain_Q31, LTP_scale_Q14), 2)
 		}
-		for i = s.sLTP_buf_idx - lag - LTP_ORDER/2; i < s.sLTP_buf_idx; i++ {
-			OpusAssert(i < MAX_FRAME_LENGTH)
+		for i = s.sLTP_buf_idx - lag - SilkConstants.LTP_ORDER/2; i < s.sLTP_buf_idx; i++ {
+			OpusAssert(i < SilkConstants.MAX_FRAME_LENGTH)
 			sLTP_Q15[i] = silk_SMULWB(inv_gain_Q31, int(sLTP[i]))
 		}
 	}
 
-	if gain_adj_Q16 != 1<<16 {
+	/* Adjust for changing gain */
+	if gain_adj_Q16 != int(int32(1)<<16) {
+		/* Scale long-term shaping state */
 		for i = s.sLTP_shp_buf_idx - psEncC.ltp_mem_length; i < s.sLTP_shp_buf_idx; i++ {
 			s.sLTP_shp_Q14[i] = silk_SMULWW(gain_adj_Q16, s.sLTP_shp_Q14[i])
 		}
 
-		if signal_type == TYPE_VOICED && s.rewhite_flag == 0 {
-			for i = s.sLTP_buf_idx - lag - LTP_ORDER/2; i < s.sLTP_buf_idx; i++ {
+		/* Scale long-term prediction state */
+		if signal_type == SilkConstants.TYPE_VOICED && s.rewhite_flag == 0 {
+			for i = s.sLTP_buf_idx - lag - SilkConstants.LTP_ORDER/2; i < s.sLTP_buf_idx; i++ {
 				sLTP_Q15[i] = silk_SMULWW(gain_adj_Q16, sLTP_Q15[i])
 			}
 		}
 
 		s.sLF_AR_shp_Q14 = silk_SMULWW(gain_adj_Q16, s.sLF_AR_shp_Q14)
 
-		for i = 0; i < NSQ_LPC_BUF_LENGTH; i++ {
+		/* Scale short-term prediction and shaping states */
+		for i = 0; i < SilkConstants.NSQ_LPC_BUF_LENGTH; i++ {
 			s.sLPC_Q14[i] = silk_SMULWW(gain_adj_Q16, s.sLPC_Q14[i])
 		}
-		for i = 0; i < MAX_SHAPE_LPC_ORDER; i++ {
+		for i = 0; i < SilkConstants.MAX_SHAPE_LPC_ORDER; i++ {
 			s.sAR2_Q14[i] = silk_SMULWW(gain_adj_Q16, s.sAR2_Q14[i])
 		}
 	}
@@ -897,7 +943,8 @@ func (s *SilkNSQState) silk_noise_shape_quantizer_del_dec(
 			psDD.Q_Q10[smpl_buf_idx.Val] = sampleStates[SS_left].Q_Q10
 			psDD.Pred_Q15[smpl_buf_idx.Val] = silk_LSHIFT32(sampleStates[SS_left].LPC_exc_Q14, 1)
 			psDD.Shape_Q14[smpl_buf_idx.Val] = sampleStates[SS_left].sLTP_shp_Q14
-			psDD.Seed = silk_ADD32_ovflw(psDD.Seed, silk_RSHIFT_ROUND(sampleStates[SS_left].Q_Q10, 10))
+			psDD.Seed = int(silk_ADD32_ovflw(int32(psDD.Seed), int32(silk_RSHIFT_ROUND(sampleStates[SS_left].Q_Q10, 10))))
+
 			psDD.RandState[smpl_buf_idx.Val] = psDD.Seed
 			psDD.RD_Q10 = sampleStates[SS_left].RD_Q10
 		}

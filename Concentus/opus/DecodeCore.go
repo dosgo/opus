@@ -50,7 +50,7 @@ func silk_decode_core(
 		if rand_seed < 0 {
 			psDec.exc_Q14[i] = -psDec.exc_Q14[i]
 		}
-		rand_seed = silk_ADD32_ovflw(rand_seed, int(pulses[i]))
+		rand_seed = int(silk_ADD32_ovflw(int32(rand_seed), int32(pulses[i])))
 	}
 
 	copy(sLPC_Q14[:MAX_LPC_ORDER], psDec.sLPC_Q14_buf[:MAX_LPC_ORDER])
