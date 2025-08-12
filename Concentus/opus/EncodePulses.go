@@ -23,7 +23,7 @@ func silk_encode_pulses(
 	quantOffsetType int,
 	pulses []int8,
 	frame_length int) {
-	panic("eeee")
+
 	fmt.Printf("silk_encode_pulses pulses:+%v\r\n", pulses)
 	var i, k, j, iter, bit, nLS, scale_down, RateLevelIndex int
 	var abs_q, minSumBits_Q5, sumBits_Q5 int
@@ -63,6 +63,7 @@ func silk_encode_pulses(
 		abs_pulses[i+3] = silk_abs(int(pulses[i+3]))
 	}
 	fmt.Printf("abs_pulses:+%v\r\n", abs_pulses)
+	os.Exit(0)
 	sum_pulses = make([]int, iter)
 	nRshifts = make([]int, iter)
 	abs_pulses_ptr = 0
@@ -116,12 +117,7 @@ func silk_encode_pulses(
 			}
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[SilkConstants.N_RATE_LEVELS-1], 8)
 		}
-		if i > 4 {
-			os.Exit(0)
-		}
 	}
-	fmt.Printf("iter:%d\r\n", iter)
-	os.Exit(0)
 	for i = 0; i < iter; i++ {
 		if sum_pulses[i] > 0 {
 			silk_shell_encoder(psRangeEnc, abs_pulses, i*SilkConstants.SHELL_CODEC_FRAME_LENGTH)

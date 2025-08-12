@@ -45,10 +45,13 @@ func silk_prefilter(
 	x_ptr int) {
 	xx, _ := json.Marshal(x)
 	fmt.Printf("silk_prefilter x:%s\r\n", xx)
+	xx1, _ := json.Marshal(xw_Q3)
+	fmt.Printf("silk_prefilter xw_Q3:%s\r\n", xx1)
 	//PrintFuncArgs(xw_Q3, x)
 	P := psEnc.sPrefilt
 
 	fmt.Printf("silk_prefilter psEncCtrl:%+v\r\n", psEncCtrl)
+
 	var j, k, lag int
 	var tmp_32 int
 	var AR1_shp_Q13 int

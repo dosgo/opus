@@ -839,6 +839,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 		fmt.Printf("xfw_Q3-1:%+v d\r\n", xfw_Q3)
 		s.silk_LBRR_encode(sEncCtrl, xfw_Q3, condCoding)
 		fmt.Printf("xfw_Q3-2:%+v d\r\n", xfw_Q3)
+		//os.Exit(0)
 		maxIter = 6
 		gainMult_Q8 = int16(silk_SMULWB(1, 1<<8))
 		found_lower = 0

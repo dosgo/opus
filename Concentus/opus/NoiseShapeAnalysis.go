@@ -3,7 +3,6 @@ package opus
 import (
 	"fmt"
 	"math"
-	"os"
 )
 
 func warped_gain(coefs_Q24 []int, lambda_Q16 int, order int) int {
@@ -229,16 +228,17 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		OpusAssert(BWExp1_Q16 <= (1 << 16))
 		silk_bwexpander_32(AR1_Q24, psEnc.shapingLPCOrder, BWExp1_Q16)
 		pre_nrg_Q30 = silk_LPC_inverse_pred_gain_Q24(AR2_Q24, psEnc.shapingLPCOrder)
+		//fmt.Printf("pre_nrg_Q30:%+v\r\n", pre_nrg_Q30)
 		nrg = silk_LPC_inverse_pred_gain_Q24(AR1_Q24, psEnc.shapingLPCOrder)
+		//fmt.Printf("nrg:%+v\r\n", nrg)
 		//pre_nrg_Q30 = silk_SMULWB(pre_nrg_Q30, int(math.Floor(0.7*float64(1<<15)))) << 1
-		pre_nrg_Q30 = silk_LSHIFT32(silk_SMULWB(pre_nrg_Q30, (int(math.Floor(((0.7)*float64(1<<(15)) + 0.5))))), 1)
-
-		//psEncCtrl.GainsPre_Q14[k] = int(math.Floor(0.3*float64(1<<14))) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
-
-		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*(1<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
-
+		pre_nrg_Q30 = silk_LSHIFT32(silk_SMULWB(pre_nrg_Q30, int(math.Floor((0.7)*float64(int64(1)<<(15))+0.5))), 1)
+		fmt.Printf("pre_nrg_Q30new:%+v\r\n", pre_nrg_Q30)
+		psEncCtrl.GainsPre_Q14[k] = int(math.Floor((0.3)*float64(int64(1)<<(14))+0.5)) + silk_DIV32_varQ(pre_nrg_Q30, nrg, 14)
+		fmt.Printf("silk_DIV32_varQ(pre_nrg_Q30, nrg, 14):%+v\r\n", silk_DIV32_varQ(pre_nrg_Q30, nrg, 14))
+		fmt.Printf("psEncCtrl.GainsPre_Q14[k]:%d\r\n", psEncCtrl.GainsPre_Q14[k])
 		limit_warped_coefs(AR2_Q24, AR1_Q24, warping_Q16, int(math.Floor(3.999*float64(1<<24))), psEnc.shapingLPCOrder)
-		fmt.Printf("AR2_Q24:%+v\r\n", AR2_Q24)
+		//fmt.Printf("AR2_Q24:%+v\r\n", AR2_Q24)
 
 		for i = 0; i < psEnc.shapingLPCOrder; i++ {
 			psEncCtrl.AR1_Q13[k*SilkConstants.MAX_SHAPE_LPC_ORDER+i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(int(AR1_Q24[i]), 11))))
@@ -246,50 +246,75 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		}
 		fmt.Printf("psEncCtrl.AR1_Q13:%+v\r\n", psEncCtrl.AR1_Q13)
 		fmt.Printf("psEncCtrl.AR2_Q13:%+v\r\n", psEncCtrl.AR2_Q13)
-		os.Exit(0)
 	}
-
+	fmt.Printf("psEncCtrl.GainsPre_Q14-2:%+v\r\n", psEncCtrl.GainsPre_Q14)
 	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Floor(0.16*float64(1<<16)))))
-	gain_add_Q16 = silk_log2lin(silk_SMLAWB(16<<7, int(MIN_QGAIN_DB<<7), int(math.Floor(0.16*float64(1<<16)))))
+	fmt.Printf("gain_mult_Q16-1:%d\r\n", gain_mult_Q16)
+
 	OpusAssert(gain_mult_Q16 > 0)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.Gains_Q16[k] = silk_SMULWW(psEncCtrl.Gains_Q16[k], gain_mult_Q16)
 		OpusAssert(psEncCtrl.Gains_Q16[k] >= 0)
 		psEncCtrl.Gains_Q16[k] = silk_ADD_POS_SAT32(psEncCtrl.Gains_Q16[k], gain_add_Q16)
 	}
-	gain_mult_Q16 = (1 << 16) + ((int(TuningParameters.INPUT_TILT)<<26 + psEncCtrl.coding_quality_Q14*int(TuningParameters.HIGH_RATE_INPUT_TILT)<<12) >> 10)
+	gain_mult_Q16 = int(math.Floor(1.0*float64(int64(1)<<(16))+0.5)) + silk_RSHIFT_ROUND(silk_MLA(int(float64(TuningParameters.INPUT_TILT)*float64(int64(1)<<(26))+0.5),
+		psEncCtrl.coding_quality_Q14, int(float64(TuningParameters.HIGH_RATE_INPUT_TILT)*float64(int64(1)<<(12))+0.5)), 10)
+
+	fmt.Printf("gain_mult_Q16:%d\r\n", gain_mult_Q16)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.GainsPre_Q14[k] = silk_SMULWB(gain_mult_Q16, psEncCtrl.GainsPre_Q14[k])
 	}
 
-	strength_Q16 = silk_MUL(int(TuningParameters.LOW_FREQ_SHAPING)<<4, silk_SMLAWB(1<<12, int(TuningParameters.LOW_QUALITY_LOW_FREQ_SHAPING_DECR)<<13, psEnc.input_quality_bands_Q15[0]-(1<<15)))
-	strength_Q16 = (strength_Q16 * psEnc.speech_activity_Q8) >> 8
+	strength_Q16 = silk_MUL(int(float64(TuningParameters.LOW_FREQ_SHAPING)*float64(int64(1)<<(4))+0.5), silk_SMLAWB(int(math.Floor(1.0*float64(int64(1)<<(12))+0.5)),
+		int(float64(TuningParameters.LOW_QUALITY_LOW_FREQ_SHAPING_DECR)*float64(int64(1)<<(13))+0.5), psEnc.input_quality_bands_Q15[0]-int(math.Floor(1.0)*float64(int64(1)<<(15))+0.5)))
+	strength_Q16 = silk_RSHIFT(silk_MUL(strength_Q16, psEnc.speech_activity_Q8), 8)
+
 	if psEnc.indices.signalType == TYPE_VOICED {
-		fs_kHz_inv := silk_DIV32_16(int(math.Floor(0.2*float64(1<<14))), int(psEnc.fs_kHz))
+
+		fs_kHz_inv := silk_DIV32_16((int(math.Floor((0.2)*float64(int64(1)<<(14)) + 0.5))), psEnc.fs_kHz)
 		for k = 0; k < psEnc.nb_subfr; k++ {
-			b_Q14 = fs_kHz_inv + silk_DIV32_16(int(3.0*float64(1<<14)), int(psEncCtrl.pitchL[k]))
-			psEncCtrl.LF_shp_Q14[k] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, b_Q14)) << 16
-			psEncCtrl.LF_shp_Q14[k] |= (b_Q14 - (1 << 14)) & 0xFFFF
+			b_Q14 = fs_kHz_inv + silk_DIV32_16(int(math.Floor((3.0)*float64(int64(1)<<(14))+0.5)), psEncCtrl.pitchL[k])
+			/* Pack two coefficients in one int32 */
+			psEncCtrl.LF_shp_Q14[k] = silk_LSHIFT(int(math.Floor((1.0)*float64(int64(1)<<(14))+0.5))-b_Q14-silk_SMULWB(strength_Q16, b_Q14), 16)
+			psEncCtrl.LF_shp_Q14[k] |= (b_Q14 - int(math.Floor((1.0)*float64(int64(1)<<(14))+0.5))) & 0xFFFF
 		}
-		OpusAssert(int(TuningParameters.HARM_HP_NOISE_COEF)<<24 < int(0.5*float64(1<<24)))
-		Tilt_Q16 = -int(TuningParameters.HP_NOISE_COEF)<<16 - silk_SMULWB((1<<16)-int(TuningParameters.HP_NOISE_COEF)<<16,
-			silk_SMULWB(int(TuningParameters.HARM_HP_NOISE_COEF)<<24, psEnc.speech_activity_Q8))
+		OpusAssert((float64(TuningParameters.HARM_HP_NOISE_COEF)*float64(int64(1)<<(24)) + 0.5) < ((0.5)*float64(int64(1)<<(24)) + 0.5))
+		/* Guarantees that second argument to SMULWB() is within range of an short*/
+		Tilt_Q16 = -int(float64(TuningParameters.HP_NOISE_COEF)*float64(int64(1)<<(16))+0.5) - silk_SMULWB((int(math.Floor(1.0*float64(int64(1)<<16)+0.5))-int(float64(TuningParameters.HP_NOISE_COEF)*float64(int64(1)<<(16))+0.5)),
+			silk_SMULWB(int(float64(TuningParameters.HARM_HP_NOISE_COEF)*float64(int64(1)<<(24))+0.5), psEnc.speech_activity_Q8))
 	} else {
-		b_Q14 = silk_DIV32_16(21299, int(psEnc.fs_kHz))
-		psEncCtrl.LF_shp_Q14[0] = (1<<14 - b_Q14 - silk_SMULWB(strength_Q16, silk_SMULWB(int(math.Floor(0.6*float64(1<<16))), b_Q14))) << 16
-		psEncCtrl.LF_shp_Q14[0] |= (b_Q14 - (1 << 14)) & 0xFFFF
+		b_Q14 = silk_DIV32_16(21299, psEnc.fs_kHz)
+		/* 1.3_Q0 = 21299_Q14*/
+		/* Pack two coefficients in one int32 */
+		psEncCtrl.LF_shp_Q14[0] = silk_LSHIFT(int(math.Floor(1.0*float64(int64(1)<<(14))+0.5))-b_Q14-
+			silk_SMULWB(strength_Q16, silk_SMULWB(int(math.Floor(0.6*float64(int64(1)<<(16))+0.5)), b_Q14)), 16)
+		psEncCtrl.LF_shp_Q14[0] |= (b_Q14 - int(math.Floor(1.0*float64(int64(1)<<(14))+0.5))) & 0xFFFF
 		for k = 1; k < psEnc.nb_subfr; k++ {
 			psEncCtrl.LF_shp_Q14[k] = psEncCtrl.LF_shp_Q14[0]
 		}
-		Tilt_Q16 = -int(TuningParameters.HP_NOISE_COEF) << 16
+		Tilt_Q16 = -int(float64(TuningParameters.HP_NOISE_COEF)*float64(int64(1)<<(16)) + 0.5)
 	}
 
-	HarmBoost_Q16 = silk_SMULWB(silk_SMULWB((1<<17)-int(psEncCtrl.coding_quality_Q14<<3), psEnc.LTPCorr_Q15), int(TuningParameters.LOW_RATE_HARMONIC_BOOST)<<16)
-	HarmBoost_Q16 = silk_SMLAWB(HarmBoost_Q16, (1<<16)-int(psEncCtrl.input_quality_Q14<<2), int(TuningParameters.LOW_INPUT_QUALITY_HARMONIC_BOOST)<<16)
-	if USE_HARM_SHAPING != 0 && psEnc.indices.signalType == TYPE_VOICED {
-		HarmShapeGain_Q16 = silk_SMLAWB(int((TuningParameters.HARMONIC_SHAPING)*(1<<(16))+0.5),
-			int(math.Floor((1.0)*(1<<(16))+0.5))-silk_SMULWB(int(math.Floor((1.0)*(1<<(18))+0.5))-silk_LSHIFT(psEncCtrl.coding_quality_Q14, 4),
-				psEncCtrl.input_quality_Q14), int((TuningParameters.HIGH_RATE_OR_LOW_QUALITY_HARMONIC_SHAPING)*(1<<(16))+0.5))
+	/**
+	 * *************************
+	 */
+	/* HARMONIC SHAPING CONTROL */
+	/**
+	 * *************************
+	 */
+	/* Control boosting of harmonic frequencies */
+	HarmBoost_Q16 = silk_SMULWB(silk_SMULWB(int(math.Floor((1.0)*float64(int64(1)<<(17))+0.5))-silk_LSHIFT(psEncCtrl.coding_quality_Q14, 3),
+		psEnc.LTPCorr_Q15), int(float64(TuningParameters.LOW_RATE_HARMONIC_BOOST)*float64(int64(1)<<(16))+0.5))
+
+	/* More harmonic boost for noisy input signals */
+	HarmBoost_Q16 = silk_SMLAWB(HarmBoost_Q16,
+		(int(math.Floor((1.0)*float64(int64(1)<<(16))+0.5)))-silk_LSHIFT(psEncCtrl.input_quality_Q14, 2), int(float64(TuningParameters.LOW_INPUT_QUALITY_HARMONIC_BOOST)*float64(int64(1)<<(16))+0.5))
+
+	if SilkConstants.USE_HARM_SHAPING != 0 && psEnc.indices.signalType == TYPE_VOICED {
+		/* More harmonic noise shaping for high bitrates or noisy input */
+		HarmShapeGain_Q16 = silk_SMLAWB(int(float64(TuningParameters.HARMONIC_SHAPING)*float64(int64(1)<<(16))+0.5),
+			(int(math.Floor((1.0)*float64(int64(1)<<(16))+0.5)))-silk_SMULWB(int(math.Floor((1.0)*float64(int64(1)<<(18))+0.5))-silk_LSHIFT(psEncCtrl.coding_quality_Q14, 4),
+				psEncCtrl.input_quality_Q14), int(float64(TuningParameters.HIGH_RATE_OR_LOW_QUALITY_HARMONIC_SHAPING)*float64(int64(1)<<(16))+0.5))
 
 		/* Less harmonic noise shaping for less periodic signals */
 		HarmShapeGain_Q16 = silk_SMULWB(silk_LSHIFT(HarmShapeGain_Q16, 1),
@@ -298,12 +323,20 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		HarmShapeGain_Q16 = 0
 	}
 
-	for k = 0; k < MAX_NB_SUBFR; k++ {
-		psShapeSt.HarmBoost_smth_Q16 = silk_SMLAWB(psShapeSt.HarmBoost_smth_Q16, HarmBoost_Q16-psShapeSt.HarmBoost_smth_Q16, int(TuningParameters.SUBFR_SMTH_COEF)<<16)
-		psShapeSt.HarmShapeGain_smth_Q16 = silk_SMLAWB(psShapeSt.HarmShapeGain_smth_Q16, HarmShapeGain_Q16-psShapeSt.HarmShapeGain_smth_Q16, int(TuningParameters.SUBFR_SMTH_COEF)<<16)
-		psShapeSt.Tilt_smth_Q16 = silk_SMLAWB(psShapeSt.Tilt_smth_Q16, Tilt_Q16-psShapeSt.Tilt_smth_Q16, int(TuningParameters.SUBFR_SMTH_COEF)<<16)
-		psEncCtrl.HarmBoost_Q14[k] = int(silk_RSHIFT_ROUND(psShapeSt.HarmBoost_smth_Q16, 2))
-		psEncCtrl.HarmShapeGain_Q14[k] = int(silk_RSHIFT_ROUND(psShapeSt.HarmShapeGain_smth_Q16, 2))
-		psEncCtrl.Tilt_Q14[k] = int(silk_RSHIFT_ROUND(psShapeSt.Tilt_smth_Q16, 2))
+	/**
+	 * **********************
+	 */
+	/* Smooth over subframes */
+	/**
+	 * **********************
+	 */
+	for k = 0; k < SilkConstants.MAX_NB_SUBFR; k++ {
+		psShapeSt.HarmBoost_smth_Q16 = silk_SMLAWB(psShapeSt.HarmBoost_smth_Q16, HarmBoost_Q16-psShapeSt.HarmBoost_smth_Q16, int(float64(TuningParameters.SUBFR_SMTH_COEF)*float64(int64(1)<<(16))+0.5))
+		psShapeSt.HarmShapeGain_smth_Q16 = silk_SMLAWB(psShapeSt.HarmShapeGain_smth_Q16, HarmShapeGain_Q16-psShapeSt.HarmShapeGain_smth_Q16, int(float64(TuningParameters.SUBFR_SMTH_COEF)*float64(int64(1)<<(16))+0.5))
+		psShapeSt.Tilt_smth_Q16 = silk_SMLAWB(psShapeSt.Tilt_smth_Q16, Tilt_Q16-psShapeSt.Tilt_smth_Q16, int(float64(TuningParameters.SUBFR_SMTH_COEF)*float64(int64(1)<<(16))+0.5))
+
+		psEncCtrl.HarmBoost_Q14[k] = silk_RSHIFT_ROUND(psShapeSt.HarmBoost_smth_Q16, 2)
+		psEncCtrl.HarmShapeGain_Q14[k] = silk_RSHIFT_ROUND(psShapeSt.HarmShapeGain_smth_Q16, 2)
+		psEncCtrl.Tilt_Q14[k] = silk_RSHIFT_ROUND(psShapeSt.Tilt_smth_Q16, 2)
 	}
 }
