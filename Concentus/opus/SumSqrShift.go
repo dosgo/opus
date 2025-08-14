@@ -30,47 +30,55 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package opus
 
-func silk_sum_sqr_shift5(energy *BoxedValueInt, shift *BoxedValueInt, x []int16, x_ptr int, len int) {
-	var i, shft int
-	var nrg_tmp, nrg int
+func silk_sum_sqr_shift5(energy *BoxedValueInt, shift *BoxedValueInt, x []int16, x_ptr int, _len int) {
+	var i int
+	var shft int32
+	var nrg_tmp, nrg int32
 
 	nrg = 0
 	shft = 0
-	len--
+	_len--
 
-	for i = 0; i < len; i += 2 {
-		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i]), int32(x[x_ptr+i]))))
-		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1]))))
+	for i = 0; i < _len; i += 2 {
+		nrg = (silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i]), int32(x[x_ptr+i])))
+		nrg = (silk_SMLABB_ovflw(int32(nrg), int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1])))
 		if nrg < 0 {
-			nrg = int(int32((silk_RSHIFT_uint(int64(nrg), 2))))
+			/* Scale down */
+			nrg = int32(silk_RSHIFT_uint(int64(nrg), 2))
 			shft = 2
 			i += 2
 			break
 		}
 	}
 
-	for ; i < len; i += 2 {
-		nrg_tmp = silk_SMULBB(int(x[x_ptr+i]), int(x[x_ptr+i]))
-		nrg_tmp = int(silk_SMLABB_ovflw(int32(nrg_tmp), int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1])))
-		nrg = int(int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), shft)))
+	for ; i < _len; i += 2 {
+		nrg_tmp = int32(silk_SMULBB(int(x[x_ptr+i]), int(x[x_ptr+i])))
+		nrg_tmp = silk_SMLABB_ovflw(nrg_tmp, int32(x[x_ptr+i+1]), int32(x[x_ptr+i+1]))
+		nrg = int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), int(shft)))
+
 		if nrg < 0 {
-			nrg = int(int32(silk_RSHIFT_uint(int64(nrg), 2)))
+			/* Scale down */
+			nrg = int32(silk_RSHIFT_uint(int64(nrg), 2))
 			shft += 2
 		}
 	}
 
-	if i == len {
-		nrg_tmp = silk_SMULBB(int(x[x_ptr+i]), int(x[x_ptr+i]))
-		nrg = int(int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), shft)))
+	if i == _len {
+		/* One sample left to process */
+		nrg_tmp = int32(silk_SMULBB(int(x[x_ptr+i]), int(x[x_ptr+i])))
+		nrg = int32(silk_ADD_RSHIFT_uint(int64(nrg), int64(nrg_tmp), int(shft)))
+
 	}
 
-	if (nrg & 0xC0000000) != 0 {
-		nrg = int(int32(silk_RSHIFT_uint(int64(nrg), 2)))
+	/* Make sure to have at least one extra leading zero (two leading zeros in total) */
+	if (int(nrg) & 0xC0000000) != 0 {
+		nrg = int32(silk_RSHIFT_uint(int64(nrg), 2))
 		shft += 2
 	}
 
-	shift.Val = shft
-	energy.Val = nrg
+	/* Output arguments */
+	shift.Val = int(shft)
+	energy.Val = int(nrg)
 }
 
 func silk_sum_sqr_shift4Bak(energy *BoxedValueInt, shift *BoxedValueInt, x []int16, len int) {

@@ -10,35 +10,57 @@ func silk_residual_energy(
 	nb_subfr int,
 	LPC_order int,
 ) {
-	offset := LPC_order + subfr_length
-	x_ptr := 0
-	LPC_res := make([]int16, (SilkConstants.MAX_NB_SUBFR>>1)*offset)
+	var offset, i, j, lz1, lz2 int
+	rshift := &BoxedValueInt{0}
+	energy := &BoxedValueInt{0}
+	var LPC_res_ptr int
+	var LPC_res []int16
+	var x_ptr int
+	var tmp32 int
 
+	x_ptr = 0
+	offset = LPC_order + subfr_length
+
+	/* Filter input to create the LPC residual for each frame half, and measure subframe energies */
+	LPC_res = make([]int16, (SilkConstants.MAX_NB_SUBFR>>1)*offset)
 	OpusAssert((nb_subfr>>1)*(SilkConstants.MAX_NB_SUBFR>>1) == nb_subfr)
-
-	for i := 0; i < nb_subfr>>1; i++ {
+	for i = 0; i < nb_subfr>>1; i++ {
+		/* Calculate half frame LPC residual signal including preceding samples */
 		silk_LPC_analysis_filter(LPC_res, 0, x, x_ptr, a_Q12[i], 0, (SilkConstants.MAX_NB_SUBFR>>1)*offset, LPC_order)
-		LPC_res_ptr := LPC_order
 
-		for j := 0; j < SilkConstants.MAX_NB_SUBFR>>1; j++ {
-			energy := &BoxedValueInt{Val: 0}
-			rshift := &BoxedValueInt{Val: 0}
+		/* Point to first subframe of the just calculated LPC residual signal */
+		LPC_res_ptr = LPC_order
+		for j = 0; j < (SilkConstants.MAX_NB_SUBFR >> 1); j++ {
+			/* Measure subframe energy */
 			silk_sum_sqr_shift5(energy, rshift, LPC_res, LPC_res_ptr, subfr_length)
-			idx := i*(SilkConstants.MAX_NB_SUBFR>>1) + j
-			nrgs[idx] = energy.Val
-			nrgsQ[idx] = -rshift.Val
+			nrgs[i*(SilkConstants.MAX_NB_SUBFR>>1)+j] = energy.Val
+
+			/* Set Q values for the measured energy */
+			nrgsQ[i*(SilkConstants.MAX_NB_SUBFR>>1)+j] = 0 - rshift.Val
+
+			/* Move to next subframe */
 			LPC_res_ptr += offset
 		}
+		/* Move to next frame half */
 		x_ptr += (SilkConstants.MAX_NB_SUBFR >> 1) * offset
 	}
 
-	for i := 0; i < nb_subfr; i++ {
-		lz1 := silk_CLZ32(nrgs[i]) - 1
-		lz2 := silk_CLZ32(gains[i]) - 1
-		tmp32 := silk_LSHIFT32(gains[i], lz2)
+	/* Apply the squared subframe gains */
+	for i = 0; i < nb_subfr; i++ {
+		/* Fully upscale gains and energies */
+		lz1 = silk_CLZ32(nrgs[i]) - 1
+		lz2 = silk_CLZ32(gains[i]) - 1
+
+		tmp32 = silk_LSHIFT32(gains[i], lz2)
+
+		/* Find squared gains */
 		tmp32 = silk_SMMUL(tmp32, tmp32)
+		/* Q( 2 * lz2 - 32 )*/
+
+		/* Scale energies */
 		nrgs[i] = silk_SMMUL(tmp32, silk_LSHIFT32(nrgs[i], lz1))
-		nrgsQ[i] += lz1 + 2*lz2 - 64
+		/* Q( nrgsQ[ i ] + lz1 + 2 * lz2 - 32 - 32 )*/
+		nrgsQ[i] += lz1 + 2*lz2 - 32 - 32
 	}
 }
 

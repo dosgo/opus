@@ -154,6 +154,7 @@ class FindPredCoefs {
         NLSF.silk_process_NLSFs(psEnc, psEncCtrl.PredCoef_Q12, NLSF_Q15, psEnc.prev_NLSFq_Q15);
 
         /* Calculate residual energy using quantized LPC coefficients */
+        fmt.Printf("silk_process_gains psEncCtrl.ResNrg:%+v\r\n", psEncCtrl.ResNrg);
         ResidualEnergy.silk_residual_energy(psEncCtrl.ResNrg, psEncCtrl.ResNrgQ, LPC_in_pre, psEncCtrl.PredCoef_Q12, local_gains,
                 psEnc.subfr_length, psEnc.nb_subfr, psEnc.predictLPCOrder);
 

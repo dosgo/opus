@@ -455,7 +455,7 @@ func silk_Encode(
 					fmt.Printf("condCoding:%d\r\n", condCoding)
 					fmt.Printf("maxBits:%d\r\n", maxBits)
 					fmt.Printf("useCBR:%d\n", useCBR)
-					fmt.Printf("psRangeEnc.buf:%+v\n", psRangeEnc.buf)
+					fmt.Printf("psRangeEnc.buf:%+v\n", psRangeEnc.get_buffer())
 					fmt.Printf("psEnc.state_Fxx[n].SNR_dB_Q7:%d\n", psEnc.state_Fxx[n].SNR_dB_Q7)
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)

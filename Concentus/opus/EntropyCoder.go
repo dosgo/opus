@@ -412,8 +412,8 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	//fmt.Printf("enc_icdf ec:%+v\r\n", ec)
 	fmt.Printf("this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("this. nbits_total : %d\r\n", ec.nbits_total)
-	if ec.rng == 2026355 {
-		//PrintFuncArgs(_s, _icdf, _ftb)
+	if ec.nbits_total == 657 {
+		//	PrintFuncArgs(_s, _icdf, _ftb)
 		panic("eeee")
 	}
 	ec.enc_normalize()

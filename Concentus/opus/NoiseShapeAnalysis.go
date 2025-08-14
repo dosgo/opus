@@ -253,7 +253,6 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	fmt.Printf("silk_noise_shape_analysis gain_mult_Q16-1:%d\r\n", gain_mult_Q16)
 
 	gain_add_Q16 = silk_log2lin(silk_SMLAWB(int(math.Floor((16.0)*(1<<(7))+0.5)), int(float64(SilkConstants.MIN_QGAIN_DB)*float64(int64(1)<<(7))+0.5), int(math.Floor((0.16)*float64(int64(1)<<(16))+0.5))))
-	fmt.Printf("silk_noise_shape_analysis gain_add_Q16:%d\r\n", gain_add_Q16)
 	OpusAssert(gain_mult_Q16 > 0)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.Gains_Q16[k] = silk_SMULWW(psEncCtrl.Gains_Q16[k], gain_mult_Q16)

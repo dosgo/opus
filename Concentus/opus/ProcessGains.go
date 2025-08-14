@@ -11,6 +11,8 @@ func silk_process_gains(
 	psEncCtrl *SilkEncoderControl,
 	condCoding int,
 ) {
+	fmt.Printf("silk_process_gains psEncCtrl.Gains_Q16-1:%+v\r\n", psEncCtrl.Gains_Q16)
+
 	psShapeSt := psEnc.sShape
 	var k int
 	var s_Q16, InvMaxSqrVal_Q16, gain, gain_squared, ResNrg, ResNrgPart, quant_offset_Q10 int
@@ -28,7 +30,8 @@ func silk_process_gains(
 	/* InvMaxSqrVal = pow( 2.0f, 0.33f * ( 21.0f - SNR_dB ) ) / subfr_length; */
 	InvMaxSqrVal_Q16 = silk_DIV32_16(silk_log2lin(
 		silk_SMULWB(int(math.Floor(float64(21+16/0.33)*float64(int64(1)<<(7))+0.5))-psEnc.SNR_dB_Q7, int(math.Floor((0.33)*float64(int64(1)<<(16))+0.5)))), psEnc.subfr_length)
-
+	fmt.Printf("silk_process_gains InvMaxSqrVal_Q16:%+v\r\n", InvMaxSqrVal_Q16)
+	fmt.Printf("silk_process_gains psEncCtrl.ResNrg:%+v\r\n", psEncCtrl.ResNrg)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		/* Soft limit on ratio residual energy and squared gains */
 		ResNrg = psEncCtrl.ResNrg[k]
@@ -60,7 +63,7 @@ func silk_process_gains(
 		}
 
 	}
-
+	fmt.Printf("silk_process_gains psEncCtrl.Gains_Q16-2:%+v\r\n", psEncCtrl.Gains_Q16)
 	/* Save unquantized gains and gain Index */
 	//System.arraycopy(psEncCtrl.Gains_Q16, 0, psEncCtrl.GainsUnq_Q16, 0, psEnc.nb_subfr)
 	copy(psEncCtrl.GainsUnq_Q16[:], psEncCtrl.Gains_Q16[0:psEnc.nb_subfr])
