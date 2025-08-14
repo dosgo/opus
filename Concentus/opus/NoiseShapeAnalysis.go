@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -213,6 +214,9 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 		tmp32 = silk_SQRT_APPROX(nrg)
 		Qnrg >>= 1
 		psEncCtrl.Gains_Q16[k] = silk_LSHIFT_SAT32(tmp32, 16-Qnrg)
+		fmt.Printf("silk_noise_shape_analysis tmp32:%d\r\n", tmp32)
+		fmt.Printf("silk_noise_shape_analysis Qnrg:%d\r\n", Qnrg)
+		fmt.Printf("silk_noise_shape_analysis psEncCtrl.Gains_Q16[k]:%d\r\n", psEncCtrl.Gains_Q16[k])
 		if psEnc.warping_Q16 > 0 {
 			gain_mult_Q16 = warped_gain(AR2_Q24, warping_Q16, psEnc.shapingLPCOrder)
 			OpusAssert(psEncCtrl.Gains_Q16[k] >= 0)
@@ -246,7 +250,10 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	}
 
 	gain_mult_Q16 = silk_log2lin(-silk_SMLAWB(-(16 << 7), SNR_adj_dB_Q7, int(math.Floor(0.16*float64(1<<16)))))
+	fmt.Printf("silk_noise_shape_analysis gain_mult_Q16-1:%d\r\n", gain_mult_Q16)
 
+	gain_add_Q16 = silk_log2lin(silk_SMLAWB(int(math.Floor((16.0)*(1<<(7))+0.5)), int(float64(SilkConstants.MIN_QGAIN_DB)*float64(int64(1)<<(7))+0.5), int(math.Floor((0.16)*float64(int64(1)<<(16))+0.5))))
+	fmt.Printf("silk_noise_shape_analysis gain_add_Q16:%d\r\n", gain_add_Q16)
 	OpusAssert(gain_mult_Q16 > 0)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.Gains_Q16[k] = silk_SMULWW(psEncCtrl.Gains_Q16[k], gain_mult_Q16)
@@ -255,7 +262,7 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 	}
 	gain_mult_Q16 = int(math.Floor(1.0*float64(int64(1)<<(16))+0.5)) + silk_RSHIFT_ROUND(silk_MLA(int(float64(TuningParameters.INPUT_TILT)*float64(int64(1)<<(26))+0.5),
 		psEncCtrl.coding_quality_Q14, int(float64(TuningParameters.HIGH_RATE_INPUT_TILT)*float64(int64(1)<<(12))+0.5)), 10)
-
+	fmt.Printf("silk_noise_shape_analysis gain_mult_Q16:%d\r\n", gain_mult_Q16)
 	for k = 0; k < psEnc.nb_subfr; k++ {
 		psEncCtrl.GainsPre_Q14[k] = silk_SMULWB(gain_mult_Q16, psEncCtrl.GainsPre_Q14[k])
 	}
