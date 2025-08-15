@@ -3,7 +3,6 @@ package opus
 import (
 	"fmt"
 	"math"
-	"os"
 )
 
 func silk_process_gains(
@@ -77,7 +76,7 @@ func silk_process_gains(
 
 	if psEnc.indices.GainsIndices[0] == 17 {
 		fmt.Printf("silk_process_gains psEncCtrl.Gains_Q16:%+v", psEncCtrl.Gains_Q16)
-		os.Exit(0)
+		//os.Exit(0)
 	}
 	/* Set quantizer offset for voiced signals. Larger offset when LTP coding gain is low or tilt is high (ie low-pass) */
 	if psEnc.indices.signalType == TYPE_VOICED {
