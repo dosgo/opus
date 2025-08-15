@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -270,7 +269,7 @@ func (st *OpusEncoder) user_bitrate_to_bitrate(frame_size, max_data_bytes int) i
 	}
 }
 
-func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, data []byte, data_ptr, out_data_bytes, lsb_depth int, analysis_pcm []int16, analysis_pcm_ptr, analysis_size, c1, c2, analysis_channels, float_api int) int {
+func (st *OpusEncoder) opus_encode_nativeNew(pcm []int16, pcm_ptr, frame_size int, data []byte, data_ptr, out_data_bytes, lsb_depth int, analysis_pcm []int16, analysis_pcm_ptr, analysis_size, c1, c2, analysis_channels, float_api int) int {
 
 	silk_enc := &st.SilkEncoder
 	celt_enc := &st.Celt_Encoder
@@ -1218,7 +1217,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			// Arrays.printObjectFields(this);
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			fmt.Printf("pcm_buf:%+v\r\n", (pcm_buf))
-			os.Exit(0)
+			//os.Exit(0)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
@@ -1295,7 +1294,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	return ret
 }
 
-func (st *OpusEncoder) opus_encode_nativebak(pcm []int16, pcm_ptr, frame_size int, data []byte, data_ptr, out_data_bytes, lsb_depth int, analysis_pcm []int16, analysis_pcm_ptr, analysis_size, c1, c2, analysis_channels, float_api int) int {
+func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, data []byte, data_ptr, out_data_bytes, lsb_depth int, analysis_pcm []int16, analysis_pcm_ptr, analysis_size, c1, c2, analysis_channels, float_api int) int {
 
 	silk_enc := &st.SilkEncoder
 	celt_enc := &st.Celt_Encoder
@@ -1971,13 +1970,13 @@ func (st *OpusEncoder) opus_encode_nativebak(pcm []int16, pcm_ptr, frame_size in
 			celt_enc.SetPrediction(0)
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
-			fmt.Printf("data Buf:%s\r\n", formatSignedBytes(data))
+			fmt.Printf("data Buf1:%s\r\n", formatSignedBytes(data))
 
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			//dd, _ := json.Marshal(data)
 			ddd, _ := json.Marshal(pcm_buf)
 			fmt.Printf("pcm_buf:%s\r\n", ddd)
-			os.Exit(0)
+			//os.Exit(0)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
