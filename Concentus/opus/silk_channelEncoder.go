@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -823,7 +822,6 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 	copy(s.x_buf[x_frame+SilkConstants.LA_SHAPE_MS*s.fs_kHz:], s.inputBuf[1:1+s.frame_length])
 
 	if s.prefillFlag == 0 {
-		fmt.Printf("eeeee\r\n")
 		var xfw_Q3 []int
 		var res_pitch []int16
 		var ec_buf_copy []byte
@@ -836,10 +834,8 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 		silk_process_gains(s, sEncCtrl, condCoding)
 		xfw_Q3 = make([]int, s.frame_length)
 		silk_prefilter(s, sEncCtrl, xfw_Q3, s.x_buf[:], x_frame)
-		fmt.Printf("xfw_Q3-1:%+v d\r\n", xfw_Q3)
 		s.silk_LBRR_encode(sEncCtrl, xfw_Q3, condCoding)
-		fmt.Printf("xfw_Q3-2:%+v d\r\n", xfw_Q3)
-		//os.Exit(0)
+
 		maxIter = 6
 		gainMult_Q8 = int16(silk_SMULWB(1, 1<<8))
 		found_lower = 0
@@ -866,33 +862,14 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 					s.ec_prevLagIndex = ec_prevLagIndex_copy
 					s.ec_prevSignalType = ec_prevSignalType_copy
 				}
-				fmt.Printf("s.pulses -1:%+v\r\n", s.pulses)
+
 				if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
 					s.sNSQ.silk_NSQ_del_dec(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
-					fmt.Printf("eeee121312\r\n")
 				} else {
-					xfw_Q3str, _ := json.Marshal(xfw_Q3)
-					fmt.Printf("xfw_Q3:%s s.nStatesDelayedDecision:%d  s.warping_Q16:%d\r\n", xfw_Q3str, s.nStatesDelayedDecision, s.warping_Q16)
-
-					LTPCoef_Q14, _ := json.Marshal(sEncCtrl.LTPCoef_Q14)
-					fmt.Printf("sEncCtrl.LTPCoef_Q14:%s \r\n", LTPCoef_Q14)
-
-					AR2_Q13, _ := json.Marshal(sEncCtrl.AR2_Q13)
-					fmt.Printf("sEncCtrl.AR2_Q13:%s \r\n", AR2_Q13)
-
-					Tilt_Q14, _ := json.Marshal(sEncCtrl.Tilt_Q14)
-					fmt.Printf("sEncCtrl.Tilt_Q14:%s \r\n", Tilt_Q14)
-					LF_shp_Q14, _ := json.Marshal(sEncCtrl.LF_shp_Q14)
-					fmt.Printf("sEncCtrl.LF_shp_Q14:%s \r\n", LF_shp_Q14)
-					Gains_Q16, _ := json.Marshal(sEncCtrl.Gains_Q16)
-					fmt.Printf("sEncCtrl.Gains_Q16:%s \r\n", Gains_Q16)
-
-					fmt.Printf("sEncCtrl.Lambda_Q10:%d \r\n", sEncCtrl.Lambda_Q10)
-					fmt.Printf("sEncCtrl.LTP_scale_Q14:%d \r\n", sEncCtrl.LTP_scale_Q14)
 
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
-				fmt.Printf("s.indices:%+v\r\n", s.indices)
+
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
 				//	fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
 
@@ -900,7 +877,6 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 				//	os.Exit(0)
 				nBits = psRangeEnc.tell()
 
-				fmt.Printf("nBits:%d\r\n", nBits)
 				if useCBR == 0 && iter == 0 && nBits <= maxBits {
 					break
 				}

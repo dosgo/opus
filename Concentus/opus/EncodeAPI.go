@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -54,7 +53,6 @@ func silk_Encode(
 	psRangeEnc *EntropyCoder,
 	nBytesOut *BoxedValueInt,
 	prefillFlag int) int {
-	fmt.Printf("psEnc.ddd:%d\r\n", psEnc.nBitsExceeded)
 	ret := SilkError.SILK_NO_ERROR
 	var nBits, flags, tmp_payloadSize_ms, tmp_complexity int
 	var nSamplesToBuffer, nSamplesToBufferMax, nBlocksOf10ms int
@@ -451,12 +449,6 @@ func silk_Encode(
 							condCoding = CODE_CONDITIONALLY
 						}
 					}
-					fmt.Printf("nBytesOut:%d\r\n", nBytesOut.Val)
-					fmt.Printf("condCoding:%d\r\n", condCoding)
-					fmt.Printf("maxBits:%d\r\n", maxBits)
-					fmt.Printf("useCBR:%d\n", useCBR)
-					fmt.Printf("psRangeEnc.buf:%+v\n", psRangeEnc.get_buffer())
-					fmt.Printf("psEnc.state_Fxx[n].SNR_dB_Q7:%d\n", psEnc.state_Fxx[n].SNR_dB_Q7)
 
 					ret += psEnc.state_Fxx[n].silk_encode_frame(nBytesOut, psRangeEnc, condCoding, maxBits, useCBR)
 					OpusAssert(ret == SilkError.SILK_NO_ERROR)

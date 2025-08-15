@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -17,9 +16,7 @@ const (
 //var SILK_CONST_FIND_LPC_COND_FAC_32 int = 42950
 
 func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedValueInt, A_Q16 []int, x []int16, x_ptr int, minInvGain_Q30 int, subfr_length int, nb_subfr int, D int) {
-	xx, _ := json.Marshal(x)
 
-	fmt.Printf("silk_burg_modified x:%s\r\n", (xx))
 	var k, n, s, lz, rshifts, reached_max_gain int
 	var C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2 int
 	var x_offset int
@@ -59,9 +56,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 	CAf[0] = CAb[0]
 	/* Q(-rshifts) */
 	MemSetLen(C_first_row, 0, SilkConstants.SILK_MAX_ORDER_LPC)
-	fmt.Printf("rshifts:%d\r\n", rshifts)
-	fmt.Printf("d:%d\r\n", D)
-	fmt.Printf("nb_subfr:%d\r\n", nb_subfr)
+
 	if rshifts > 0 {
 		for s = 0; s < nb_subfr; s++ {
 			x_offset = x_ptr + s*subfr_length
@@ -75,7 +70,6 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 			var d int
 			x_offset = x_ptr + s*subfr_length
 			pitch_xcorr1(x, x_offset, x, x_offset+1, xcorr, subfr_length-D, D)
-			fmt.Printf("xcorr:%+v\r\n", xcorr)
 			for n = 1; n < D+1; n++ {
 				d = 0
 				for i = n + subfr_length - D; i < subfr_length; i++ {
@@ -90,7 +84,6 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 	}
 	//System.arraycopy(C_first_row, 0, C_last_row, 0, SilkConstants.SILK_MAX_ORDER_LPC)
 	copy(C_last_row, C_first_row[:SilkConstants.SILK_MAX_ORDER_LPC])
-	fmt.Printf("C_first_row:%+v\r\n", C_first_row)
 	/* Initialize */
 	CAb[0] = C0 + silk_SMMUL(int(float64(TuningParameters.FIND_LPC_COND_FAC)*float64(int64(1)<<(32))+0.5), C0) + 1
 	CAf[0] = CAb[0]
@@ -219,7 +212,6 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 			}
 
 		}
-		fmt.Printf("rc_Q31:%d\r\n", rc_Q31)
 		/* Update inverse prediction gain */
 		tmp1 = int(int32(1)<<30) - silk_SMMUL(rc_Q31, rc_Q31)
 		//fmt.Printf("tmp1-1:%d\r\n", tmp1)

@@ -1,8 +1,6 @@
 package opus
 
 import (
-	"encoding/json"
-	"fmt"
 	"math"
 )
 
@@ -93,18 +91,10 @@ func silk_find_pred_coefs(
 
 	}
 
-	fmt.Printf("silk_find_pred_coefs minInvGain_Q30:%d\r\n", minInvGain_Q30)
-	jsonStr, _ := json.Marshal(NLSF_Q15)
-	fmt.Printf("silk_find_pred_coefs NLSF_Q15-1:%s\r\n", jsonStr)
 	silk_find_LPC(psEnc, NLSF_Q15, LPC_in_pre, minInvGain_Q30)
-	jsonStr, _ = json.Marshal(NLSF_Q15)
-	fmt.Printf("silk_find_pred_coefs NLSF_Q15:%s\r\n", jsonStr)
+
 	silk_process_NLSFs(psEnc, psEncCtrl.PredCoef_Q12, NLSF_Q15, psEnc.prev_NLSFq_Q15[:])
-	fmt.Printf("silk_find_pred_coefs psEncCtrl.ResNrg:%+v\r\n", psEncCtrl.ResNrg)
-	jsonStr, _ = json.Marshal(psEncCtrl.PredCoef_Q12)
-	fmt.Printf("silk_find_pred_coefs PredCoef_Q12:%s\r\n", jsonStr)
 
 	silk_residual_energy(psEncCtrl.ResNrg[:], psEncCtrl.ResNrgQ[:], LPC_in_pre, psEncCtrl.PredCoef_Q12, local_gains, psEnc.subfr_length, psEnc.nb_subfr, psEnc.predictLPCOrder)
-	fmt.Printf("silk_find_pred_coefs psEncCtrl.ResNrg:%+v\r\n", psEncCtrl.ResNrg)
 	copy(psEnc.prev_NLSFq_Q15[:], NLSF_Q15[:MAX_LPC_ORDER])
 }

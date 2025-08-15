@@ -1,10 +1,5 @@
 package opus
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 func silk_warped_LPC_analysis_filter(
 	state []int,
 	res_Q2 []int,
@@ -44,12 +39,8 @@ func silk_prefilter(
 	x []int16,
 	x_ptr int) {
 
-	xx1, _ := json.Marshal(xw_Q3)
-	fmt.Printf("silk_prefilter xw_Q3:%s\r\n", xx1)
 	//PrintFuncArgs(xw_Q3, x)
 	P := psEnc.sPrefilt
-
-	fmt.Printf("silk_prefilter psEncCtrl:%+v\r\n", psEncCtrl)
 
 	var j, k, lag int
 	var tmp_32 int

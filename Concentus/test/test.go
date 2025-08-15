@@ -57,12 +57,9 @@ func main() {
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 
 		//encoder.ResetState()
-		if err == nil {
-			os.Exit(0)
-		}
-		if i == 4 {
-			fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
-		}
+
+		fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
+
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
 		//break
 		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
@@ -72,6 +69,7 @@ func main() {
 		//fmt.Printf("%d samples decoded\r\n", samplesDecoded)
 		if err == nil {
 			fmt.Printf("pcm:%s\r\n", IntSliceToMD5(pcm))
+			break
 		}
 		i++
 	}

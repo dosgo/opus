@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -673,6 +674,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		dc_reject(pcm, pcm_ptr, 3, pcm_buf, total_buffer*st.channels, st.hp_mem[:], frame_size, st.channels, st.Fs)
 	}
+	fmt.Printf("pcm_buf-4:%+v\r\n", pcm_buf)
 	HB_gain = CeltConstants.Q15ONE
 	if st.mode != MODE_CELT_ONLY {
 		pcm_silk := make([]int16, st.channels*frame_size)
@@ -866,9 +868,11 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	} else {
 		copy(st.delay_buffer[:], pcm_buf[(frame_size+total_buffer-st.encoder_buffer)*st.channels:(frame_size+total_buffer-st.encoder_buffer)*st.channels+st.encoder_buffer*st.channels])
 	}
+	fmt.Printf("pcm_buf-3:%+v\r\n", pcm_buf)
 	if st.prev_HB_gain < CeltConstants.Q15ONE || HB_gain < CeltConstants.Q15ONE {
 		gain_fade(pcm_buf, 0, st.prev_HB_gain, HB_gain, celt_mode.overlap, frame_size, st.channels, celt_mode.window, st.Fs)
 	}
+	fmt.Printf("pcm_buf-2:%+v\r\n", pcm_buf)
 	st.prev_HB_gain = HB_gain
 	if st.mode != MODE_HYBRID || st.stream_channels == 1 {
 		st.silk_mode.stereoWidth_Q14 = imin(1<<14, 2*imax(0, equiv_rate-30000))
@@ -919,6 +923,7 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 	}
 	redundant_rng = 0
 	if redundancy != 0 && celt_to_silk != 0 {
+		//	fmt.Printf("\r\r\r\ndddddddddddddddddddd\r\n")
 		celt_enc.SetStartBand(0)
 		celt_enc.SetVBR(false)
 		err := celt_enc.celt_encode_with_ec(pcm_buf, 0, st.Fs/200, data, data_ptr+nb_compr_bytes, redundancy_bytes, nil)
@@ -939,10 +944,11 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
 			fmt.Printf("data Buf:%s\r\n", formatSignedBytes(data))
-
+			fmt.Printf("pcm_buf-1:%+v\r\n", pcm_buf)
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
 			//dd, _ := json.Marshal(data)
-			fmt.Printf("pcm_buf:%+v\r\n", data)
+			fmt.Printf("pcm_buf:%+v\r\n", pcm_buf)
+			os.Exit(0)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
