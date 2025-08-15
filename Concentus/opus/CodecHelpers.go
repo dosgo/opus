@@ -1,6 +1,8 @@
 package opus
 
-import "math"
+import (
+	"math"
+)
 
 func gen_toc(mode int, framerate int, bandwidth int, channels int) byte {
 	var period int
@@ -56,18 +58,25 @@ func hp_cutoff(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 }
 
 func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, output_ptr int, hp_mem []int, len int, channels int, Fs int) {
+	var c, i int
 	var shift int
+	//	PrintFuncArgs(input, input_ptr, cutoff_Hz, output, output_ptr, hp_mem, len, channels, Fs)
 
+	/* Approximates -round(log2(4.*cutoff_Hz/Fs)) */
 	shift = celt_ilog2(Fs / (cutoff_Hz * 3))
-	for c := 0; c < channels; c++ {
-		for i := 0; i < len; i++ {
-			var x, tmp, y int
-			x = SHL32(EXTEND32Int(int(input[channels*i+c+input_ptr])), 15)
-			tmp = x - hp_mem[2*c]
-			hp_mem[2*c] = hp_mem[2*c] + PSHR32(x-hp_mem[2*c], shift)
-			y = tmp - hp_mem[2*c+1]
-			hp_mem[2*c+1] = hp_mem[2*c+1] + PSHR32(tmp-hp_mem[2*c+1], shift)
-			output[channels*i+c+output_ptr] = int16(EXTRACT16(SATURATE(PSHR32(y, 15), 32767)))
+
+	for c = 0; c < channels; c++ {
+		for i = 0; i < len; i++ {
+			var x, tmp, y int32
+			x = int32(SHL32(EXTEND32(input[channels*i+c+input_ptr]), 15))
+			/* First stage */
+			tmp = x - int32(hp_mem[2*c])
+			hp_mem[2*c] = hp_mem[2*c] + PSHR32(int(x-int32(hp_mem[2*c])), shift)
+			/* Second stage */
+			y = tmp - int32(hp_mem[2*c+1])
+			//fmt.Printf("y:%d\r\n", (SATURATE(PSHR32(int(y), 15), 32767)))
+			hp_mem[2*c+1] = hp_mem[2*c+1] + PSHR32(int(tmp-int32(hp_mem[2*c+1])), shift)
+			output[channels*i+c+output_ptr] = EXTRACT16(int(int32(SATURATE(PSHR32(int(y), 15), 32767))))
 		}
 	}
 }

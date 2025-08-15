@@ -78,3 +78,17 @@ func OpusBandwidthHelpers_GetBandwidth(ordinal int) int {
 func SUBTRACT(a int, b int) int {
 	return OpusBandwidthHelpers_GetBandwidth(OpusBandwidthHelpers_GetOrdinal(a) - b)
 }
+
+func OpusBandwidthHelpers_MIN(a int, b int) int {
+	if OpusBandwidthHelpers_GetOrdinal(a) < OpusBandwidthHelpers_GetOrdinal(b) {
+		return a
+	}
+	return b
+}
+
+func OpusBandwidthHelpers_MAX(a int, b int) int {
+	if OpusBandwidthHelpers_GetOrdinal(a) > OpusBandwidthHelpers_GetOrdinal(b) {
+		return a
+	}
+	return b
+}
