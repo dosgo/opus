@@ -151,7 +151,7 @@ func (ec *EntropyCoder) dec_init(_buf []byte, _buf_ptr int, _storage int) {
 	ec.val = CapToUInt32(ec.rng - 1 - int64(ec.rem>>(EC_SYM_BITS-EC_CODE_EXTRA)))
 	ec.error = 0
 	ec.dec_normalize()
-	fmt.Printf(" dec_init nbits_total:%d\r\n", ec.nbits_total)
+	fmt.Printf(" dec_init ec.rng:%d nbits_total:%d\r\n", ec.rng, ec.nbits_total)
 }
 
 func (ec *EntropyCoder) decode(_ft int64) int64 {
@@ -179,6 +179,7 @@ func (ec *EntropyCoder) dec_update(_fl int64, _fh int64, _ft int64) {
 		ec.rng = ec.rng - s
 	}
 	ec.dec_normalize()
+	//fmt.Printf(" dec_update ec.rng:%d \r\n", ec.rng)
 }
 
 func (ec *EntropyCoder) dec_bit_logp(_logp int64) int {
@@ -203,11 +204,12 @@ func (ec *EntropyCoder) dec_bit_logp(_logp int64) int {
 		ec.rng = r - s
 	}
 	ec.dec_normalize()
+	fmt.Printf(" dec_bit_logp ec.rng:%d \r\n", ec.rng)
 	return ret
 }
 
 func (ec *EntropyCoder) dec_icdf(_icdf []int16, _ftb int) int {
-	old := ec.val
+	old := ec.rng
 	var t int64
 	var s = ec.rng
 	var d = ec.val
@@ -228,11 +230,14 @@ func (ec *EntropyCoder) dec_icdf(_icdf []int16, _ftb int) int {
 	fmt.Printf("dec_icdf this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("dec_icdf this. nbits_total : %d\r\n", ec.nbits_total)
 	ec.dec_normalize()
+	if ec.rng == 184937692 {
+		panic("eeee")
+	}
 	return ret
 }
 
 func (ec *EntropyCoder) dec_icdf_offset(_icdf []int16, _icdf_offset int, _ftb int) int {
-	old := ec.val
+	old := ec.rng
 	var t int64
 	var s = ec.rng
 	var d = ec.val

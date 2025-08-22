@@ -64,6 +64,5 @@ func silk_decode_pulses(
 			sum_pulses[i] |= nLS << 5
 		}
 	}
-
-	silk_decode_signs(*psRangeDec, pulses, frame_length, signalType, quantOffsetType, sum_pulses[:])
+	silk_decode_signs(psRangeDec, pulses, frame_length, signalType, quantOffsetType, sum_pulses[:])
 }

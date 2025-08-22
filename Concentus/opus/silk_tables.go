@@ -535,6 +535,7 @@ var silk_sign_iCDF = []int16{
 	255, 94, 104, 109, 112, 115, 118,
 	248, 53, 69, 80, 88, 95, 102,
 }
+
 var delay_matrix_enc = [][]int8{
 	{6, 0, 3},
 	{0, 7, 3},
@@ -740,6 +741,7 @@ var SilkTables = struct {
 	Silk_TargetRate_table_WB            []int
 	Silk_SNR_table_Q1                   []int16
 	Silk_LTP_gain_middle_avg_RD_Q14     int16
+	Silk_sign_iCDF                      []int16
 }{
 	Silk_Quantization_Offsets_Q10:       silk_Quantization_Offsets_Q10,
 	Silk_type_offset_VAD_iCDF:           silk_type_offset_VAD_iCDF,
@@ -784,4 +786,5 @@ var SilkTables = struct {
 	Silk_TargetRate_table_WB:            silk_TargetRate_table_WB,
 	Silk_SNR_table_Q1:                   silk_SNR_table_Q1,
 	Silk_LTP_gain_middle_avg_RD_Q14:     silk_LTP_gain_middle_avg_RD_Q14,
+	Silk_sign_iCDF:                      silk_sign_iCDF,
 }

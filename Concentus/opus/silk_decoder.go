@@ -37,7 +37,7 @@ package opus
 /// </summary>
 type SilkDecoder struct {
 	channel_state           [DECODER_NUM_CHANNELS]*SilkChannelDecoder
-	sStereo                 StereoDecodeState
+	sStereo                 *StereoDecodeState
 	nChannelsAPI            int
 	nChannelsInternal       int
 	prev_decode_only_middle int
@@ -48,6 +48,7 @@ func NewSilkDecoder() SilkDecoder {
 	for c := 0; c < DECODER_NUM_CHANNELS; c++ {
 		d.channel_state[c] = NewSilkChannelDecoder()
 	}
+	d.sStereo = &StereoDecodeState{}
 	return d
 }
 

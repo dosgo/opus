@@ -1,7 +1,9 @@
 package opus
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 type OpusDecoder struct {
@@ -163,7 +165,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			}
 		}
 	}
-
 	celt_accum := 0
 	if mode != MODE_CELT_ONLY && frame_size >= F10 {
 		celt_accum = 1
@@ -197,15 +198,15 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		pcm_silk_size = IMAX(F10, frame_size) * this.channels
 	}
 	pcm_silk = make([]int16, pcm_silk_size)
+	fmt.Printf("celt_accum:%d\r\n", celt_accum)
 
 	if mode != MODE_CELT_ONLY {
-		lost_flag := 0
-		decoded_samples := 0
+		var lost_flag, decoded_samples int
 		var pcm_ptr2 []int16
-		pcm_ptr2_ptr := 0
+		var pcm_ptr2_ptr = 0
 
 		if celt_accum != 0 {
-			pcm_ptr2 = pcm[pcm_ptr:]
+			pcm_ptr2 = pcm
 			pcm_ptr2_ptr = pcm_ptr
 		} else {
 			pcm_ptr2 = pcm_silk
@@ -216,58 +217,62 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			silk_InitDecoder(&this.SilkDecoder)
 		}
 
+		/* The SILK PLC cannot produce frames of less than 10 ms */
 		this.DecControl.payloadSize_ms = IMAX(10, 1000*audiosize/this.Fs)
 
 		if data != nil {
 			this.DecControl.nChannelsInternal = this.stream_channels
 			if mode == MODE_SILK_ONLY {
-				switch this.bandwidth {
-				case OPUS_BANDWIDTH_NARROWBAND:
+				if this.bandwidth == OPUS_BANDWIDTH_NARROWBAND {
 					this.DecControl.internalSampleRate = 8000
-				case OPUS_BANDWIDTH_MEDIUMBAND:
+				} else if this.bandwidth == OPUS_BANDWIDTH_MEDIUMBAND {
 					this.DecControl.internalSampleRate = 12000
-				case OPUS_BANDWIDTH_WIDEBAND:
+				} else if this.bandwidth == OPUS_BANDWIDTH_WIDEBAND {
 					this.DecControl.internalSampleRate = 16000
-				default:
+				} else {
 					this.DecControl.internalSampleRate = 16000
 					OpusAssert(false)
 				}
 			} else {
+				/* Hybrid mode */
 				this.DecControl.internalSampleRate = 16000
 			}
 		}
 
+		lost_flag = 2 * decode_fec
 		if data == nil {
 			lost_flag = 1
-		} else {
-			lost_flag = 2 * decode_fec
 		}
 		decoded_samples = 0
-		for decoded_samples < frame_size {
-			first_frame := 0
-			if decoded_samples == 0 {
-				first_frame = 1
-			}
-
-			boxed_silk_frame_size := BoxedValueInt{0}
-			silk_ret = silk_Decode(&this.SilkDecoder, &this.DecControl, lost_flag, first_frame, &dec, pcm_ptr2, pcm_ptr2_ptr, &boxed_silk_frame_size)
+		for {
+			/* Call SILK decoder */
+			first_frame := boolToInt(decoded_samples == 0)
+			boxed_silk_frame_size := &BoxedValueInt{0}
+			silk_ret = silk_Decode(&this.SilkDecoder, &this.DecControl,
+				lost_flag, first_frame, &dec, pcm_ptr2, pcm_ptr2_ptr, boxed_silk_frame_size)
 			silk_frame_size = boxed_silk_frame_size.Val
 
 			if silk_ret != 0 {
 				if lost_flag != 0 {
+					/* PLC failure should not be fatal */
 					silk_frame_size = frame_size
-					for i := pcm_ptr2_ptr; i < pcm_ptr2_ptr+frame_size*this.channels; i++ {
-						pcm_ptr2[i] = 0
-					}
+					MemSetWithOffset(pcm_ptr2, 0, pcm_ptr2_ptr, frame_size*this.channels)
 				} else {
+
 					return OpusError.OPUS_INTERNAL_ERROR
 				}
 			}
-			pcm_ptr2_ptr += silk_frame_size * this.channels
+			pcm_ptr2_ptr += (silk_frame_size * this.channels)
 			decoded_samples += silk_frame_size
+			if decoded_samples < frame_size {
+				continue
+			}
+			break
+
 		}
 	}
-
+	xxx, _ := json.Marshal(pcm)
+	fmt.Printf("pcm-3:%s\r\n", xxx)
 	if decode_fec == 0 && mode != MODE_CELT_ONLY && data != nil &&
 		dec.tell()+17+20*boolToInt(this.mode == MODE_HYBRID) <= 8*len {
 		if mode == MODE_HYBRID {
@@ -333,7 +338,7 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		redundant_rng := this.Celt_Decoder.GetFinalRange()
 		_ = redundant_rng
 	}
-
+	fmt.Printf("pcm-2:%+v\r\n", pcm)
 	this.Celt_Decoder.SetStartBand(start_band)
 	if mode != MODE_SILK_ONLY {
 		celt_frame_size := IMIN(F20, frame_size)
@@ -359,10 +364,10 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 
 	if mode != MODE_CELT_ONLY && celt_accum == 0 {
 		for i = 0; i < frame_size*this.channels; i++ {
-
 			pcm[pcm_ptr+i] = SAT16(int(pcm[pcm_ptr+i]) + int(pcm_silk[i]))
 		}
 	}
+	fmt.Printf("pcm-1:%+v\r\n", pcm)
 	window := this.Celt_Decoder.GetMode().window
 	var redundant_rng = 0
 	if redundancy != 0 && celt_to_silk == 0 {
@@ -374,7 +379,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 
 		smooth_fade(pcm, pcm_ptr+this.channels*(frame_size-F2_5), redundant_audio, this.channels*F2_5,
 			pcm, (pcm_ptr + this.channels*(frame_size-F2_5)), F2_5, this.channels, window, this.Fs)
-
 	}
 	if redundancy != 0 && celt_to_silk != 0 {
 		for c = 0; c < this.channels; c++ {
