@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -272,7 +271,7 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 			/* Q( -rshifts ) */
 		}
 	}
-	fmt.Printf("reached_max_gain:%d\r\n", reached_max_gain)
+
 	if reached_max_gain != 0 {
 		for k = 0; k < D; k++ {
 			/* Scale coefficients */

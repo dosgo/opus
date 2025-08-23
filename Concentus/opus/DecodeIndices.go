@@ -75,16 +75,16 @@ func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec *EntropyCoder, Fr
 
 		for k = 0; k < psDec.nb_subfr; k++ {
 			ptr := SilkTables.Silk_LTP_gain_iCDF_ptrs[psDec.indices.PERIndex]
-			psDec.indices.LTPIndex[k] = byte(psRangeDec.dec_icdf(ptr, 8))
+			psDec.indices.LTPIndex[k] = int8(psRangeDec.dec_icdf(ptr, 8))
 		}
 
 		if condCoding == SilkConstants.CODE_INDEPENDENTLY {
-			psDec.indices.LTP_scaleIndex = byte(psRangeDec.dec_icdf(SilkTables.Silk_LTPscale_iCDF, 8))
+			psDec.indices.LTP_scaleIndex = int8(psRangeDec.dec_icdf(SilkTables.Silk_LTPscale_iCDF, 8))
 		} else {
 			psDec.indices.LTP_scaleIndex = 0
 		}
 	}
 	psDec.ec_prevSignalType = int(psDec.indices.signalType)
 
-	psDec.indices.Seed = byte(psRangeDec.dec_icdf(SilkTables.Silk_uniform4_iCDF, 8))
+	psDec.indices.Seed = int8(psRangeDec.dec_icdf(SilkTables.Silk_uniform4_iCDF, 8))
 }

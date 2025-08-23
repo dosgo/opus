@@ -631,9 +631,9 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 	var ec_prevLagIndex_copy int16
 	var ec_prevSignalType_copy int
 	var LastGainIndex_copy2 byte
-	var seed_copy byte
+	var seed_copy int8
 	nBits_lower, nBits_upper, gainMult_lower, gainMult_upper = 0, 0, 0, 0
-	s.indices.Seed = byte(s.frameCounter & 3)
+	s.indices.Seed = int8(s.frameCounter & 3)
 	s.frameCounter++
 	x_frame = s.ltp_mem_length
 

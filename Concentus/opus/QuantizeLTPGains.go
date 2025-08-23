@@ -4,7 +4,7 @@ import "math"
 
 func silk_quant_LTP_gains(
 	B_Q14 []int16,
-	cbk_index []byte,
+	cbk_index []int8,
 	periodicity_index *BoxedValueByte,
 	sum_log_gain_Q7 *BoxedValueInt,
 	W_Q18 []int,
@@ -13,7 +13,7 @@ func silk_quant_LTP_gains(
 	nb_subfr int) {
 
 	var j, k, cbk_size int
-	var temp_idx [MAX_NB_SUBFR]byte
+	var temp_idx [MAX_NB_SUBFR]int8
 	var cl_ptr_Q5 []int16
 	var cbk_ptr_Q7 [][]int8
 	var cbk_gain_ptr_Q7 []int16
@@ -64,7 +64,7 @@ func silk_quant_LTP_gains(
 			rate_dist_Q14 = silk_ADD_POS_SAT32(rate_dist_Q14, rate_dist_Q14_subfr.Val)
 			sum_log_gain_tmp_Q7 = silk_max(0, sum_log_gain_tmp_Q7+silk_lin2log(gain_safety+gain_Q7.Val)-int(math.Floor(7*(1<<(7))+0.5)))
 
-			temp_idx[j] = byte(tempIdxVal.Val)
+			temp_idx[j] = int8(tempIdxVal.Val)
 			b_Q14_ptr += LTP_ORDER
 			W_Q18_ptr += LTP_ORDER * LTP_ORDER
 		}

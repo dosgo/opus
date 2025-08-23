@@ -1,10 +1,8 @@
 package opus
 
-import "bytes"
-
 type SideInfoIndices struct {
 	GainsIndices      []int8
-	LTPIndex          []byte
+	LTPIndex          []int8
 	NLSFIndices       []int8
 	lagIndex          int16
 	contourIndex      int8
@@ -12,14 +10,14 @@ type SideInfoIndices struct {
 	quantOffsetType   byte
 	NLSFInterpCoef_Q2 byte
 	PERIndex          int8
-	LTP_scaleIndex    byte
-	Seed              byte
+	LTP_scaleIndex    int8
+	Seed              int8
 }
 
 func NewSideInfoIndices() *SideInfoIndices {
 	obj := &SideInfoIndices{}
 	obj.GainsIndices = make([]int8, SilkConstants.MAX_NB_SUBFR)
-	obj.LTPIndex = make([]byte, SilkConstants.MAX_NB_SUBFR)
+	obj.LTPIndex = make([]int8, SilkConstants.MAX_NB_SUBFR)
 	obj.NLSFIndices = make([]int8, SilkConstants.MAX_LPC_ORDER+1)
 	return obj
 }
@@ -27,7 +25,10 @@ func (si *SideInfoIndices) Reset() {
 	for i := range si.GainsIndices {
 		si.GainsIndices[i] = 0
 	}
-	copy(si.LTPIndex, bytes.Repeat([]byte{0}, len(si.LTPIndex)))
+
+	for i := range si.LTPIndex {
+		si.LTPIndex[i] = 0
+	}
 	for i := range si.NLSFIndices {
 		si.NLSFIndices[i] = 0
 	}

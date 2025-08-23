@@ -173,7 +173,7 @@ func (d *SilkChannelDecoder) silk_decoder_set_fs(fs_kHz, fs_API_Hz int) int {
 	return ret
 }
 
-func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN *BoxedValueInt, lostFlag, condCoding int) int {
+func (d *SilkChannelDecoder) silk_decode_frameBak(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN *BoxedValueInt, lostFlag, condCoding int) int {
 	thisCtrl := NewSilkDecoderControl()
 	L := d.frame_length
 	thisCtrl.LTP_scale_Q14 = 0
@@ -203,5 +203,116 @@ func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []
 	silk_PLC_glue_frames(d, pOut, pOut_ptr, L)
 	d.lagPrev = thisCtrl.pitchL[d.nb_subfr-1]
 	pN.Val = L
+	return ret
+}
+
+func (d *SilkChannelDecoder) silk_decode_frame(psRangeDec *EntropyCoder, pOut []int16, pOut_ptr int, pN *BoxedValueInt, lostFlag, condCoding int) int {
+	thisCtrl := NewSilkDecoderControl()
+	var L, mv_len, ret int = 0, 0, 0
+
+	L = d.frame_length
+	thisCtrl.LTP_scale_Q14 = 0
+
+	/* Safety checks */
+	OpusAssert(L > 0 && L <= SilkConstants.MAX_FRAME_LENGTH)
+
+	if lostFlag == FLAG_DECODE_NORMAL ||
+		(lostFlag == FLAG_DECODE_LBRR && d.LBRR_flags[d.nFramesDecoded] == 1) {
+
+		pulses := make([]int16, (L+SilkConstants.SHELL_CODEC_FRAME_LENGTH-1)&^(SilkConstants.SHELL_CODEC_FRAME_LENGTH-1))
+		/**
+		 * ******************************************
+		 */
+		/* Decode quantization indices of side info  */
+		/**
+		 * ******************************************
+		 */
+		silk_decode_indices(d, psRangeDec, d.nFramesDecoded, lostFlag, condCoding)
+
+		/**
+		 * ******************************************
+		 */
+		/* Decode quantization indices of excitation */
+		/**
+		 * ******************************************
+		 */
+		silk_decode_pulses(psRangeDec, pulses, int(d.indices.signalType),
+			int(d.indices.quantOffsetType), d.frame_length)
+
+		/**
+		 * *****************************************
+		 */
+		/* Decode parameters and pulse signal       */
+		/**
+		 * *****************************************
+		 */
+		silk_decode_parameters(d, thisCtrl, condCoding)
+
+		/**
+		 * *****************************************************
+		 */
+		/* Run inverse NSQ                                      */
+		/**
+		 * *****************************************************
+		 */
+		silk_decode_core(d, thisCtrl, pOut, pOut_ptr, pulses)
+
+		/**
+		 * *****************************************************
+		 */
+		/* Update PLC state                                     */
+		/**
+		 * *****************************************************
+		 */
+		silk_PLC(d, thisCtrl, pOut, pOut_ptr, 0)
+
+		d.lossCnt = 0
+		d.prevSignalType = int(d.indices.signalType)
+		OpusAssert(d.prevSignalType >= 0 && d.prevSignalType <= 2)
+
+		/* A frame has been decoded without errors */
+		d.first_frame_after_reset = 0
+	} else {
+		/* Handle packet loss by extrapolation */
+		silk_PLC(d, thisCtrl, pOut, pOut_ptr, 1)
+	}
+
+	/**
+	 * **********************
+	 */
+	/* Update output buffer. */
+	/**
+	 * **********************
+	 */
+	OpusAssert(d.ltp_mem_length >= d.frame_length)
+	mv_len = d.ltp_mem_length - d.frame_length
+	MemMove(d.outBuf, d.frame_length, 0, mv_len)
+	//System.arraycopy(pOut, pOut_ptr, d.outBuf, mv_len, d.frame_length)
+	copy(d.outBuf[mv_len:], pOut[pOut_ptr:pOut_ptr+d.frame_length])
+
+	/**
+	 * *********************************************
+	 */
+	/* Comfort noise generation / estimation        */
+	/**
+	 * *********************************************
+	 */
+	silk_CNG(d, thisCtrl, pOut, pOut_ptr, L)
+
+	/**
+	 * *************************************************************
+	 */
+	/* Ensure smooth connection of extrapolated and good frames     */
+	/**
+	 * *************************************************************
+	 */
+	silk_PLC_glue_frames(d, pOut, pOut_ptr, L)
+
+	/* Update some decoder state variables */
+	d.lagPrev = thisCtrl.pitchL[d.nb_subfr-1]
+
+	/* Set output frame length */
+	pN.Val = L
+
 	return ret
 }

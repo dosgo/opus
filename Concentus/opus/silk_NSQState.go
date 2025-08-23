@@ -653,7 +653,7 @@ func (s *SilkNSQState) silk_NSQ_del_dec(
 	}
 
 	psDD = psDelDec[Winner_ind]
-	psIndices.Seed = byte(psDD.SeedInit)
+	psIndices.Seed = int8(psDD.SeedInit)
 	last_smple_idx = smpl_buf_idx + decisionDelay
 	Gain_Q10 = silk_RSHIFT32(Gains_Q16[psEncC.nb_subfr-1], 6)
 	for i = 0; i < decisionDelay; i++ {
