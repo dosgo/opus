@@ -1,10 +1,5 @@
 package opus
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 func silk_InitDecoder(decState *SilkDecoder) int {
 	decState.Reset()
 	ret := SilkError.SILK_NO_ERROR
@@ -507,9 +502,7 @@ func silk_Decode(
 	   we can delay allocating the temp buffer until after the SILK peak stack
 	   usage. We need to use a < and not a <= because of the two extra samples. */
 	delay_stack_alloc = boolToInt(decControl.internalSampleRate*decControl.nChannelsInternal < decControl.API_sampleRate*decControl.nChannelsAPI)
-	samplesOutStr, _ := json.Marshal(samplesOut)
 
-	fmt.Printf("silk_Decode delay_stack_alloc:%d samplesOut-1:%s\r\n", delay_stack_alloc, samplesOutStr)
 	if delay_stack_alloc != 0 {
 		samplesOut_tmp = samplesOut
 		samplesOut_tmp_ptrs[0] = samplesOut_ptr
@@ -558,8 +551,7 @@ func silk_Decode(
 		}
 		channel_state[n].nFramesDecoded++
 	}
-	samplesOutStr2, _ := json.Marshal(samplesOut)
-	fmt.Printf("silk_Decode samplesOut-11:%s\r\n", samplesOutStr2)
+
 	if decControl.nChannelsAPI == 2 && decControl.nChannelsInternal == 2 {
 		/* Convert Mid/Side to Left/Right */
 		silk_stereo_MS_to_LR(psDec.sStereo, samplesOut_tmp, samplesOut_tmp_ptrs[0], samplesOut_tmp, samplesOut_tmp_ptrs[1], MS_pred_Q13, channel_state[0].fs_kHz, nSamplesOutDec.Val)
@@ -593,9 +585,7 @@ func silk_Decode(
 		samplesOut_tmp_ptrs[0] = 0
 		samplesOut_tmp_ptrs[1] = channel_state[0].frame_length + 2
 	}
-	samplesOutStr1, _ := json.Marshal(samplesOut)
 
-	fmt.Printf("silk_Decode samplesOut11:%s\r\n", samplesOutStr1)
 	for n = 0; n < silk_min(decControl.nChannelsAPI, decControl.nChannelsInternal); n++ {
 
 		/* Resample decoded signal to API_sampleRate */

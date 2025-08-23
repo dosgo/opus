@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -346,7 +345,6 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	overlap = mode.overlap
 	eBands = mode.eBands
 	start = this.start
-	fmt.Println("start:", start)
 	end = this.end
 	tf_estimate = 0
 	if nbCompressedBytes < 2 || pcm == nil {
@@ -494,7 +492,7 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 	if (gain1 > int(math.Floor(0.5+(.4)*float64(1<<(15)))) || this.prefilter_gain > int(math.Floor(0.5+(.4)*float64(1<<(15))))) && (this.analysis.valid == 0 || this.analysis.tonality > .3) && (pitch_index > int(1.26*float64(this.prefilter_period)) || pitch_index < int(0.79*float64(this.prefilter_period))) {
 		pitch_change = 1
 	}
-	fmt.Printf("pf_on:%d tell:%d total_bits:%d start:%d\r\n", pf_on, tell, total_bits, start)
+
 	if pf_on == 0 {
 		if start == 0 && tell+16 <= total_bits {
 			enc.enc_bit_logp(0, 1)
@@ -1112,7 +1110,6 @@ func (this *CeltEncoder) SetStartBand(value int) {
 	if value < 0 || value >= this.mode.nbEBands {
 		panic("Start band above max number of ebands (or negative)")
 	}
-	fmt.Printf("this.start:%d\r\n", value)
 	this.start = value
 }
 

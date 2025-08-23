@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec *EntropyCoder, FrameIndex int, decode_LBRR int, condCoding int) {
 	var i, k, Ix int
 	var decode_absolute_lagIndex, delta_lagIndex int
@@ -9,11 +7,9 @@ func silk_decode_indices(psDec *SilkChannelDecoder, psRangeDec *EntropyCoder, Fr
 	pred_Q8 := make([]int16, psDec.LPC_order)
 
 	if decode_LBRR != 0 || psDec.VAD_flags[FrameIndex] != 0 {
-		fmt.Println("silk_decode_indices -1\r\n")
 		Ix = psRangeDec.dec_icdf(SilkTables.Silk_type_offset_VAD_iCDF, 8) + 2
 	} else {
 		Ix = psRangeDec.dec_icdf(SilkTables.Silk_type_offset_no_VAD_iCDF, 8)
-		fmt.Println("silk_decode_indices 1\r\n")
 	}
 	psDec.indices.signalType = byte(Ix >> 1)
 	psDec.indices.quantOffsetType = byte(Ix & 1)

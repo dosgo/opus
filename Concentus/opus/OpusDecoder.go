@@ -1,9 +1,7 @@
 package opus
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 type OpusDecoder struct {
@@ -198,7 +196,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		pcm_silk_size = IMAX(F10, frame_size) * this.channels
 	}
 	pcm_silk = make([]int16, pcm_silk_size)
-	fmt.Printf("celt_accum:%d\r\n", celt_accum)
 
 	if mode != MODE_CELT_ONLY {
 		var lost_flag, decoded_samples int
@@ -271,8 +268,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 
 		}
 	}
-	xxx, _ := json.Marshal(pcm)
-	fmt.Printf("pcm-3:%s\r\n", xxx)
 	if decode_fec == 0 && mode != MODE_CELT_ONLY && data != nil &&
 		dec.tell()+17+20*boolToInt(this.mode == MODE_HYBRID) <= 8*len {
 		if mode == MODE_HYBRID {
@@ -338,7 +333,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 		redundant_rng := this.Celt_Decoder.GetFinalRange()
 		_ = redundant_rng
 	}
-	fmt.Printf("pcm-2:%+v\r\n", pcm)
 	this.Celt_Decoder.SetStartBand(start_band)
 	if mode != MODE_SILK_ONLY {
 		celt_frame_size := IMIN(F20, frame_size)
@@ -367,7 +361,6 @@ func (this *OpusDecoder) opus_decode_frame(data []byte, data_ptr int, len int, p
 			pcm[pcm_ptr+i] = SAT16(int(pcm[pcm_ptr+i]) + int(pcm_silk[i]))
 		}
 	}
-	fmt.Printf("pcm-1:%+v\r\n", pcm)
 	window := this.Celt_Decoder.GetMode().window
 	var redundant_rng = 0
 	if redundancy != 0 && celt_to_silk == 0 {

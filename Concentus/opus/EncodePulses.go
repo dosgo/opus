@@ -1,9 +1,5 @@
 package opus
 
-import (
-	"fmt"
-)
-
 func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, pulses_in_ptr int, max_pulses int, _len int) int {
 	for k := 0; k < _len; k++ {
 		k2p := 2*k + pulses_in_ptr
@@ -102,7 +98,6 @@ func silk_encode_pulses(
 	}
 
 	psRangeEnc.enc_icdf(RateLevelIndex, SilkTables.Silk_rate_levels_iCDF[signalType>>1], 8)
-	fmt.Printf("sum_pulses:%v\r\n", sum_pulses)
 	for i = 0; i < iter; i++ {
 		if nRshifts[i] == 0 {
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[RateLevelIndex], 8)

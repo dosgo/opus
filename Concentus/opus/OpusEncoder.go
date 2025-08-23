@@ -1,9 +1,7 @@
 package opus
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -1152,12 +1150,10 @@ func (st *OpusEncoder) opus_encode_nativeNew(pcm []int16, pcm_ptr, frame_size in
 		}
 		/* If false, we already busted the budget and we'll end up with a "PLC packet" */
 		if enc.tell() <= 8*nb_compr_bytes {
-			fmt.Printf("data buf:%+v\r\n", (data))
 
 			// Arrays.printObjectFields(this);
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
-			fmt.Printf("pcm_buf:%+v\r\n", (pcm_buf))
-			//os.Exit(0)
+
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
 			}
@@ -1824,7 +1820,6 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			nb_compr_bytes = bytes_target
 		}
 	}
-	fmt.Printf("nb_compr_bytes:%d\r\n", nb_compr_bytes)
 	tmp_prefill = make([]int16, st.channels*st.Fs/400)
 	if st.mode != MODE_SILK_ONLY && st.mode != st.prev_mode && (st.prev_mode != MODE_AUTO && st.prev_mode != MODE_UNKNOWN) {
 		copy(tmp_prefill, st.delay_buffer[(st.encoder_buffer-total_buffer-st.Fs/400)*st.channels:(st.encoder_buffer-total_buffer-st.Fs/400)*st.channels+st.channels*st.Fs/400])
@@ -1910,12 +1905,9 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 			celt_enc.SetPrediction(0)
 		}
 		if enc.tell() <= 8*nb_compr_bytes {
-			fmt.Printf("data Buf1:%s\r\n", formatSignedBytes(data))
 
 			ret = celt_enc.celt_encode_with_ec(pcm_buf, 0, frame_size, nil, 0, nb_compr_bytes, enc)
-			//dd, _ := json.Marshal(data)
-			ddd, _ := json.Marshal(pcm_buf)
-			fmt.Printf("pcm_buf:%s\r\n", ddd)
+
 			//os.Exit(0)
 			if ret < 0 {
 				return OpusError.OPUS_INTERNAL_ERROR
