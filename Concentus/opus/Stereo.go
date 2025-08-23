@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -69,8 +68,6 @@ func silk_stereo_find_predictor(
 	scale1 := BoxedValueInt{0}
 	scale2 := BoxedValueInt{0}
 	var corr, pred_Q13, pred2_Q10 int
-	//fmt.Printf("X:%+v \r\n y:%+v length:%d\r\n", x, y, length)
-	//xjson, _ := json.Marshal(x)
 
 	silk_sum_sqr_shift4(&nrgx, &scale1, x, length)
 	silk_sum_sqr_shift4(&nrgy, &scale2, y, length)
@@ -278,14 +275,14 @@ func silk_stereo_LR_to_MS(
 
 		/* Q11 */
 		sum = silk_SMLAWB(silk_SMULWB(w_Q24, int(side[n+1])), sum, pred0_Q13)
-		//fmt.Printf("sum:%d\r\n", sum)
+
 		/* Q8  */
 		sum = silk_SMLAWB(sum, silk_LSHIFT(int(x1[mid+n+1]), 11), pred1_Q13)
-		//fmt.Printf("sum:%d\r\n", sum)
+
 		/* Q8  */
 		x2[x2_ptr+n-1] = int16(silk_SAT16(silk_RSHIFT_ROUND(sum, 8)))
 	}
-	fmt.Printf("x2:%s\r\n", IntSliceToMD5(x2))
+
 	pred0_Q13 = -pred_Q13[0]
 	pred1_Q13 = -pred_Q13[1]
 	w_Q24 = silk_LSHIFT(width_Q14, 10)
@@ -377,7 +374,6 @@ func silk_stereo_quant_pred(
 					quant_pred_Q13 = lvl_Q13
 					(ix)[n][0] = i
 					(ix)[n][1] = j
-					//fmt.Printf("ixdddd\r\n'")
 				} else {
 					done = true
 				}

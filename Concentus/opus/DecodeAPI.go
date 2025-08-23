@@ -591,7 +591,7 @@ func silk_Decode(
 		samplesOut_tmp_ptrs[0] = 0
 		samplesOut_tmp_ptrs[1] = channel_state[0].frame_length + 2
 	}
-	fmt.Printf("silk_Decode samplesOut:%s", samplesOut)
+	fmt.Printf("silk_Decode samplesOut:%+v", samplesOut)
 	for n = 0; n < silk_min(decControl.nChannelsAPI, decControl.nChannelsInternal); n++ {
 
 		/* Resample decoded signal to API_sampleRate */

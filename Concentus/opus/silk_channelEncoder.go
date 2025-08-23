@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -223,184 +222,6 @@ func (s *SilkChannelEncoder) Reset() {
 		s.x_buf[i] = 0
 	}
 	s.LTPCorr_Q15 = 0
-}
-
-func (e *SilkChannelEncoder) PrintAllFields() {
-	fmt.Printf("SilkChannelEncoder start\r\n")
-	fmt.Printf("In_HP_State: %v\n", e.In_HP_State)
-	fmt.Printf("variable_HP_smth1_Q15: %d\n", e.variable_HP_smth1_Q15)
-	fmt.Printf("variable_HP_smth2_Q15: %d\n", e.variable_HP_smth2_Q15)
-	fmt.Printf("sLP: %+v\n", e.sLP)
-	fmt.Printf("sVAD: %+v\n", e.sVAD)
-	fmt.Printf("sNSQ: %+v\n", e.sNSQ)
-
-	if e.prev_NLSFq_Q15 == nil {
-		fmt.Println("prev_NLSFq_Q15: nil")
-	} else {
-		fmt.Printf("prev_NLSFq_Q15: %#v\n", e.prev_NLSFq_Q15)
-	}
-
-	fmt.Printf("speech_activity_Q8: %d\n", e.speech_activity_Q8)
-	fmt.Printf("allow_bandwidth_switch: %d\n", e.allow_bandwidth_switch)
-	fmt.Printf("LBRRprevLastGainIndex: %d\n", e.LBRRprevLastGainIndex)
-	fmt.Printf("prevSignalType: %d\n", e.prevSignalType)
-	fmt.Printf("prevLag: %d\n", e.prevLag)
-	fmt.Printf("pitch_LPC_win_length: %d\n", e.pitch_LPC_win_length)
-	fmt.Printf("max_pitch_lag: %d\n", e.max_pitch_lag)
-	fmt.Printf("API_fs_Hz: %d\n", e.API_fs_Hz)
-	fmt.Printf("prev_API_fs_Hz: %d\n", e.prev_API_fs_Hz)
-	fmt.Printf("maxInternal_fs_Hz: %d\n", e.maxInternal_fs_Hz)
-	fmt.Printf("minInternal_fs_Hz: %d\n", e.minInternal_fs_Hz)
-	fmt.Printf("desiredInternal_fs_Hz: %d\n", e.desiredInternal_fs_Hz)
-	fmt.Printf("fs_kHz: %d\n", e.fs_kHz)
-	fmt.Printf("nb_subfr: %d\n", e.nb_subfr)
-	fmt.Printf("frame_length: %d\n", e.frame_length)
-	fmt.Printf("subfr_length: %d\n", e.subfr_length)
-	fmt.Printf("ltp_mem_length: %d\n", e.ltp_mem_length)
-	fmt.Printf("la_pitch: %d\n", e.la_pitch)
-	fmt.Printf("la_shape: %d\n", e.la_shape)
-	fmt.Printf("shapeWinLength: %d\n", e.shapeWinLength)
-	fmt.Printf("TargetRate_bps: %d\n", e.TargetRate_bps)
-	fmt.Printf("PacketSize_ms: %d\n", e.PacketSize_ms)
-	fmt.Printf("PacketLoss_perc: %d\n", e.PacketLoss_perc)
-	fmt.Printf("frameCounter: %d\n", e.frameCounter)
-	fmt.Printf("Complexity: %d\n", e.Complexity)
-	fmt.Printf("nStatesDelayedDecision: %d\n", e.nStatesDelayedDecision)
-	fmt.Printf("useInterpolatedNLSFs: %d\n", e.useInterpolatedNLSFs)
-	fmt.Printf("shapingLPCOrder: %d\n", e.shapingLPCOrder)
-	fmt.Printf("predictLPCOrder: %d\n", e.predictLPCOrder)
-	fmt.Printf("pitchEstimationComplexity: %d\n", e.pitchEstimationComplexity)
-	fmt.Printf("pitchEstimationLPCOrder: %d\n", e.pitchEstimationLPCOrder)
-	fmt.Printf("pitchEstimationThreshold_Q16: %d\n", e.pitchEstimationThreshold_Q16)
-	fmt.Printf("LTPQuantLowComplexity: %d\n", e.LTPQuantLowComplexity)
-	fmt.Printf("mu_LTP_Q9: %d\n", e.mu_LTP_Q9)
-	fmt.Printf("sum_log_gain_Q7: %d\n", e.sum_log_gain_Q7)
-	fmt.Printf("NLSF_MSVQ_Survivors: %d\n", e.NLSF_MSVQ_Survivors)
-	fmt.Printf("first_frame_after_reset: %d\n", e.first_frame_after_reset)
-	fmt.Printf("controlled_since_last_payload: %d\n", e.controlled_since_last_payload)
-	fmt.Printf("warping_Q16: %d\n", e.warping_Q16)
-	fmt.Printf("useCBR: %d\n", e.useCBR)
-	fmt.Printf("prefillFlag: %d\n", e.prefillFlag)
-
-	if e.pitch_lag_low_bits_iCDF == nil {
-		fmt.Println("pitch_lag_low_bits_iCDF: nil")
-	} else {
-		fmt.Printf("pitch_lag_low_bits_iCDF: %#v\n", e.pitch_lag_low_bits_iCDF)
-	}
-
-	if e.pitch_contour_iCDF == nil {
-		fmt.Println("pitch_contour_iCDF: nil")
-	} else {
-		fmt.Printf("pitch_contour_iCDF: %#v\n", e.pitch_contour_iCDF)
-	}
-
-	fmt.Printf("psNLSF_CB: %p\n", e.psNLSF_CB)
-	fmt.Printf("input_quality_bands_Q15: %v\n", e.input_quality_bands_Q15)
-	fmt.Printf("input_tilt_Q15: %d\n", e.input_tilt_Q15)
-	fmt.Printf("SNR_dB_Q7: %d\n", e.SNR_dB_Q7)
-
-	// VAD_flags 数组处理
-	fmt.Printf("VAD_flags: %v\n", e.VAD_flags)
-
-	fmt.Printf("LBRR_flag: %d\n", e.LBRR_flag)
-
-	// LBRR_flags 数组处理
-	fmt.Printf("LBRR_flags: [")
-	for i, v := range e.LBRR_flags {
-		if i > 0 {
-			fmt.Print(", ")
-		}
-		fmt.Printf("%d", v)
-	}
-	fmt.Println("]")
-
-	fmt.Printf("indices: %+v\n", e.indices)
-
-	if e.pulses == nil {
-		fmt.Println("pulses: nil")
-	} else {
-		fmt.Printf("pulses: %#v\n", e.pulses)
-	}
-
-	if e.inputBuf == nil {
-		fmt.Println("inputBuf: nil")
-	} else {
-		// 输出前10个元素示例
-		fmt.Printf("inputBuf (first 10): [")
-		for i := 0; i < 10 && i < len(e.inputBuf); i++ {
-			if i > 0 {
-				fmt.Print(", ")
-			}
-			fmt.Printf("%d", e.inputBuf[i])
-		}
-		if len(e.inputBuf) > 10 {
-			fmt.Printf(", ...(%d more)]\n", len(e.inputBuf)-10)
-		} else {
-			fmt.Println("]")
-		}
-	}
-
-	fmt.Printf("inputBufIx: %d\n", e.inputBufIx)
-	fmt.Printf("nFramesPerPacket: %d\n", e.nFramesPerPacket)
-	fmt.Printf("nFramesEncoded: %d\n", e.nFramesEncoded)
-	fmt.Printf("nChannelsAPI: %d\n", e.nChannelsAPI)
-	fmt.Printf("nChannelsInternal: %d\n", e.nChannelsInternal)
-	fmt.Printf("channelNb: %d\n", e.channelNb)
-	fmt.Printf("frames_since_onset: %d\n", e.frames_since_onset)
-	fmt.Printf("ec_prevSignalType: %d\n", e.ec_prevSignalType)
-	fmt.Printf("ec_prevLagIndex: %d\n", e.ec_prevLagIndex)
-
-	fmt.Printf("resampler_state: %+v\n", e.resampler_state)
-
-	fmt.Printf("useDTX: %d\n", e.useDTX)
-	fmt.Printf("inDTX: %d\n", e.inDTX)
-	fmt.Printf("noSpeechCounter: %d\n", e.noSpeechCounter)
-	fmt.Printf("useInBandFEC: %d\n", e.useInBandFEC)
-	fmt.Printf("LBRR_enabled: %d\n", e.LBRR_enabled)
-	fmt.Printf("LBRR_GainIncreases: %d\n", e.LBRR_GainIncreases)
-
-	if e.indices_LBRR == nil {
-		fmt.Println("indices_LBRR: nil")
-	} else {
-		fmt.Println("indices_LBRR:")
-		for i, v := range e.indices_LBRR {
-			if v == nil {
-				fmt.Printf("  [%d]: nil\n", i)
-			} else {
-				fmt.Printf("  [%d]: %+v\n", i, v)
-			}
-		}
-	}
-
-	fmt.Println("pulses_LBRR:")
-	for i, v := range e.pulses_LBRR {
-		if v == nil {
-			fmt.Printf("  [%d]: nil\n", i)
-		} else {
-			fmt.Printf("  [%d]: %#v\n", i, v)
-		}
-	}
-
-	fmt.Printf("sShape: %+v\n", e.sShape)
-	fmt.Printf("sPrefilt: %+v\n", e.sPrefilt)
-
-	// x_buf 数组输出（只显示前10个元素）
-	fmt.Printf("x_buf (first 10): [")
-	for i := 0; i < 10 && i < len(e.x_buf); i++ {
-		if i > 0 {
-			fmt.Print(", ")
-		}
-		fmt.Printf("%d", e.x_buf[i])
-	}
-	if len(e.x_buf) > 10 {
-		fmt.Printf(", ...(%d more)]\n", len(e.x_buf)-10)
-	} else {
-		fmt.Println("]")
-	}
-
-	fmt.Printf("LTPCorr_Q15: %d\n", e.LTPCorr_Q15)
-
-	fmt.Printf("SilkChannelEncoder end\r\n\r\n\r\n\r\n\r\n\r\n\r\n")
 }
 
 func (s *SilkChannelEncoder) silk_control_encoder(encControl *EncControlState, TargetRate_bps int, allow_bw_switch int, channelNb int, force_fs_kHz int) int {
@@ -775,9 +596,8 @@ func (s *SilkChannelEncoder) silk_control_SNR(TargetRate_bps int) int {
 
 func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 
-	//fmt.Printf("silk_encode_do_VAD -1 s.inputBuf:%+v\r\n", s.inputBuf)
 	silk_VAD_GetSA_Q8(s, s.inputBuf[:], 1)
-	//	fmt.Printf("silk_encode_do_VAD s.inputBuf:%+v\r\n", s.inputBuf)
+
 	if s.speech_activity_Q8 < silk_SMULWB(int(TuningParameters.SPEECH_ACTIVITY_DTX_THRES), 1<<8) {
 		s.indices.signalType = byte(SilkConstants.TYPE_NO_VOICE_ACTIVITY)
 		s.noSpeechCounter++
@@ -871,10 +691,9 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 				}
 
 				silk_encode_indices(s, psRangeEnc, s.nFramesEncoded, 0, condCoding)
-				//	fmt.Printf("psRangeEnc 1:%+v\r\n", psRangeEnc)
 
 				silk_encode_pulses(psRangeEnc, int(s.indices.signalType), int(s.indices.quantOffsetType), s.pulses, s.frame_length)
-				//	os.Exit(0)
+
 				nBits = psRangeEnc.tell()
 
 				if useCBR == 0 && iter == 0 && nBits <= maxBits {
@@ -973,7 +792,7 @@ func (s *SilkChannelEncoder) silk_LBRR_encode(thisCtrl *SilkEncoderControl, xfw_
 		copy(TempGains_Q16, thisCtrl.Gains_Q16[:])
 		if s.nFramesEncoded == 0 || s.LBRR_flags[s.nFramesEncoded-1] == 0 {
 			psIndices_LBRR.GainsIndices[0] = int8(silk_min_int(int(psIndices_LBRR.GainsIndices[0])+s.LBRR_GainIncreases, SilkConstants.N_LEVELS_QGAIN-1))
-			fmt.Printf("psIndices_LBRR.GainsIndices[0]:%d\r\n", psIndices_LBRR.GainsIndices[0])
+
 		}
 
 		boxed_gainIndex := BoxedValueByte{int8(s.LBRRprevLastGainIndex)}

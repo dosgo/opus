@@ -72,10 +72,4 @@ func silk_decode_signs(
 
 		q_ptr += SilkConstants.SHELL_CODEC_FRAME_LENGTH
 	}
-
-	//pulsesstr, _ := json.Marshal(pulses)
-	//sum_pulsesStr, _ := json.Marshal(sum_pulses)
-
-	//fmt.Printf("silk_encode_signs pulses:%s sum_pulsesStr:%s\r\n", pulsesstr, sum_pulsesStr)
-	//os.Exit(0)
 }

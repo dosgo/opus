@@ -214,11 +214,9 @@ func BurgModified_silk_burg_modified(res_nrg *BoxedValueInt, res_nrg_Q *BoxedVal
 		}
 		/* Update inverse prediction gain */
 		tmp1 = int(int32(1)<<30) - silk_SMMUL(rc_Q31, rc_Q31)
-		//fmt.Printf("tmp1-1:%d\r\n", tmp1)
+
 		tmp1 = silk_LSHIFT(silk_SMMUL(invGain_Q30, tmp1), 2)
-		//fmt.Printf("tmp1:%d\r\n", tmp1)
-		//fmt.Printf("invGain_Q30:%d\r\n", invGain_Q30)
-		//fmt.Printf("minInvGain_Q30:%d\r\n", minInvGain_Q30)
+
 		if tmp1 <= minInvGain_Q30 {
 			/* Max prediction gain exceeded; set reflection coefficient such that max prediction gain is exactly hit */
 			tmp2 = int(int32(1)<<30) - silk_DIV32_varQ(minInvGain_Q30, invGain_Q30, 30)

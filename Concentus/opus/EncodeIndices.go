@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
 	var i, k, typeOffset int
 	var encode_absolute_lagIndex, delta_lagIndex int
@@ -14,8 +12,6 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	} else {
 		psIndices = psEncC.indices
 	}
-
-	fmt.Printf("psIndices.GainsIndices:%+v\r\n", psIndices.GainsIndices)
 
 	/**
 	 * ****************************************

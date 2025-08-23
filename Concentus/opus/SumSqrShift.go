@@ -135,13 +135,10 @@ func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 
 	for i = 0; i < len; i += 2 {
 		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[i]), int32(x[i]))))
-		//fmt.Printf("nrg0: %d,x[i]:%d\n", nrg, x[i])
 		nrg = int(int32(silk_SMLABB_ovflw(int32(nrg), int32(x[i+1]), int32(x[i+1]))))
-		//fmt.Printf("nrg01: %d,x[i+1]:%d\n", nrg, x[i+1])
 		if nrg < 0 {
 			/* Scale down */
 			nrg = int(int32(silk_RSHIFT_uint(int64(nrg), 2)))
-			//fmt.Printf("nrg1: %d\n", nrg)
 			shft = 2
 			i += 2
 			break
@@ -155,7 +152,6 @@ func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 		if nrg < 0 {
 			/* Scale down */
 			nrg = int(silk_RSHIFT_uint(int64(nrg), 2))
-			//fmt.Printf("nrg2: %d\n", nrg)
 			shft += 2
 		}
 	}
@@ -169,14 +165,10 @@ func silk_sum_sqr_shift4(energy *BoxedValueInt, shift *BoxedValueInt, x []int16,
 	/* Make sure to have at least one extra leading zero (two leading zeros in total) */
 	if (nrg & 0xC0000000) != 0 {
 		nrg = int(int32(silk_RSHIFT_uint(int64(nrg), 2)))
-
-		//fmt.Printf("nrg3: %d\n", nrg)
 		shft += 2
 	}
 
 	/* Output arguments */
 	shift.Val = shft
 	energy.Val = int(nrg)
-	//fmt.Printf("energy.Val:%d\r\n", energy.Val)
-	//os.Exit(0)
 }
