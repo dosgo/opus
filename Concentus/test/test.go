@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,7 +58,7 @@ func main() {
 
 		//encoder.ResetState()
 
-		fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
+		//fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
 
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
 		//break
@@ -71,9 +70,9 @@ func main() {
 
 		if err == nil {
 			fmt.Printf("pcm:%s\r\n", IntSliceToMD5(pcm))
-			pcmStr, _ := json.Marshal(pcm)
-			fmt.Printf("pcmbuf:%s\r\n", pcmStr)
-			break
+			//pcmStr, _ := json.Marshal(pcm)
+			//fmt.Printf("pcmbuf:%s\r\n", pcmStr)
+			//break
 		}
 		i++
 	}
