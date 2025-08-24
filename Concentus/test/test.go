@@ -64,7 +64,7 @@ func main() {
 		//break
 		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
 		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, ByteSliceToMD5(data_packet))
-
+		break
 		_, err = decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
 		//fmt.Printf("%d samples decoded\r\n", samplesDecoded)
 
