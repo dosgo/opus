@@ -790,9 +790,10 @@ func (st *OpusEncoder) opus_encode_native(pcm []int16, pcm_ptr, frame_size int, 
 				}
 
 				HB_gain = SHL32(celt_rate, 9) / SHR32(celt_rate+st.stream_channels*HB_gain_ref, 6)
-				HB_gain = CeltConstants.Q15ONE
 				if HB_gain < CeltConstants.Q15ONE*6/7 {
 					HB_gain = HB_gain + CeltConstants.Q15ONE/7
+				} else {
+					HB_gain = CeltConstants.Q15ONE
 				}
 
 			}
