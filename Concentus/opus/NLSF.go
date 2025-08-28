@@ -362,7 +362,6 @@ func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_c
 		}
 	}
 
-	//panic("eeee")
 	for j := 0; j < ord; j++ {
 		//indices[j] = byte(int8(ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]))
 		indices[j] = int8(ind[ind_tmp&(SilkConstants.NLSF_QUANT_DEL_DEC_STATES-1)][j])

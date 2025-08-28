@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
 	var i, k, typeOffset int
 	var encode_absolute_lagIndex, delta_lagIndex int
@@ -127,6 +129,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		/* Countour index */
 		OpusAssert(psIndices.contourIndex >= 0)
 		OpusAssert((psIndices.contourIndex < 34 && psEncC.fs_kHz > 8 && psEncC.nb_subfr == 4) || (psIndices.contourIndex < 11 && psEncC.fs_kHz == 8 && psEncC.nb_subfr == 4) || (psIndices.contourIndex < 12 && psEncC.fs_kHz > 8 && psEncC.nb_subfr == 2) || (psIndices.contourIndex < 3 && psEncC.fs_kHz == 8 && psEncC.nb_subfr == 2))
+		fmt.Printf("psIndices.contourIndex:%d\r\n", psIndices.contourIndex)
 		psRangeEnc.enc_icdf(int(psIndices.contourIndex), psEncC.pitch_contour_iCDF, 8)
 
 		/**

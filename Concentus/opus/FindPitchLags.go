@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -77,6 +78,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 		}
 
 		psEnc.indices.lagIndex = lagIndex.Val
+		fmt.Printf("psEnc.indices.contourIndex :%d\r\n", psEnc.indices.contourIndex)
 		psEnc.indices.contourIndex = contourIndex.Val
 		psEnc.LTPCorr_Q15 = LTPcorr_Q15.Val
 	} else {

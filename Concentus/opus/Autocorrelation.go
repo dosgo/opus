@@ -71,7 +71,6 @@ func _celt_autocorrBak(x []int16, ac []int, lag int, n int) int {
 
 func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 
-	//panic("111")
 	var d int
 	var i, k int
 	var fastN = n - lag

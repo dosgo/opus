@@ -1329,6 +1329,10 @@ func MatrixGet(Matrix_base_adr []int, row, column, N int) int {
 	return Matrix_base_adr[row*N+column]
 }
 
+func MatrixGetVals(Matrix_base_adr []*silk_pe_stage3_vals, row int, column int, N int) *silk_pe_stage3_vals {
+	return Matrix_base_adr[((row)*(N))+(column)]
+}
+
 func MatrixGetShort(Matrix_base_adr []int16, row, column, N int) int16 {
 	return Matrix_base_adr[row*N+column]
 }
@@ -1351,6 +1355,9 @@ func MatrixSet5(Matrix_base_adr []int, row, column, N, value int) {
 
 func MatrixSetShort(Matrix_base_adr []int16, matrix_ptr, row, column, N int, value int16) {
 	Matrix_base_adr[matrix_ptr+row*N+column] = value
+}
+func MatrixSetShort5(Matrix_base_adr []int16, row, column, N int, value int16) {
+	Matrix_base_adr[row*N+column] = value
 }
 
 func MatrixSetNoPtr(Matrix_base_adr []int, row, column, N, value int) {
