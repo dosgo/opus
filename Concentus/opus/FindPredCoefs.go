@@ -52,7 +52,7 @@ func silk_find_pred_coefs(
 
 		//codgain := psEncCtrl.LTPredCodGain_Q7
 		codgain := BoxedValueInt{psEncCtrl.LTPredCodGain_Q7}
-		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
+		silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, &codgain, res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length, psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
 		psEncCtrl.LTPredCodGain_Q7 = codgain.Val
 
 		boxed_periodicity := BoxedValueByte{psEnc.indices.PERIndex}

@@ -1345,6 +1345,10 @@ func MatrixSet(Matrix_base_adr []int, matrix_ptr, row, column, N, value int) {
 	Matrix_base_adr[matrix_ptr+row*N+column] = value
 }
 
+func MatrixSet5(Matrix_base_adr []int, row, column, N, value int) {
+	Matrix_base_adr[row*N+column] = value
+}
+
 func MatrixSetShort(Matrix_base_adr []int16, matrix_ptr, row, column, N int, value int16) {
 	Matrix_base_adr[matrix_ptr+row*N+column] = value
 }

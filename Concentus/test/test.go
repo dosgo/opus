@@ -63,7 +63,7 @@ func main() {
 				i++
 				continue
 			}*/
-		if i > 10 {
+		if i > 6 {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))

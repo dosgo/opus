@@ -62,8 +62,7 @@ func silk_LDL_factorize(A []int, A_ptr int, M int, L_Q16 []int, inv_D []int) {
 
 			inv_D[j*2+0] = one_div_diag_Q36
 			inv_D[j*2+1] = one_div_diag_Q48
-
-			MatrixGetPtr(L_Q16, j, j, M, 65536)
+			MatrixSet5(L_Q16, j, j, M, 65536)
 			scratch1 = A
 			scratch1_ptr = MatrixGetPointer(j, 0, M) + A_ptr
 			scratch2 = L_Q16
@@ -74,7 +73,7 @@ func silk_LDL_factorize(A []int, A_ptr int, M int, L_Q16 []int, inv_D []int) {
 					tmp_32 = silk_SMLAWW(tmp_32, v_Q0[k], scratch2[scratch2_ptr+k])
 				}
 				tmp_32 = silk_SUB32(scratch1[scratch1_ptr+i], tmp_32)
-				MatrixGetPtr(L_Q16, i, j, M, silk_ADD32(
+				MatrixSet5(L_Q16, i, j, M, silk_ADD32(
 					silk_SMMUL(tmp_32, one_div_diag_Q48),
 					silk_RSHIFT(silk_SMULWW(tmp_32, one_div_diag_Q36), 4),
 				))
