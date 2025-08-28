@@ -1,7 +1,10 @@
 package opus
 
+import "fmt"
+
 var pred_coef = []int{29440, 26112, 21248, 16384}
 var beta_coef = []int{30147, 22282, 12124, 6554}
+
 var beta_intra = 4915
 var small_energy_icdf = []int16{2, 1, 0}
 
@@ -111,10 +114,10 @@ func quant_coarse_energy_impl(m *CeltMode, start int, end int, eBands [][]int, o
 	return badness
 }
 func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][]int, oldEBands [][]int, budget int, error [][]int, enc *EntropyCoder, C int, LM int, nbAvailableBytes int, force_intra int, delayedIntra *BoxedValueInt, two_pass int, loss_rate int, lfe int) {
-	intra := 0
-	if force_intra != 0 || (two_pass == 0 && delayedIntra.Val > 2*C*(end-start) && nbAvailableBytes > (end-start)*C) {
-		intra = 1
-	}
+
+	intra := boolToInt(force_intra != 0 || (two_pass == 0 && delayedIntra.Val > 2*C*(end-start) && nbAvailableBytes > (end-start)*C))
+
+	fmt.Printf("delayedIntra.Val :%d\r\n", delayedIntra.Val)
 	intra_bias := (budget * delayedIntra.Val * loss_rate) / (C * 512)
 	new_distortion := loss_distortion(eBands, oldEBands, start, effEnd, m.nbEBands, C)
 
@@ -189,8 +192,8 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 	if intra != 0 {
 		delayedIntra.Val = new_distortion
 	} else {
-		pred := pred_coef[LM]
-		delayedIntra.Val = (pred*pred*delayedIntra.Val)/32768 + new_distortion
+		delayedIntra.Val = ADD32(MULT16_32_Q15Int(MULT16_16_Q15Int(pred_coef[LM], pred_coef[LM]), delayedIntra.Val),
+			new_distortion)
 	}
 }
 

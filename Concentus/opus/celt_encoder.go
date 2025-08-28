@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -742,12 +743,13 @@ func (this *CeltEncoder) celt_encode_with_ec(pcm []int16, pcm_ptr int, frame_siz
 
 	error = InitTwoDimensionalArrayInt(C, nbEBands)
 	boxed_delayedintra := BoxedValueInt{this.delayedIntra}
+	fmt.Printf("quant_coarse_energy delayedIntra:%d\r\n", this.delayedIntra)
 	quant_coarse_energy(mode, start, end, effEnd, bandLogE,
 		this.oldBandE, total_bits, error, enc,
 		C, LM, nbAvailableBytes, this.force_intra,
 		&boxed_delayedintra, boolToInt(this.complexity >= 4), this.loss_rate, this.lfe)
 	this.delayedIntra = boxed_delayedintra.Val
-
+	fmt.Printf("quant_coarse_energy2 delayedIntra:%d\r\n", this.delayedIntra)
 	tf_encode(start, end, isTransient, tf_res, LM, tf_select, enc)
 
 	if enc.tell()+4 <= total_bits {

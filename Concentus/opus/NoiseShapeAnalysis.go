@@ -147,7 +147,8 @@ func silk_noise_shape_analysis(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoder
 			pitch_res_ptr2 += nSamples
 		}
 		psEncCtrl.sparseness_Q8 = silk_sigm_Q15(silk_SMULWB(energy_variation_Q7-(5<<7), int(math.Floor(0.1*float64(1<<16))))) >> 7
-		if psEncCtrl.sparseness_Q8 > int(TuningParameters.SPARSENESS_THRESHOLD_QNT_OFFSET)<<8 {
+
+		if psEncCtrl.sparseness_Q8 > int(float64(TuningParameters.SPARSENESS_THRESHOLD_QNT_OFFSET)*float64(int64(1)<<(8))+0.5) {
 			psEnc.indices.quantOffsetType = 0
 		} else {
 			psEnc.indices.quantOffsetType = 1

@@ -15,6 +15,22 @@ import (
 	"time"
 )
 
+func BytesToJSONArray(b []byte) string {
+	if len(b) == 0 {
+		return "[]"
+	}
+
+	result := "["
+	result += fmt.Sprintf("%d", int8(b[0]))
+
+	for i := 1; i < len(b); i++ {
+		result += fmt.Sprintf(",%d", int8(b[i]))
+	}
+
+	result += "]"
+	return result
+}
+
 func main() {
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
@@ -25,7 +41,7 @@ func main() {
 	encoder.SetSignalType(opus.OPUS_SIGNAL_MUSIC)
 	encoder.SetComplexity(0)
 
-	decoder, err := opus.NewOpusDecoder(48000, 2)
+	//	decoder, err := opus.NewOpusDecoder(48000, 2)
 	fileIn, err := os.Open("48Khz Stereo.raw")
 	if err != nil {
 		panic(err)
@@ -47,16 +63,15 @@ func main() {
 				i++
 				continue
 			}*/
-		if i > 4 {
+		if i > 10 {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
 
 		fmt.Printf("imput md5:%s\r\n", ByteSliceToMD5(inBuf))
 		//encoder.PrintAllFields()
-		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 
-		//encoder.ResetState()
+		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 
 		//fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
 
@@ -64,12 +79,14 @@ func main() {
 		//break
 		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
 		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, ByteSliceToMD5(data_packet))
-		break
-		_, err = decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
+
+		//fmt.Printf(" data_packet:%s\r\n", BytesToJSONArray(data_packet))
+
+		//	_, err = decoder.Decode(data_packet, 0, bytesEncoded, pcm, 0, packetSamples, false)
 		//fmt.Printf("%d samples decoded\r\n", samplesDecoded)
 
 		if err == nil {
-			fmt.Printf("pcm:%s\r\n", IntSliceToMD5(pcm))
+			//	fmt.Printf("pcm:%s\r\n", IntSliceToMD5(pcm))
 			//pcmStr, _ := json.Marshal(pcm)
 			//fmt.Printf("pcmbuf:%s\r\n", pcmStr)
 			//break

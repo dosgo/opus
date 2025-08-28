@@ -22,7 +22,6 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	 */
 
 	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)
-
 	OpusAssert(typeOffset >= 0 && typeOffset < 6)
 	OpusAssert(encode_LBRR == 0 || typeOffset >= 2)
 	if encode_LBRR != 0 || typeOffset >= 2 {
