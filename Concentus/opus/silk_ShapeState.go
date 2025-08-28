@@ -1,7 +1,7 @@
 package opus
 
 type SilkShapeState struct {
-	LastGainIndex          byte
+	LastGainIndex          int8
 	HarmBoost_smth_Q16     int
 	HarmShapeGain_smth_Q16 int
 	Tilt_smth_Q16          int

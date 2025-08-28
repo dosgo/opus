@@ -630,7 +630,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 	var gainMult_Q8 int16
 	var ec_prevLagIndex_copy int16
 	var ec_prevSignalType_copy int
-	var LastGainIndex_copy2 byte
+	var LastGainIndex_copy2 int8
 	var seed_copy int8
 	nBits_lower, nBits_upper, gainMult_lower, gainMult_upper = 0, 0, 0, 0
 	s.indices.Seed = int8(s.frameCounter & 3)
@@ -763,7 +763,7 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 
 			silk_gains_quant(s.indices.GainsIndices, sEncCtrl.Gains_Q16,
 				boxed_gainIndex, boolToInt(condCoding == SilkConstants.CODE_CONDITIONALLY), s.nb_subfr)
-			s.sShape.LastGainIndex = byte(boxed_gainIndex.Val)
+			s.sShape.LastGainIndex = int8(boxed_gainIndex.Val)
 			gainsID = silk_gains_ID(s.indices.GainsIndices[:], s.nb_subfr)
 		}
 	}

@@ -22,7 +22,7 @@ type SilkEncoderControl struct {
 	ResNrg             [MAX_NB_SUBFR]int
 	ResNrgQ            [MAX_NB_SUBFR]int
 	GainsUnq_Q16       [MAX_NB_SUBFR]int
-	lastGainIndexPrev  byte
+	lastGainIndexPrev  int8
 }
 
 func NewSilkEncoderControl() *SilkEncoderControl {
