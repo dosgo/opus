@@ -393,6 +393,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 			lag = d
 			CBimax = CBimax_new
 		}
+		fmt.Printf("CCmax_new:%d\r\n", CCmax_new)
 	}
 
 	if lag == -1 {
