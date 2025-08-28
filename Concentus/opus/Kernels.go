@@ -1,49 +1,51 @@
 package opus
 
 func celt_fir(x []int16, x_ptr int, num []int16, y []int16, y_ptr int, N int, ord int, mem []int16) {
+	var i, j int
 	rnum := make([]int16, ord)
 	local_x := make([]int16, N+ord)
 
-	for i := 0; i < ord; i++ {
+	for i = 0; i < ord; i++ {
 		rnum[i] = num[ord-i-1]
 	}
 
-	for i := 0; i < ord; i++ {
+	for i = 0; i < ord; i++ {
 		local_x[i] = mem[ord-i-1]
 	}
 
-	for i := 0; i < N; i++ {
+	for i = 0; i < N; i++ {
 		local_x[i+ord] = x[x_ptr+i]
 	}
 
-	for i := 0; i < ord; i++ {
+	for i = 0; i < ord; i++ {
 		mem[i] = x[x_ptr+N-i-1]
 	}
 
-	sum0 := &BoxedValueInt{Val: 0}
-	sum1 := &BoxedValueInt{Val: 0}
-	sum2 := &BoxedValueInt{Val: 0}
-	sum3 := &BoxedValueInt{Val: 0}
+	sum0 := &BoxedValueInt{0}
+	sum1 := &BoxedValueInt{0}
+	sum2 := &BoxedValueInt{0}
+	sum3 := &BoxedValueInt{0}
 
-	i := 0
-	for ; i < N-3; i += 4 {
+	for i = 0; i < N-3; i += 4 {
 		sum0.Val = 0
 		sum1.Val = 0
 		sum2.Val = 0
 		sum3.Val = 0
 		xcorr_kernel(rnum, 0, local_x, i, sum0, sum1, sum2, sum3, ord)
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum0.Val, CeltConstants.SIG_SHIFT)))
-		y[y_ptr+i+1] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+1]), PSHR32(sum1.Val, CeltConstants.SIG_SHIFT)))
-		y[y_ptr+i+2] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+2]), PSHR32(sum2.Val, CeltConstants.SIG_SHIFT)))
-		y[y_ptr+i+3] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i+3]), PSHR32(sum3.Val, CeltConstants.SIG_SHIFT)))
+		y[y_ptr+i] = SATURATE16((ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum0.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+1] = SATURATE16((ADD32(EXTEND32(x[x_ptr+i+1]), PSHR32(sum1.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+2] = SATURATE16((ADD32(EXTEND32(x[x_ptr+i+2]), PSHR32(sum2.Val, CeltConstants.SIG_SHIFT))))
+		y[y_ptr+i+3] = SATURATE16((ADD32(EXTEND32(x[x_ptr+i+3]), PSHR32(sum3.Val, CeltConstants.SIG_SHIFT))))
 	}
 
 	for ; i < N; i++ {
-		sum := int(0)
-		for j := 0; j < ord; j++ {
+		var sum = 0
+
+		for j = 0; j < ord; j++ {
 			sum = MAC16_16Int(sum, rnum[j], local_x[i+j])
 		}
-		y[y_ptr+i] = SATURATE16(ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, CeltConstants.SIG_SHIFT)))
+
+		y[y_ptr+i] = SATURATE16((ADD32(EXTEND32(x[x_ptr+i]), PSHR32(sum, CeltConstants.SIG_SHIFT))))
 	}
 }
 

@@ -51,7 +51,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0]&7), silk_uniform8_iCDF, 8)
 	}
 	/* remaining subframes */
-
+	fmt.Printf("psIndices.GainsIndices:%+v\r\n", psIndices.GainsIndices)
 	for i = 1; i < psEncC.nb_subfr; i++ {
 		OpusAssert(psIndices.GainsIndices[i] >= 0 && psIndices.GainsIndices[i] < MAX_DELTA_GAIN_QUANT-MIN_DELTA_GAIN_QUANT+1)
 		//    System.out.printf("psIndices.GainsIndices[i]:%s\r\n", java.util.Arrays.toString(psIndices.GainsIndices));

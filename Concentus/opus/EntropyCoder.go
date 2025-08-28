@@ -434,7 +434,7 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 
 	//	fmt.Printf("this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("this. nbits_total : %d this.rng:%d old:%d\r\n", ec.nbits_total, ec.rng, old)
-	if old == 13309536 {
+	if old == 383057920 {
 		fmt.Printf("_icdf:%+v _s:%d oldVal:%d\r\n", (_icdf), _s, old)
 		panic("eee")
 		os.Exit(0)

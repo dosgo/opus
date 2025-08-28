@@ -313,6 +313,7 @@ func silk_LPC_analysis_filter(
 		mem[j] = input[input_ptr+d-j-1]
 	}
 	//celt_fir(input[input_ptr+d:], num, output[output_ptr+d:], len-d, d, mem)
+
 	celt_fir(input, input_ptr+d, num, output, output_ptr+d, len-d, d, mem)
 	for j := output_ptr; j < output_ptr+d; j++ {
 		output[j] = 0

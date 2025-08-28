@@ -52,7 +52,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 	silk_k2a(A_Q24[:], rc_Q15[:], psEnc.pitchEstimationLPCOrder)
 
 	for i = 0; i < psEnc.pitchEstimationLPCOrder; i++ {
-		A_Q12[i] = int16(silk_SAT16(int(silk_RSHIFT_ROUND(A_Q24[i], 12))))
+		A_Q12[i] = int16(silk_SAT16(silk_RSHIFT(A_Q24[i], 12)))
 	}
 
 	silk_bwexpander(A_Q12[:], psEnc.pitchEstimationLPCOrder, int((TuningParameters.FIND_PITCH_BANDWIDTH_EXPANSION)*(1<<16)+0.5))
@@ -78,8 +78,9 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 		}
 
 		psEnc.indices.lagIndex = lagIndex.Val
-		fmt.Printf("psEnc.indices.contourIndex :%d\r\n", psEnc.indices.contourIndex)
+
 		psEnc.indices.contourIndex = contourIndex.Val
+		fmt.Printf("psEnc.indices.contourIndex :%d\r\n", psEnc.indices.contourIndex)
 		psEnc.LTPCorr_Q15 = LTPcorr_Q15.Val
 	} else {
 		for i := range psEncCtrl.pitchL {

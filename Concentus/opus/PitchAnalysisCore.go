@@ -75,6 +75,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 
 	/* Resample from input sampled at Fs_kHz to 8 kHz */
 	frame_8kHz = make([]int16, frame_length_8kHz)
+
 	if Fs_kHz == 16 {
 		MemSetLen(filt_state, 0, 2)
 		silk_resampler_down2(filt_state, frame_8kHz, frame, frame_length)
@@ -129,6 +130,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 	MemSetLen(C, 0, (nb_subfr>>1)*CSTRIDE_4KHZ)
 	target = frame_4kHz
 	target_ptr = silk_LSHIFT(SF_LENGTH_4KHZ, 2)
+
 	for k = 0; k < nb_subfr>>1; k++ {
 		basis = target
 		basis_ptr = target_ptr - MIN_LAG_4KHZ
@@ -138,6 +140,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		/* Calculate first vector products before loop */
 		cross_corr = xcorr32[MAX_LAG_4KHZ-MIN_LAG_4KHZ]
 		normalizer = silk_inner_prod_self(target, target_ptr, SF_LENGTH_8KHZ)
+
 		normalizer = silk_ADD32(normalizer, silk_inner_prod_self(basis, basis_ptr, SF_LENGTH_8KHZ))
 		normalizer = silk_ADD32(normalizer, silk_SMULBB(SF_LENGTH_8KHZ, 4000))
 
@@ -349,9 +352,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 				/* Try all codebooks */
 				d_subfr = d + int(Lag_CB_ptr[i][j])
 				CC[j] = CC[j] +
-					int(MatrixGetShort(C, i,
-						d_subfr-(MIN_LAG_8KHZ-2),
-						CSTRIDE_8KHZ))
+					int(MatrixGetShort(C, i, d_subfr-(MIN_LAG_8KHZ-2), CSTRIDE_8KHZ))
 			}
 		}
 		/* Find best codebook */
@@ -531,7 +532,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		}
 		lagIndex.Val = int16(lag_new - min_lag)
 		contourIndex.Val = int8(CBimax)
-		fmt.Printf("contourIndex.CBimax=%d 111\r\n", CBimax)
+
 	} else {
 		/* Fs_kHz == 8 */
 		/* Save Lags */
@@ -540,7 +541,6 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 			pitch_out[k] = silk_LIMIT(pitch_out[k], MIN_LAG_8KHZ, SilkConstants.PE_MAX_LAG_MS*8)
 		}
 		lagIndex.Val = int16(lag - MIN_LAG_8KHZ)
-		fmt.Printf("contourIndex.CBimax=%d\r\n", CBimax)
 		contourIndex.Val = int8(CBimax)
 	}
 	OpusAssert(lagIndex.Val >= 0)
