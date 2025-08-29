@@ -73,7 +73,7 @@ func main() {
 
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 		if i == 11 {
-			opus.Debug = true
+			opus.Debug = false
 		}
 		if i > 11 {
 			opus.Debug = false

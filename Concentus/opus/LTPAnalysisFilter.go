@@ -10,7 +10,6 @@ func silk_LTP_analysis_filter(
 	subfr_length int,
 	nb_subfr int,
 	pre_length int) {
-
 	var x_ptr2, x_lag_ptr int
 	Btmp_Q14 := make([]int16, SilkConstants.LTP_ORDER)
 	var LTP_res_ptr int
@@ -28,10 +27,12 @@ func silk_LTP_analysis_filter(
 		Btmp_Q14[3] = LTPCoef_Q14[k*SilkConstants.LTP_ORDER+3]
 		Btmp_Q14[4] = LTPCoef_Q14[k*SilkConstants.LTP_ORDER+4]
 
+		/* LTP analysis FIR filter */
 		for i = 0; i < subfr_length+pre_length; i++ {
-			LTP_res_ptri := LTP_res_ptr + i
+			var LTP_res_ptri = LTP_res_ptr + i
 			LTP_res[LTP_res_ptri] = x[x_ptr2+i]
 
+			/* Long-term prediction */
 			LTP_est = silk_SMULBB(int(x[x_lag_ptr+SilkConstants.LTP_ORDER/2]), int(Btmp_Q14[0]))
 			LTP_est = int(silk_SMLABB_ovflw(int32(LTP_est), int32(x[x_lag_ptr+1]), int32(Btmp_Q14[1])))
 			LTP_est = int(silk_SMLABB_ovflw(int32(LTP_est), int32(x[x_lag_ptr]), int32(Btmp_Q14[2])))
@@ -39,17 +40,18 @@ func silk_LTP_analysis_filter(
 			LTP_est = int(silk_SMLABB_ovflw(int32(LTP_est), int32(x[x_lag_ptr-2]), int32(Btmp_Q14[4])))
 
 			LTP_est = silk_RSHIFT_ROUND(LTP_est, 14)
+			/* round and . Q0*/
 
-			tmp := int(x[x_ptr2+i]) - LTP_est
-			LTP_res[LTP_res_ptri] = int16(silk_SAT16(tmp))
+			/* Subtract long-term prediction */
+			LTP_res[LTP_res_ptri] = int16(silk_SAT16(int(x[x_ptr2+i]) - LTP_est))
 
-			gain := int(invGains_Q16[k])
-			smulwb_result := silk_SMULWB(gain, int(LTP_res[LTP_res_ptri]))
-			LTP_res[LTP_res_ptri] = int16(smulwb_result)
+			/* Scale residual */
+			LTP_res[LTP_res_ptri] = int16(silk_SMULWB(invGains_Q16[k], int(LTP_res[LTP_res_ptri])))
 
 			x_lag_ptr++
 		}
 
+		/* Update pointers */
 		LTP_res_ptr += subfr_length + pre_length
 		x_ptr2 += subfr_length
 	}

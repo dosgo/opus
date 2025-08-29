@@ -1,6 +1,10 @@
 package opus
 
-import "math"
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+)
 
 func silk_quant_LTP_gains(
 	B_Q14 []int16,
@@ -99,6 +103,16 @@ func silk_quant_LTP_gains(
 	}
 
 	cbk_ptr_Q7 = silk_LTP_vq_ptrs_Q7[periodicity_index.Val]
+	if Debug {
+
+		B_Q14Str, _ := json.Marshal(B_Q14)
+		fmt.Printf(" silk_quant_LTP_gains B_Q14:%s\r\n", B_Q14Str)
+
+		cbk_ptr_Q7Str, _ := json.Marshal(cbk_ptr_Q7)
+		fmt.Printf(" silk_quant_LTP_gains cbk_ptr_Q7Str:%s\r\n", cbk_ptr_Q7Str)
+
+		fmt.Printf("cbk_index:%+v\r\n", cbk_index)
+	}
 	for j = 0; j < nb_subfr; j++ {
 		for k = 0; k < SilkConstants.LTP_ORDER; k++ {
 			B_Q14[j*SilkConstants.LTP_ORDER+k] = int16(silk_LSHIFT(int(cbk_ptr_Q7[cbk_index[j]][k]), 7))

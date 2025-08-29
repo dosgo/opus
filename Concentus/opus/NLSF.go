@@ -192,135 +192,150 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []int8, psNLSF_CB *NLSFCode
 }
 
 func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
+	if Debug {
+		fmt.Printf("x_Q10:%+v\r\n", x_Q10)
+		fmt.Printf("w_Q5:%+v\r\n", w_Q5)
+		fmt.Printf("pred_coef_Q8:%+v\r\n", pred_coef_Q8)
+		fmt.Printf("ec_ix:%+v\r\n", ec_ix)
+		fmt.Printf("ec_rates_Q5:%+v\r\n", ec_rates_Q5)
+		fmt.Printf("mu_Q20:%+v\r\n", mu_Q20)
 
-	var nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
+	}
+	var i, j, nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
 	var pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5 int
 	var RD_tmp_Q25, min_Q25, min_max_Q25, max_min_Q25, pred_coef_Q16 int
-	ind_sort := make([]int, NLSF_QUANT_DEL_DEC_STATES)
-	ind := make([][]byte, NLSF_QUANT_DEL_DEC_STATES)
-	for i := range ind {
-		ind[i] = make([]byte, MAX_LPC_ORDER)
+	ind_sort := make([]int, SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
+	ind := make([][]int8, SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
+	for i = 0; i < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; i++ {
+		ind[i] = make([]int8, SilkConstants.MAX_LPC_ORDER)
 	}
 
-	prev_out_Q10 := make([]int16, 2*NLSF_QUANT_DEL_DEC_STATES)
-	RD_Q25 := make([]int, 2*NLSF_QUANT_DEL_DEC_STATES)
-	RD_min_Q25 := make([]int, NLSF_QUANT_DEL_DEC_STATES)
-	RD_max_Q25 := make([]int, NLSF_QUANT_DEL_DEC_STATES)
+	prev_out_Q10 := make([]int16, 2*SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
+	RD_Q25 := make([]int, 2*SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
+	RD_min_Q25 := make([]int, SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
+	RD_max_Q25 := make([]int, SilkConstants.NLSF_QUANT_DEL_DEC_STATES)
 	var rates_Q5 int
 
-	out0_Q10_table := make([]int, 2*NLSF_QUANT_MAX_AMPLITUDE_EXT)
-	out1_Q10_table := make([]int, 2*NLSF_QUANT_MAX_AMPLITUDE_EXT)
+	out0_Q10_table := make([]int, 2*SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT)
+	out1_Q10_table := make([]int, 2*SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT)
 
-	for i := -NLSF_QUANT_MAX_AMPLITUDE_EXT; i < NLSF_QUANT_MAX_AMPLITUDE_EXT; i++ {
-		out0_Q10 = int(i) << 10
-		out1_Q10 = out0_Q10 + 1024
+	for i = 0 - SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT; i <= SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT-1; i++ {
+		out0_Q10 = silk_LSHIFT(i, 10)
+		out1_Q10 = int(silk_ADD16(int16(out0_Q10), 1024))
 
 		if i > 0 {
-			out0_Q10 -= int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
-			out1_Q10 -= int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out0_Q10 = int(silk_SUB16(int16(out0_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
+			out1_Q10 = int(silk_SUB16(int16(out1_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
 		} else if i == 0 {
-			out1_Q10 -= int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out1_Q10 = int(silk_SUB16(int16(out1_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
 		} else if i == -1 {
-			out0_Q10 += int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out0_Q10 = int(silk_ADD16(int16(out0_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
 		} else {
-			out0_Q10 += int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
-			out1_Q10 += int(SilkConstants.NLSF_QUANT_LEVEL_ADJ * (1 << 10))
+			out0_Q10 = int(silk_ADD16(int16(out0_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
+			out1_Q10 = int(silk_ADD16(int16(out1_Q10), int16((float64(SilkConstants.NLSF_QUANT_LEVEL_ADJ)*float64(int64(1)<<(10)) + 0.5))))
 		}
 
-		out0_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out0_Q10, quant_step_size_Q16)
-		out1_Q10_table[i+NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out1_Q10, quant_step_size_Q16)
+		out0_Q10_table[i+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out0_Q10, quant_step_size_Q16)
+		out1_Q10_table[i+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT] = silk_SMULWB(out1_Q10, quant_step_size_Q16)
 	}
 
-	OpusAssert((NLSF_QUANT_DEL_DEC_STATES & (NLSF_QUANT_DEL_DEC_STATES - 1)) == 0)
+	OpusAssert((SilkConstants.NLSF_QUANT_DEL_DEC_STATES & (SilkConstants.NLSF_QUANT_DEL_DEC_STATES - 1)) == 0) // must be power of two
 
 	nStates = 1
 	RD_Q25[0] = 0
 	prev_out_Q10[0] = 0
 
-	ord := int(order)
-	for i := ord - 1; ; i-- {
-		pred_coef_Q16 = int(pred_coef_Q8[i]) << 8
+	for i = int(order) - 1; ; i-- {
+		pred_coef_Q16 = silk_LSHIFT(int(pred_coef_Q8[i]), 8)
 		in_Q10 = int(x_Q10[i])
 
-		for j := 0; j < nStates; j++ {
+		for j = 0; j < nStates; j++ {
 			pred_Q10 = silk_SMULWB(pred_coef_Q16, int(prev_out_Q10[j]))
-			res_Q10 = in_Q10 - pred_Q10
+			res_Q10 = int(silk_SUB16(int16(in_Q10), int16(pred_Q10)))
 			ind_tmp = silk_SMULWB(int(inv_quant_step_size_Q6), res_Q10)
-			ind_tmp = silk_LIMIT(ind_tmp, -NLSF_QUANT_MAX_AMPLITUDE_EXT, NLSF_QUANT_MAX_AMPLITUDE_EXT-1)
-			ind[j][i] = byte(ind_tmp)
+			ind_tmp = silk_LIMIT(ind_tmp, 0-SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT, SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT-1)
+			ind[j][i] = int8(ind_tmp)
 			rates_Q5 = int(ec_ix[i]) + ind_tmp
 
-			out0_Q10 = out0_Q10_table[ind_tmp+NLSF_QUANT_MAX_AMPLITUDE_EXT]
-			out1_Q10 = out1_Q10_table[ind_tmp+NLSF_QUANT_MAX_AMPLITUDE_EXT]
+			// compute outputs for ind_tmp and ind_tmp + 1
+			out0_Q10 = out0_Q10_table[ind_tmp+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT]
+			out1_Q10 = out1_Q10_table[ind_tmp+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT]
 
-			out0_Q10 += pred_Q10
-			out1_Q10 += pred_Q10
+			out0_Q10 = int(silk_ADD16(int16(out0_Q10), int16(pred_Q10)))
+			out1_Q10 = int(silk_ADD16(int16(out1_Q10), int16(pred_Q10)))
 			prev_out_Q10[j] = int16(out0_Q10)
 			prev_out_Q10[j+nStates] = int16(out1_Q10)
 
-			if ind_tmp+1 >= NLSF_QUANT_MAX_AMPLITUDE {
-				if ind_tmp+1 == NLSF_QUANT_MAX_AMPLITUDE {
-					rate0_Q5 = int(ec_rates_Q5[rates_Q5+NLSF_QUANT_MAX_AMPLITUDE])
+			// compute RD for ind_tmp and ind_tmp + 1
+			if ind_tmp+1 >= SilkConstants.NLSF_QUANT_MAX_AMPLITUDE {
+				if ind_tmp+1 == SilkConstants.NLSF_QUANT_MAX_AMPLITUDE {
+					rate0_Q5 = int(ec_rates_Q5[rates_Q5+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE])
 					rate1_Q5 = 280
 				} else {
-					rate0_Q5 = silk_SMLABB(280-(43*NLSF_QUANT_MAX_AMPLITUDE), 43, ind_tmp)
-					rate1_Q5 = rate0_Q5 + 43
+					rate0_Q5 = silk_SMLABB(280-(43*SilkConstants.NLSF_QUANT_MAX_AMPLITUDE), 43, ind_tmp)
+					rate1_Q5 = int(silk_ADD16(int16(rate0_Q5), 43))
 				}
-			} else if ind_tmp <= -NLSF_QUANT_MAX_AMPLITUDE {
-				if ind_tmp == -NLSF_QUANT_MAX_AMPLITUDE {
+			} else if ind_tmp <= 0-SilkConstants.NLSF_QUANT_MAX_AMPLITUDE {
+				if ind_tmp == 0-SilkConstants.NLSF_QUANT_MAX_AMPLITUDE {
 					rate0_Q5 = 280
-					rate1_Q5 = int(ec_rates_Q5[rates_Q5+1+NLSF_QUANT_MAX_AMPLITUDE])
+					rate1_Q5 = int(ec_rates_Q5[rates_Q5+1+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE])
 				} else {
-					rate0_Q5 = silk_SMLABB(280-43*NLSF_QUANT_MAX_AMPLITUDE, -43, ind_tmp)
-					rate1_Q5 = rate0_Q5 - 43
+					rate0_Q5 = silk_SMLABB(280-43*SilkConstants.NLSF_QUANT_MAX_AMPLITUDE, -43, ind_tmp)
+					rate1_Q5 = int(silk_SUB16(int16(rate0_Q5), 43))
 				}
 			} else {
-				rate0_Q5 = int(ec_rates_Q5[rates_Q5+NLSF_QUANT_MAX_AMPLITUDE])
-				rate1_Q5 = int(ec_rates_Q5[rates_Q5+1+NLSF_QUANT_MAX_AMPLITUDE])
+				rate0_Q5 = int(ec_rates_Q5[rates_Q5+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE])
+				rate1_Q5 = int(ec_rates_Q5[rates_Q5+1+SilkConstants.NLSF_QUANT_MAX_AMPLITUDE])
 			}
 
 			RD_tmp_Q25 = RD_Q25[j]
-			diff_Q10 = in_Q10 - out0_Q10
+			diff_Q10 = int(silk_SUB16(int16(in_Q10), int16(out0_Q10)))
+
 			RD_Q25[j] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int(w_Q5[i])), mu_Q20, rate0_Q5)
-			diff_Q10 = in_Q10 - out1_Q10
+			diff_Q10 = int(silk_SUB16(int16(in_Q10), int16(out1_Q10)))
 			RD_Q25[j+nStates] = silk_SMLABB(silk_MLA(RD_tmp_Q25, silk_SMULBB(diff_Q10, diff_Q10), int(w_Q5[i])), mu_Q20, rate1_Q5)
 		}
 
-		if nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1) {
+		if nStates <= (SilkConstants.NLSF_QUANT_DEL_DEC_STATES >> 1) {
 			// double number of states and copy
-			for j := 0; j < nStates; j++ {
-				ind[j+nStates][i] = (byte)(ind[j][i] + 1)
+			for j = 0; j < nStates; j++ {
+				ind[j+nStates][i] = int8(ind[j][i] + 1)
 			}
 			nStates = silk_LSHIFT(nStates, 1)
 
-			for j := nStates; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
+			for j = nStates; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
 				ind[j][i] = ind[j-nStates][i]
 			}
-
 		} else if i > 0 {
-			for j := 0; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
-				if RD_Q25[j] > RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES] {
+			// sort lower and upper half of RD_Q25, pairwise
+			for j = 0; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
+				if RD_Q25[j] > RD_Q25[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES] {
 					RD_max_Q25[j] = RD_Q25[j]
-					RD_min_Q25[j] = RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES]
+					RD_min_Q25[j] = RD_Q25[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES]
 					RD_Q25[j] = RD_min_Q25[j]
-					RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES] = RD_max_Q25[j]
+					RD_Q25[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES] = RD_max_Q25[j]
+
+					// swap prev_out values
 					out0_Q10 = int(prev_out_Q10[j])
-					prev_out_Q10[j] = prev_out_Q10[j+NLSF_QUANT_DEL_DEC_STATES]
-					prev_out_Q10[j+NLSF_QUANT_DEL_DEC_STATES] = int16(out0_Q10)
-					ind_sort[j] = j + NLSF_QUANT_DEL_DEC_STATES
+					prev_out_Q10[j] = prev_out_Q10[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES]
+					prev_out_Q10[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES] = int16(out0_Q10)
+					ind_sort[j] = j + SilkConstants.NLSF_QUANT_DEL_DEC_STATES
 				} else {
 					RD_min_Q25[j] = RD_Q25[j]
-					RD_max_Q25[j] = RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES]
+					RD_max_Q25[j] = RD_Q25[j+SilkConstants.NLSF_QUANT_DEL_DEC_STATES]
 					ind_sort[j] = j
 				}
 			}
+
+			// compare the highest RD values of the winning half with the lowest one in the losing half, and copy if necessary
+			// afterwards ind_sort[] will contain the indices of the NLSF_QUANT_DEL_DEC_STATES winning RD values
 			for {
 				min_max_Q25 = math.MaxInt32
 				max_min_Q25 = 0
 				ind_min_max = 0
 				ind_max_min = 0
 
-				for j := 0; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
+				for j = 0; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
 					if min_max_Q25 > RD_max_Q25[j] {
 						min_max_Q25 = RD_max_Q25[j]
 						ind_min_max = j
@@ -335,56 +350,61 @@ func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_c
 					break
 				}
 
-				ind_sort[ind_max_min] = ind_sort[ind_min_max] ^ NLSF_QUANT_DEL_DEC_STATES
-				RD_Q25[ind_max_min] = RD_Q25[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
-				prev_out_Q10[ind_max_min] = prev_out_Q10[ind_min_max+NLSF_QUANT_DEL_DEC_STATES]
+				// copy ind_min_max to ind_max_min
+				ind_sort[ind_max_min] = ind_sort[ind_min_max] ^ SilkConstants.NLSF_QUANT_DEL_DEC_STATES
+				RD_Q25[ind_max_min] = RD_Q25[ind_min_max+SilkConstants.NLSF_QUANT_DEL_DEC_STATES]
+				prev_out_Q10[ind_max_min] = prev_out_Q10[ind_min_max+SilkConstants.NLSF_QUANT_DEL_DEC_STATES]
 				RD_min_Q25[ind_max_min] = 0
 				RD_max_Q25[ind_min_max] = math.MaxInt32
-				copy(ind[ind_max_min], ind[ind_min_max])
+				//	System.arraycopy(ind[ind_min_max], 0, ind[ind_max_min], 0, order)
+				copy(ind[ind_max_min], ind[ind_min_max][:order])
 			}
 
-			for j := 0; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
-				x := ind_sort[j] >> NLSF_QUANT_DEL_DEC_STATES_LOG2
-				ind[j][i] += byte(x)
+			// increment index if it comes from the upper half
+			for j = 0; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
+				x := silk_RSHIFT(ind_sort[j], SilkConstants.NLSF_QUANT_DEL_DEC_STATES_LOG2)
+				ind[j][i] += int8(x)
 			}
 		} else {
+			// i == 0
 			break
 		}
 	}
 
+	// last sample: find winner, copy indices and return RD value
 	ind_tmp = 0
 	min_Q25 = math.MaxInt32
-	for j := 0; j < 2*NLSF_QUANT_DEL_DEC_STATES; j++ {
+	for j = 0; j < 2*SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
 		if min_Q25 > RD_Q25[j] {
 			min_Q25 = RD_Q25[j]
 			ind_tmp = j
 		}
 	}
-
-	for j := 0; j < ord; j++ {
-		//indices[j] = byte(int8(ind[ind_tmp&(NLSF_QUANT_DEL_DEC_STATES-1)][j]))
-		indices[j] = int8(ind[ind_tmp&(SilkConstants.NLSF_QUANT_DEL_DEC_STATES-1)][j])
-
-		OpusAssert(int(indices[j]) >= -NLSF_QUANT_MAX_AMPLITUDE_EXT)
-		OpusAssert(int(indices[j]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
+	if Debug {
+		fmt.Printf("ind:%+v\r\n", ind)
+		fmt.Printf("ind_tmp:%d\r\n", ind_tmp)
+		fmt.Printf("RD_Q25:%+v\r\n", RD_Q25)
+	}
+	for j = 0; j < int(order); j++ {
+		indices[j] = ind[ind_tmp&(SilkConstants.NLSF_QUANT_DEL_DEC_STATES-1)][j]
+		OpusAssert(int(indices[j]) >= 0-SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT)
+		OpusAssert(int(indices[j]) <= SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT)
 	}
 
 	indices[0] = int8(int(indices[0]) + silk_RSHIFT(ind_tmp, SilkConstants.NLSF_QUANT_DEL_DEC_STATES_LOG2))
-
-	OpusAssert(int(indices[0]) <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
+	OpusAssert(indices[0] <= NLSF_QUANT_MAX_AMPLITUDE_EXT)
 	OpusAssert(min_Q25 >= 0)
 	return min_Q25
 }
 
 func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCodebook, pW_QW []int16, NLSF_mu_Q20 int, nSurvivors int, signalType int) int {
 
-	var ind1, prob_Q8, bits_q7 int
+	var i, s, ind1, prob_Q8, bits_q7 int
 	var W_tmp_Q9 int
-	err_Q26 := make([]int, psNLSF_CB.nVectors)
-	RD_Q25 := make([]int, nSurvivors)
-	tempIndices1 := make([]int, nSurvivors)
-	tempIndices2 := InitTwoDimensionalArrayByte(nSurvivors, SilkConstants.MAX_LPC_ORDER)
-
+	var err_Q26 []int
+	var RD_Q25 []int
+	var tempIndices1 []int
+	var tempIndices2 [][]int8
 	res_Q15 := make([]int16, psNLSF_CB.order)
 	res_Q10 := make([]int16, psNLSF_CB.order)
 	NLSF_tmp_Q15 := make([]int16, psNLSF_CB.order)
@@ -392,39 +412,78 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	W_adj_Q5 := make([]int16, psNLSF_CB.order)
 	pred_Q8 := make([]int16, psNLSF_CB.order)
 	ec_ix := make([]int16, psNLSF_CB.order)
-
-	OpusAssert(nSurvivors <= NLSF_VQ_MAX_SURVIVORS)
+	pCB := psNLSF_CB.CB1_NLSF_Q8
+	var iCDF_ptr int
+	var pCB_element int
+	if Debug {
+		fmt.Printf("pNLSF_Q15-1:%+v\r\n", pNLSF_Q15)
+	}
+	OpusAssert(nSurvivors <= SilkConstants.NLSF_VQ_MAX_SURVIVORS)
 	OpusAssert(signalType >= 0 && signalType <= 2)
 	OpusAssert(NLSF_mu_Q20 <= 32767 && NLSF_mu_Q20 >= 0)
 
+	// NLSF stabilization
 	silk_NLSF_stabilize(pNLSF_Q15, psNLSF_CB.deltaMin_Q15, int(psNLSF_CB.order))
+
+	// First stage: VQ
+	err_Q26 = make([]int, psNLSF_CB.nVectors)
 	silk_NLSF_VQ(err_Q26, pNLSF_Q15, psNLSF_CB.CB1_NLSF_Q8, int(psNLSF_CB.nVectors), int(psNLSF_CB.order))
+
+	// Sort the quantization errors
+	tempIndices1 = make([]int, nSurvivors)
 	silk_insertion_sort_increasing(err_Q26, tempIndices1, int(psNLSF_CB.nVectors), nSurvivors)
 
-	for s := 0; s < nSurvivors; s++ {
+	RD_Q25 = make([]int, nSurvivors)
+	tempIndices2 = InitTwoDimensionalArrayByte(nSurvivors, SilkConstants.MAX_LPC_ORDER)
+	if Debug {
+		fmt.Printf("pNLSF_Q15:%+v\r\n", pNLSF_Q15)
+	}
+	// Loop over survivors
+	for s = 0; s < nSurvivors; s++ {
 		ind1 = tempIndices1[s]
-		pCB_element := ind1 * int(psNLSF_CB.order)
-		for i := 0; i < int(psNLSF_CB.order); i++ {
-			NLSF_tmp_Q15[i] = int16(psNLSF_CB.CB1_NLSF_Q8[pCB_element+i] << 7)
-			res_Q15[i] = pNLSF_Q15[i] - NLSF_tmp_Q15[i]
+
+		// Residual after first stage
+		pCB_element = ind1 * int(psNLSF_CB.order) // opt: potential 1:2 partitioned buffer
+		for i = 0; i < int(psNLSF_CB.order); i++ {
+			NLSF_tmp_Q15[i] = silk_LSHIFT16(pCB[pCB_element+i], 7)
+			res_Q15[i] = int16(pNLSF_Q15[i] - NLSF_tmp_Q15[i])
 		}
 
+		// Weights from codebook vector
 		silk_NLSF_VQ_weights_laroia(W_tmp_QW, NLSF_tmp_Q15, int(psNLSF_CB.order))
-		for i := 0; i < int(psNLSF_CB.order); i++ {
-			W_tmp_Q9 = silk_SQRT_APPROX(int(W_tmp_QW[i]) << (18 - SilkConstants.NLSF_W_Q))
+
+		// Apply square-rooted weights
+		for i = 0; i < int(psNLSF_CB.order); i++ {
+			W_tmp_Q9 = silk_SQRT_APPROX(silk_LSHIFT(int(W_tmp_QW[i]), 18-SilkConstants.NLSF_W_Q))
 			res_Q10[i] = int16(silk_RSHIFT(silk_SMULBB(int(res_Q15[i]), W_tmp_Q9), 14))
 		}
 
-		for i := 0; i < int(psNLSF_CB.order); i++ {
-			W_adj_Q5[i] = int16(silk_DIV32_16(int(pW_QW[i])<<5, int(W_tmp_QW[i])))
+		// Modify input weights accordingly
+		for i = 0; i < int(psNLSF_CB.order); i++ {
+			W_adj_Q5[i] = int16(silk_DIV32_16(silk_LSHIFT(int(pW_QW[i]), 5), int(W_tmp_QW[i])))
 		}
 
+		// Unpack entropy table indices and predictor for current CB1 index
 		silk_NLSF_unpack(ec_ix, pred_Q8, psNLSF_CB, ind1)
+		if Debug {
+			fmt.Printf("res_Q10:%+v\r\n", res_Q10)
+		}
+		// Trellis quantizer
 		RD_Q25[s] = silk_NLSF_del_dec_quant(
-			tempIndices2[s], res_Q10, W_adj_Q5, pred_Q8, ec_ix, psNLSF_CB.ec_Rates_Q5,
-			int(psNLSF_CB.quantStepSize_Q16), psNLSF_CB.invQuantStepSize_Q6, NLSF_mu_Q20, int16(psNLSF_CB.order))
+			tempIndices2[s],
+			res_Q10,
+			W_adj_Q5,
+			pred_Q8,
+			ec_ix,
+			psNLSF_CB.ec_Rates_Q5,
+			int(psNLSF_CB.quantStepSize_Q16),
+			psNLSF_CB.invQuantStepSize_Q6,
+			NLSF_mu_Q20,
+			psNLSF_CB.order)
 
-		iCDF_ptr := (signalType >> 1) * int(psNLSF_CB.nVectors)
+		// Add rate for first stage
+		iCDF_ptr = (signalType >> 1) * int(psNLSF_CB.nVectors)
+
 		if ind1 == 0 {
 			prob_Q8 = 256 - int(psNLSF_CB.CB1_iCDF[iCDF_ptr+ind1])
 		} else {
@@ -432,19 +491,26 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 		}
 
 		bits_q7 = (8 << 7) - silk_lin2log(prob_Q8)
-		RD_Q25[s] = silk_SMLABB(RD_Q25[s], int(bits_q7), NLSF_mu_Q20>>2)
+		RD_Q25[s] = silk_SMLABB(RD_Q25[s], bits_q7, silk_RSHIFT(NLSF_mu_Q20, 2))
 	}
 
+	// Find the lowest rate-distortion error
 	bestIndex := make([]int, 1)
 	silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1)
+	if Debug {
+		fmt.Printf("NLSFIndices-1:%+v\r\n", NLSFIndices)
+		fmt.Printf("tempIndices2-1:%+v\r\n", tempIndices2)
+	}
 	NLSFIndices[0] = int8(tempIndices1[bestIndex[0]])
-	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]])
+	//System.arraycopy(tempIndices2[bestIndex[0]], 0, NLSFIndices, 1, psNLSF_CB.order)
+	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]][0:psNLSF_CB.order])
 
+	// Decode
 	silk_NLSF_decode(pNLSF_Q15, NLSFIndices, psNLSF_CB)
 	if Debug {
 		fmt.Printf("NLSFIndices:%+v\r\n", NLSFIndices)
 	}
-	return RD_Q25[bestIndex[0]]
+	return RD_Q25[0]
 }
 
 func silk_NLSF2A_find_poly(o []int, cLSF []int, cLSF_ptr int, dd int) {
@@ -600,7 +666,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 	var nom, den int
 	P := make([]int, SilkConstants.SILK_MAX_ORDER_LPC/2+1)
 	Q := make([]int, SilkConstants.SILK_MAX_ORDER_LPC/2+1)
-	PQ := [2][]int{P, Q}
+	PQ := make([][]int, 2)
 	var p []int
 
 	/* Store pointers to array */
@@ -615,7 +681,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 	p = P
 	/* Pointer to polynomial */
 
-	xlo = int(SilkTables.Silk_LSFCosTab_Q12[0])
+	xlo = int(silk_LSFCosTab_Q12[0])
 	/* Q12*/
 	ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
 
@@ -638,7 +704,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 	thr = 0
 	for {
 		/* Evaluate polynomial */
-		xhi = int(SilkTables.Silk_LSFCosTab_Q12[k])
+		xhi = int(silk_LSFCosTab_Q12[k])
 		/* Q12 */
 		yhi = silk_A2NLSF_eval_poly(p, xhi, dd)
 
@@ -698,7 +764,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 			p = PQ[root_ix&1]
 
 			/* Evaluate polynomial */
-			xlo = int(SilkTables.Silk_LSFCosTab_Q12[k-1])
+			xlo = int(silk_LSFCosTab_Q12[k-1])
 			/* Q12*/
 			ylo = silk_LSHIFT(1-(root_ix&2), 12)
 		} else {
@@ -712,7 +778,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 				i++
 				if i > MAX_ITERATIONS_A2NLSF {
 					/* Set NLSFs to white spectrum and exit */
-					NLSF[0] = int16(silk_DIV32_16(1<<15, (d + 1)))
+					NLSF[0] = int16(silk_DIV32_16(1<<15, int(d+1)))
 					for k = 1; k < d; k++ {
 						NLSF[k] = int16(silk_SMULBB(k+1, int(NLSF[0])))
 					}
@@ -726,7 +792,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 				silk_A2NLSF_init(a_Q16, P, Q, dd)
 				p = P
 				/* Pointer to polynomial */
-				xlo = int(SilkTables.Silk_LSFCosTab_Q12[0])
+				xlo = int(silk_LSFCosTab_Q12[0])
 				/* Q12*/
 				ylo = silk_A2NLSF_eval_poly(p, xlo, dd)
 				if ylo < 0 {
@@ -749,7 +815,9 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 }
 
 func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLSF_Q15 []int16, prev_NLSFq_Q15 []int16) {
-
+	if Debug {
+		fmt.Printf("silk_process_NLSFs pNLSF_Q15:%+v\r\n", pNLSF_Q15)
+	}
 	var doInterpolate bool
 	var NLSF_mu_Q20, i_sqr_Q15 int
 	pNLSF0_temp_Q15 := make([]int16, MAX_LPC_ORDER)

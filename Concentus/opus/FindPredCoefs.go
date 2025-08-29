@@ -1,6 +1,8 @@
 package opus
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
 )
 
@@ -48,6 +50,7 @@ func silk_find_pred_coefs(
 
 	LPC_in_pre = make([]int16, psEnc.nb_subfr*psEnc.predictLPCOrder+psEnc.frame_length)
 	if psEnc.indices.signalType == TYPE_VOICED {
+
 		var WLTP []int
 
 		/**
@@ -67,6 +70,13 @@ func silk_find_pred_coefs(
 			res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length,
 			psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift)
 		psEncCtrl.LTPredCodGain_Q7 = boxed_codgain.Val
+
+		if Debug {
+
+			invGains_Q16Str, _ := json.Marshal(psEncCtrl.LTPCoef_Q14)
+			fmt.Printf("psEncCtrl.LTPCoef_Q14-1:%s\r\n", invGains_Q16Str)
+
+		}
 
 		/* Quantize LTP gain parameters */
 		boxed_periodicity := &BoxedValueByte{psEnc.indices.PERIndex}
@@ -117,7 +127,14 @@ func silk_find_pred_coefs(
 			silk_SMULWW(int(float64(SilkConstants.MAX_PREDICTION_POWER_GAIN)*float64(int64(1)<<(0))+0.5),
 				silk_SMLAWB(int(math.Floor(0.25*float64(int64(1)<<(18))+0.5)), int(math.Floor(0.75*float64(int64(1)<<(18))+0.5)), psEncCtrl.coding_quality_Q14)), 14)
 	}
+	if Debug {
+		LPC_in_preStr, _ := json.Marshal(LPC_in_pre)
+		fmt.Printf("LPC_in_pre:%s\r\n", LPC_in_preStr)
 
+		invGains_Q16Str, _ := json.Marshal(psEncCtrl.LTPCoef_Q14)
+		fmt.Printf("psEncCtrl.LTPCoef_Q14:%s\r\n", invGains_Q16Str)
+
+	}
 	silk_find_LPC(psEnc, NLSF_Q15, LPC_in_pre, minInvGain_Q30)
 
 	/* Quantize LSFs */

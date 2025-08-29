@@ -290,8 +290,13 @@ func (s *SilkChannelEncoder) silk_setup_resamplers(fs_kHz int) int {
 
 func (s *SilkChannelEncoder) silk_setup_fs(fs_kHz int, PacketSize_ms int) int {
 	ret := SilkError.SILK_NO_ERROR
+
+	/* Set packet size */
 	if PacketSize_ms != s.PacketSize_ms {
-		if PacketSize_ms != 10 && PacketSize_ms != 20 && PacketSize_ms != 40 && PacketSize_ms != 60 {
+		if (PacketSize_ms != 10) &&
+			(PacketSize_ms != 20) &&
+			(PacketSize_ms != 40) &&
+			(PacketSize_ms != 60) {
 			ret = SilkError.SILK_ENC_PACKET_SIZE_NOT_SUPPORTED
 		}
 		if PacketSize_ms <= 10 {
@@ -301,12 +306,13 @@ func (s *SilkChannelEncoder) silk_setup_fs(fs_kHz int, PacketSize_ms int) int {
 			} else {
 				s.nb_subfr = 1
 			}
+
 			s.frame_length = silk_SMULBB(PacketSize_ms, fs_kHz)
 			s.pitch_LPC_win_length = silk_SMULBB(SilkConstants.FIND_PITCH_LPC_WIN_MS_2_SF, fs_kHz)
 			if s.fs_kHz == 8 {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_10_ms_NB_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_10_ms_NB_iCDF
 			} else {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_10_ms_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_10_ms_iCDF
 			}
 		} else {
 			s.nFramesPerPacket = silk_DIV32_16(PacketSize_ms, SilkConstants.MAX_FRAME_LENGTH_MS)
@@ -314,78 +320,88 @@ func (s *SilkChannelEncoder) silk_setup_fs(fs_kHz int, PacketSize_ms int) int {
 			s.frame_length = silk_SMULBB(20, fs_kHz)
 			s.pitch_LPC_win_length = silk_SMULBB(SilkConstants.FIND_PITCH_LPC_WIN_MS, fs_kHz)
 			if s.fs_kHz == 8 {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_NB_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_NB_iCDF
 			} else {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_iCDF
 			}
 		}
 		s.PacketSize_ms = PacketSize_ms
 		s.TargetRate_bps = 0
+		/* trigger new SNR computation */
 	}
 
+	/* Set sampling frequency */
 	OpusAssert(fs_kHz == 8 || fs_kHz == 12 || fs_kHz == 16)
 	OpusAssert(s.nb_subfr == 2 || s.nb_subfr == 4)
 	if s.fs_kHz != fs_kHz {
+		/* reset part of the state */
 		s.sShape.Reset()
 		s.sPrefilt.Reset()
 		s.sNSQ.Reset()
-		for i := range s.prev_NLSFq_Q15 {
-			s.prev_NLSFq_Q15[i] = 0
-		}
-		for i := range s.sLP.In_LP_State {
-			s.sLP.In_LP_State[i] = 0
-		}
+		MemSetLen(s.prev_NLSFq_Q15, 0, SilkConstants.MAX_LPC_ORDER)
+		MemSetLen(s.sLP.In_LP_State[:], 0, 2)
 		s.inputBufIx = 0
 		s.nFramesEncoded = 0
 		s.TargetRate_bps = 0
+		/* trigger new SNR computation */
+
+		/* Initialize non-zero parameters */
 		s.prevLag = 100
 		s.first_frame_after_reset = 1
 		s.sPrefilt.lagPrev = 100
 		s.sShape.LastGainIndex = 10
 		s.sNSQ.lagPrev = 100
 		s.sNSQ.prev_gain_Q16 = 65536
-		s.prevSignalType = byte(SilkConstants.TYPE_NO_VOICE_ACTIVITY)
+		s.prevSignalType = TYPE_NO_VOICE_ACTIVITY
+
 		s.fs_kHz = fs_kHz
 		if s.fs_kHz == 8 {
 			if s.nb_subfr == SilkConstants.MAX_NB_SUBFR {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_NB_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_NB_iCDF
 			} else {
-				s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_10_ms_NB_iCDF
+				s.pitch_contour_iCDF = silk_pitch_contour_10_ms_NB_iCDF
 			}
 		} else if s.nb_subfr == SilkConstants.MAX_NB_SUBFR {
-			s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_iCDF
+			s.pitch_contour_iCDF = silk_pitch_contour_iCDF
 		} else {
-			s.pitch_contour_iCDF = SilkTables.Silk_pitch_contour_10_ms_iCDF
+			s.pitch_contour_iCDF = silk_pitch_contour_10_ms_iCDF
 		}
+
 		if s.fs_kHz == 8 || s.fs_kHz == 12 {
 			s.predictLPCOrder = SilkConstants.MIN_LPC_ORDER
-			s.psNLSF_CB = SilkTables.Silk_NLSF_CB_NB_MB
+			s.psNLSF_CB = silk_NLSF_CB_NB_MB
 		} else {
 			s.predictLPCOrder = SilkConstants.MAX_LPC_ORDER
-			s.psNLSF_CB = SilkTables.Silk_NLSF_CB_WB
+			s.psNLSF_CB = silk_NLSF_CB_WB
 		}
+
 		s.subfr_length = SilkConstants.SUB_FRAME_LENGTH_MS * fs_kHz
 		s.frame_length = silk_SMULBB(s.subfr_length, s.nb_subfr)
 		s.ltp_mem_length = silk_SMULBB(SilkConstants.LTP_MEM_LENGTH_MS, fs_kHz)
 		s.la_pitch = silk_SMULBB(SilkConstants.LA_PITCH_MS, fs_kHz)
 		s.max_pitch_lag = silk_SMULBB(18, fs_kHz)
+
 		if s.nb_subfr == SilkConstants.MAX_NB_SUBFR {
 			s.pitch_LPC_win_length = silk_SMULBB(SilkConstants.FIND_PITCH_LPC_WIN_MS, fs_kHz)
 		} else {
 			s.pitch_LPC_win_length = silk_SMULBB(SilkConstants.FIND_PITCH_LPC_WIN_MS_2_SF, fs_kHz)
 		}
+
 		if s.fs_kHz == 16 {
-			s.mu_LTP_Q9 = silk_SMULWB(int(TuningParameters.MU_LTP_QUANT_WB), 1<<9)
-			s.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform8_iCDF
+			s.mu_LTP_Q9 = ((int)(float64(TuningParameters.MU_LTP_QUANT_WB)*float64(int64(1)<<(9)) + 0.5))
+			s.pitch_lag_low_bits_iCDF = silk_uniform8_iCDF
 		} else if s.fs_kHz == 12 {
-			s.mu_LTP_Q9 = silk_SMULWB(int(TuningParameters.MU_LTP_QUANT_MB), 1<<9)
-			s.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform6_iCDF
+			s.mu_LTP_Q9 = ((int)(float64(TuningParameters.MU_LTP_QUANT_MB)*float64(int64(1)<<(9)) + 0.5))
+			s.pitch_lag_low_bits_iCDF = silk_uniform6_iCDF
 		} else {
-			s.mu_LTP_Q9 = silk_SMULWB(int(TuningParameters.MU_LTP_QUANT_NB), 1<<9)
-			s.pitch_lag_low_bits_iCDF = SilkTables.Silk_uniform4_iCDF
+			s.mu_LTP_Q9 = ((int)(float64(TuningParameters.MU_LTP_QUANT_NB)*float64(int64(1)<<(9)) + 0.5))
+			s.pitch_lag_low_bits_iCDF = silk_uniform4_iCDF
 		}
 	}
-	OpusAssert(s.subfr_length*s.nb_subfr == s.frame_length)
+
+	/* Check that settings are valid */
+	OpusAssert((s.subfr_length * s.nb_subfr) == s.frame_length)
+
 	return ret
 }
 

@@ -779,7 +779,7 @@ func silk_SMULBB(a32, b32 int) int {
 	return int(int(int16(a32)) * int(int16(b32)))
 }
 func silk_SMULWB(a32, b32 int) int {
-	return int((int64(a32) * int64(int16(b32))) >> 16)
+	return int(int32(int64(a32) * int64(int16(b32)) >> 16))
 }
 
 func silk_SMLABB(a32, b32, c32 int) int {
@@ -990,7 +990,7 @@ func silk_ADD_LSHIFT(a, b, shift int) int {
 }
 
 func silk_ADD_LSHIFT32(a, b, shift int) int {
-	return a + (b << shift)
+	return a + int(int32(b)<<shift)
 }
 
 func silk_ADD_RSHIFT(a, b, shift int) int {
