@@ -23,7 +23,7 @@ func CapToUintLong(val int64) int64 {
 }
 
 func MULT16_16SU(a, b int) int {
-	return int(a) * int(b)
+	return (int(int16(a)) * (int)(b&0xFFFF))
 }
 
 func MULT16_32_Q16(a int16, b int) int {
@@ -212,7 +212,7 @@ func SUB32(a, b int) int {
 }
 
 func MULT16_16_16(a, b int16) int16 {
-	return int16(int(a) * int(b))
+	return int16(int16(a) * int16(b))
 }
 
 func MULT16_16_16Int(a, b int) int {
@@ -702,11 +702,13 @@ func _celt_cos_pi_2(x int) int {
 }
 
 func FLOAT2INT16(x float32) int16 {
-	x *= 65535.0 / 32768.0
-	if x < -32768 {
-		return -32768
-	} else if x > 32767 {
-		return 32767
+
+	x = x * CeltConstants.CELT_SIG_SCALE
+	if x < math.MinInt16 {
+		x = math.MinInt16
+	}
+	if x > math.MaxInt16 {
+		x = math.MaxInt16
 	}
 	return int16(x)
 }
@@ -771,12 +773,6 @@ func silk_MLA_ovflw(a32, b32, c32 int32) int32 {
 
 func silk_SMLABB_ovflw(a32, b32, c32 int32) int32 {
 	return silk_ADD32_ovflw(a32, int32(b32)*int32(c32))
-}
-func silk_SMLABB_ovflwNew(a32, b32, c32 int32) int32 {
-	b16 := int16(b32)
-	c16 := int16(c32)
-	product := int32(b16) * int32(c16)
-	return a32 + product
 }
 
 func silk_SMULBB(a32, b32 int) int {

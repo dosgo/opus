@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -685,12 +684,10 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 					s.ec_prevLagIndex = ec_prevLagIndex_copy
 					s.ec_prevSignalType = ec_prevSignalType_copy
 				}
-				fmt.Printf("s.pulses:%+v\r\n", s.pulses)
+
 				if s.nStatesDelayedDecision > 1 || s.warping_Q16 > 0 {
-					fmt.Printf("silk_NSQ_del_dec\r\n")
 					s.sNSQ.silk_NSQ_del_dec(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				} else {
-					fmt.Printf("silk_NSQ xfw_Q3:%+v\r\n", xfw_Q3)
 					s.sNSQ.silk_NSQ(s, s.indices, xfw_Q3, s.pulses[:], sEncCtrl.PredCoef_Q12[:], sEncCtrl.LTPCoef_Q14[:], sEncCtrl.AR2_Q13[:], sEncCtrl.HarmShapeGain_Q14, sEncCtrl.Tilt_Q14, sEncCtrl.LF_shp_Q14, sEncCtrl.Gains_Q16[:], sEncCtrl.pitchL[:], sEncCtrl.Lambda_Q10, sEncCtrl.LTP_scale_Q14)
 				}
 

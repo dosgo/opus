@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, pulses_in_ptr int, max_pulses int, _len int) int {
 	for k := 0; k < _len; k++ {
 		k2p := 2*k + pulses_in_ptr
@@ -60,7 +58,7 @@ func silk_encode_pulses(
 			}
 		}
 	}
-	fmt.Printf("pulses:%+v\r\n", pulses)
+
 	abs_pulses = make([]int, iter*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
 	OpusAssert((SilkConstants.SHELL_CODEC_FRAME_LENGTH & 3) == 0)
 	// unrolled loop
@@ -70,7 +68,6 @@ func silk_encode_pulses(
 		abs_pulses[i+2] = silk_abs(int(pulses[i+2]))
 		abs_pulses[i+3] = silk_abs(int(pulses[i+3]))
 	}
-	fmt.Printf("abs_pulses:%+v\r\n", abs_pulses)
 
 	sum_pulses = make([]int, iter)
 	nRshifts = make([]int, iter)
@@ -117,7 +114,7 @@ func silk_encode_pulses(
 	}
 
 	psRangeEnc.enc_icdf(RateLevelIndex, SilkTables.Silk_rate_levels_iCDF[signalType>>1], 8)
-	fmt.Printf("nRshifts:%+v\r\n", nRshifts)
+
 	for i = 0; i < iter; i++ {
 		if nRshifts[i] == 0 {
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[RateLevelIndex], 8)

@@ -1,9 +1,5 @@
 package opus
 
-import (
-	"fmt"
-)
-
 func silk_warped_LPC_analysis_filter(
 	state []int,
 	res_Q2 []int,
@@ -52,7 +48,6 @@ func silk_prefilter(
 	xw_Q3 []int,
 	x []int16,
 	x_ptr int) {
-	fmt.Printf("psEncCtrl.HarmShapeGain_Q14:%+v\r\n", psEncCtrl.HarmBoost_Q14)
 
 	P := psEnc.sPrefilt
 	var j, k, lag int
@@ -139,7 +134,6 @@ func silk_prefilt(
 	sLF_AR_shp_Q12 = P.sLF_AR_shp_Q12
 	sLF_MA_shp_Q12 = P.sLF_MA_shp_Q12
 
-	//fmt.Printf("LTP_shp_buf:%+v\r\n", LTP_shp_buf)
 	for i = 0; i < length; i++ {
 		if lag > 0 {
 			/* unrolled loop */

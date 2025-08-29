@@ -63,7 +63,7 @@ func main() {
 				i++
 				continue
 			}*/
-		if i > 10 {
+		if i > 20 {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
@@ -77,7 +77,7 @@ func main() {
 
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
 		//break
-		fmt.Printf("pcmlen:%d\r\n", len(inBuf))
+
 		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, ByteSliceToMD5(data_packet))
 
 		//fmt.Printf(" data_packet:%s\r\n", BytesToJSONArray(data_packet))
