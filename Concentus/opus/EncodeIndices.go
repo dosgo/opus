@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
 	var i, k, typeOffset int
 	var encode_absolute_lagIndex, delta_lagIndex int
@@ -64,7 +66,9 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	/**
 	 * *************
 	 */
-
+	if Debug {
+		fmt.Printf("psIndices.NLSFIndices:%+v\r\n", psIndices.NLSFIndices)
+	}
 	psRangeEnc.enc_icdf_offset(int(psIndices.NLSFIndices[0]), psEncC.psNLSF_CB.CB1_iCDF, int(int16(psIndices.signalType>>1)*psEncC.psNLSF_CB.nVectors), 8)
 	silk_NLSF_unpack(ec_ix, pred_Q8, psEncC.psNLSF_CB, int(psIndices.NLSFIndices[0]))
 	OpusAssert(int(psEncC.psNLSF_CB.order) == psEncC.predictLPCOrder)
@@ -76,6 +80,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 			psRangeEnc.enc_icdf_offset(0, psEncC.psNLSF_CB.ec_iCDF, int(ec_ix[i]), 8)
 			psRangeEnc.enc_icdf(-int(psIndices.NLSFIndices[i+1])-NLSF_QUANT_MAX_AMPLITUDE, silk_NLSF_EXT_iCDF, 8)
 		} else {
+
 			psRangeEnc.enc_icdf_offset(int(psIndices.NLSFIndices[i+1])+NLSF_QUANT_MAX_AMPLITUDE, psEncC.psNLSF_CB.ec_iCDF, int(ec_ix[i]), 8)
 		}
 	}

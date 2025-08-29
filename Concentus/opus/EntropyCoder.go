@@ -1,6 +1,8 @@
 package opus
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	EC_WINDOW_SIZE = 32
@@ -441,7 +443,10 @@ func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ft
 
 	ec.enc_normalize()
 	if Debug {
-		fmt.Printf("enc_icdf_offset nbits_total:%d this.rng  :%d old:%d  _ftb:%d\r\n", ec.nbits_total, ec.rng, old, _ftb)
+		if ec.rng == 32345264 {
+			fmt.Printf("enc_icdf_offset nbits_total:%d this.rng  :%d old:%d  _ftb:%d _s:%d\r\n", ec.nbits_total, ec.rng, old, _ftb, _s)
+			panic("eee")
+		}
 	}
 
 }
@@ -488,6 +493,9 @@ func (ec *EntropyCoder) enc_bits(_fl int64, _bits int) {
 	ec.nend_bits = used
 	ec.nbits_total += _bits
 	//fmt.Printf(" enc_bits nbits_total:%d\r\n", ec.nbits_total)
+	if Debug {
+		fmt.Printf("enc_bits nbits_total:%d this.rng  \r\n", ec.nbits_total, ec.rng)
+	}
 }
 
 func (ec *EntropyCoder) enc_patch_initial_bits(_val int64, _nbits int) {

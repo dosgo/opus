@@ -1,6 +1,7 @@
 package opus
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -440,6 +441,9 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]])
 
 	silk_NLSF_decode(pNLSF_Q15, NLSFIndices, psNLSF_CB)
+	if Debug {
+		fmt.Printf("NLSFIndices:%+v\r\n", NLSFIndices)
+	}
 	return RD_Q25[bestIndex[0]]
 }
 
