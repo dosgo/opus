@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var Debug = false
+
 func InitTwoDimensionalArrayInt(x, y int) [][]int {
 	arr := make([][]int, x)
 	for i := range arr {

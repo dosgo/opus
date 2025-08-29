@@ -72,7 +72,12 @@ func main() {
 		//encoder.PrintAllFields()
 
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
-
+		if i == 11 {
+			opus.Debug = true
+		}
+		if i > 11 {
+			opus.Debug = false
+		}
 		//fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))
 
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())

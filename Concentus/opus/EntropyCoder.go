@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 const (
 	EC_WINDOW_SIZE = 32
 	EC_UINT_BITS   = 8
@@ -391,7 +393,7 @@ func (ec *EntropyCoder) encode_bin(_fl int64, _fh int64, _bits int) {
 }
 
 func (ec *EntropyCoder) enc_bit_logp(_val int, _logp int) {
-	//	old := ec.rng
+	old := ec.rng
 
 	r := ec.rng
 	l := ec.val
@@ -406,14 +408,13 @@ func (ec *EntropyCoder) enc_bit_logp(_val int, _logp int) {
 		ec.rng = r
 	}
 	ec.enc_normalize()
-	//fmt.Printf("enc_bit_logp this.rng : %d old:%d\r\n", ec.rng, old)
-
-	//fmt.Printf("enc_bit_logp this. nbits_total : %d\r\n", ec.nbits_total)
-
+	if Debug {
+		fmt.Printf("enc_bit_logp  nbits_total:%d this.rng : %d old:%d\r\n", ec.nbits_total, ec.rng, old)
+	}
 }
 
 func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
-
+	old := ec.rng
 	r := CapToUInt32(ec.rng >> _ftb)
 	if _s > 0 {
 		ec.val = ec.val + CapToUInt32(ec.rng-CapToUInt32(r*int64(_icdf[_s-1])))
@@ -421,16 +422,15 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	} else {
 		ec.rng = CapToUInt32(ec.rng - (r * int64(_icdf[_s])))
 	}
-
-	//	fmt.Printf("this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
-	//fmt.Printf("this. nbits_total : %d this.rng:%d old:%d\r\n", ec.nbits_total, ec.rng, old)
-
+	if Debug {
+		fmt.Printf("enc_icdf nbits_total:%d this.rng  :%d old:%d  _ftb:%d\r\n", ec.nbits_total, ec.rng, old, _ftb)
+	}
 	ec.enc_normalize()
 
 }
 
 func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ftb int) {
-	//	old := ec.rng
+	old := ec.rng
 	r := CapToUInt32(ec.rng >> _ftb)
 	if _s > 0 {
 		ec.val = ec.val + CapToUInt32(ec.rng-CapToUInt32(r*int64(_icdf[icdf_ptr+_s-1])))
@@ -439,10 +439,10 @@ func (ec *EntropyCoder) enc_icdf_offset(_s int, _icdf []int16, icdf_ptr int, _ft
 		ec.rng = CapToUInt32(ec.rng - r*int64(_icdf[icdf_ptr+_s]))
 	}
 
-	//fmt.Printf("offset this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
-	//fmt.Printf("offset this. nbits_total : %d\r\n", ec.nbits_total)
 	ec.enc_normalize()
-	//fmt.Printf("offset enc_normalize this.rng: %d\r\n", ec.rng)
+	if Debug {
+		fmt.Printf("enc_icdf_offset nbits_total:%d this.rng  :%d old:%d  _ftb:%d\r\n", ec.nbits_total, ec.rng, old, _ftb)
+	}
 
 }
 
@@ -466,6 +466,9 @@ func (ec *EntropyCoder) enc_uint(_fl int64, _ft int64) {
 		ec.enc_bits(_fl&CapToUInt32((1<<ftb)-1), ftb)
 	} else {
 		ec.encode(_fl, _fl+1, _ft+1)
+	}
+	if Debug {
+		fmt.Printf("enc_uint nbits_total:%d this.rng  \r\n", ec.nbits_total, ec.rng)
 	}
 }
 
