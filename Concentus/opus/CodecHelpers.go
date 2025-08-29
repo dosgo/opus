@@ -74,7 +74,6 @@ func dc_reject(input []int16, input_ptr int, cutoff_Hz int, output []int16, outp
 			hp_mem[2*c] = hp_mem[2*c] + PSHR32(int(x-int32(hp_mem[2*c])), shift)
 			/* Second stage */
 			y = tmp - int32(hp_mem[2*c+1])
-			//fmt.Printf("y:%d\r\n", (SATURATE(PSHR32(int(y), 15), 32767)))
 			hp_mem[2*c+1] = hp_mem[2*c+1] + PSHR32(int(tmp-int32(hp_mem[2*c+1])), shift)
 			output[channels*i+c+output_ptr] = EXTRACT16(int(int32(SATURATE(PSHR32(int(y), 15), 32767))))
 		}

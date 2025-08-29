@@ -2,7 +2,6 @@ package opus
 
 import (
 	"fmt"
-	"os"
 )
 
 const (
@@ -423,7 +422,7 @@ func (ec *EntropyCoder) enc_bit_logp(_val int, _logp int) {
 
 func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 	old := ec.rng
-	//oldVal := ec.val
+	oldVal := ec.val
 	r := CapToUInt32(ec.rng >> _ftb)
 	if _s > 0 {
 		ec.val = ec.val + CapToUInt32(ec.rng-CapToUInt32(r*int64(_icdf[_s-1])))
@@ -434,10 +433,9 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 
 	//	fmt.Printf("this.rng  :%d old:%d  _ftb:%d\r\n", ec.rng, old, _ftb)
 	fmt.Printf("this. nbits_total : %d this.rng:%d old:%d\r\n", ec.nbits_total, ec.rng, old)
-	if old == 383057920 {
-		fmt.Printf("_icdf:%+v _s:%d oldVal:%d\r\n", (_icdf), _s, old)
-		panic("eee")
-		os.Exit(0)
+	if old == 221088000 {
+		fmt.Printf("_icdf:%+v _s:%d oldVal:%d\r\n", (_icdf), _s, oldVal)
+
 	}
 	ec.enc_normalize()
 

@@ -62,6 +62,7 @@ func silk_residual_energy(
 		/* Q( nrgsQ[ i ] + lz1 + 2 * lz2 - 32 - 32 )*/
 		nrgsQ[i] += lz1 + 2*lz2 - 32 - 32
 	}
+
 }
 
 func silk_residual_energy16_covar(

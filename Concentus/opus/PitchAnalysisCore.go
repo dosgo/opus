@@ -1,7 +1,6 @@
 package opus
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -394,7 +393,6 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 			lag = d
 			CBimax = CBimax_new
 		}
-		fmt.Printf("CCmax_new:%d\r\n", CCmax_new)
 	}
 
 	if lag == -1 {
@@ -403,7 +401,7 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 		LTPCorr_Q15.Val = 0
 		lagIndex.Val = 0
 		contourIndex.Val = 0
-		fmt.Printf("contourInde=0  lag=-1\r\n")
+
 		return 1
 	}
 
@@ -516,7 +514,6 @@ func silk_pitch_analysis_core(frame []int16, pitch_out []int, lagIndex *BoxedVal
 				} else {
 					CCmax_new = 0
 				}
-				fmt.Printf("CCmax_new:%d CCmax:%d\r\n", CCmax_new, CCmax)
 				if CCmax_new > CCmax && (d+int(silk_CB_lags_stage3[0][j])) <= max_lag {
 					CCmax = CCmax_new
 					lag_new = d

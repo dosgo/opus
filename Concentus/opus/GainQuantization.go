@@ -32,20 +32,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package opus
 
-import (
-	"fmt"
-)
-
 var OFFSET = ((MIN_QGAIN_DB*128)/6 + 16*128)
 var SCALE_Q16 = ((65536 * (N_LEVELS_QGAIN - 1)) / (((MAX_QGAIN_DB - MIN_QGAIN_DB) * 128) / 6))
 var INV_SCALE_Q16 = ((65536 * (((MAX_QGAIN_DB - MIN_QGAIN_DB) * 128) / 6)) / (N_LEVELS_QGAIN - 1))
 
 func silk_gains_quant(ind []int8, gain_Q16 []int, prev_ind *BoxedValueByte, conditional int, nb_subfr int) {
-	fmt.Printf("gain_Q16:%+v\r\n", gain_Q16)
+
 	var k, double_step_size_threshold int
-	if gain_Q16[1] == 28180480 {
-		panic("silk_gains_quant")
-	}
 
 	for k = 0; k < nb_subfr; k++ {
 		// Debug.WriteLine("2a 0x{0:x}", (uint)gain_Q16[k]);
@@ -92,7 +85,7 @@ func silk_gains_quant(ind []int8, gain_Q16 []int, prev_ind *BoxedValueByte, cond
 		gain_Q16[k] = silk_log2lin(silk_min_32(silk_SMULWB(INV_SCALE_Q16, int(prev_ind.Val))+OFFSET, 3967))
 		/* 3967 = 31 in Q7 */
 	}
-	fmt.Printf("ind:%+v\r\n", ind)
+
 }
 
 func silk_gains_dequant(gain_Q16 []int, ind []int8, prev_ind *BoxedValueByte, conditional int, nb_subfr int) {

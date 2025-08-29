@@ -1,5 +1,7 @@
 package opus
 
+import "fmt"
+
 func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, pulses_in_ptr int, max_pulses int, _len int) int {
 	for k := 0; k < _len; k++ {
 		k2p := 2*k + pulses_in_ptr
@@ -8,6 +10,20 @@ func combine_and_check(pulses_comb []int, pulses_comb_ptr int, pulses_in []int, 
 			return 1
 		}
 		pulses_comb[pulses_comb_ptr+k] = sum
+	}
+	return 0
+}
+func combine_and_check4(
+	pulses_comb []int,
+	pulses_in []int,
+	max_pulses int,
+	_len int) int {
+	for k := 0; k < _len; k++ {
+		sum := pulses_in[2*k] + pulses_in[2*k+1]
+		if sum > max_pulses {
+			return 1
+		}
+		pulses_comb[k] = sum
 	}
 	return 0
 }
@@ -44,17 +60,17 @@ func silk_encode_pulses(
 			}
 		}
 	}
-
+	fmt.Printf("pulses:%+v\r\n", pulses)
 	abs_pulses = make([]int, iter*SilkConstants.SHELL_CODEC_FRAME_LENGTH)
 	OpusAssert((SilkConstants.SHELL_CODEC_FRAME_LENGTH & 3) == 0)
 	// unrolled loop
 	for i = 0; i < iter*SilkConstants.SHELL_CODEC_FRAME_LENGTH; i += 4 {
 		abs_pulses[i+0] = silk_abs(int(pulses[i+0]))
-		abs_pulses[i+0] = silk_abs(int(pulses[i+0]))
 		abs_pulses[i+1] = silk_abs(int(pulses[i+1]))
 		abs_pulses[i+2] = silk_abs(int(pulses[i+2]))
 		abs_pulses[i+3] = silk_abs(int(pulses[i+3]))
 	}
+	fmt.Printf("abs_pulses:%+v\r\n", abs_pulses)
 
 	sum_pulses = make([]int, iter)
 	nRshifts = make([]int, iter)
@@ -63,10 +79,13 @@ func silk_encode_pulses(
 		nRshifts[i] = 0
 
 		for {
-			scale_down = combine_and_check(pulses_comb, 0, abs_pulses, abs_pulses_ptr, int(SilkTables.Silk_max_pulses_table[0]), 8)
-			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[1]), 4)
-			scale_down += combine_and_check(pulses_comb, 0, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[2]), 2)
-			scale_down += combine_and_check(sum_pulses, i, pulses_comb, 0, int(SilkTables.Silk_max_pulses_table[3]), 1)
+			scale_down = combine_and_check(pulses_comb, 0, abs_pulses, abs_pulses_ptr, int(silk_max_pulses_table[0]), 8)
+			/* 2+2 . 4 */
+			scale_down += combine_and_check4(pulses_comb, pulses_comb, int(silk_max_pulses_table[1]), 4)
+			/* 4+4 . 8 */
+			scale_down += combine_and_check4(pulses_comb, pulses_comb, int(silk_max_pulses_table[2]), 2)
+			/* 8+8 . 16 */
+			scale_down += combine_and_check(sum_pulses, i, pulses_comb, 0, int(silk_max_pulses_table[3]), 1)
 
 			if scale_down != 0 {
 				nRshifts[i]++
@@ -98,6 +117,7 @@ func silk_encode_pulses(
 	}
 
 	psRangeEnc.enc_icdf(RateLevelIndex, SilkTables.Silk_rate_levels_iCDF[signalType>>1], 8)
+	fmt.Printf("nRshifts:%+v\r\n", nRshifts)
 	for i = 0; i < iter; i++ {
 		if nRshifts[i] == 0 {
 			psRangeEnc.enc_icdf(sum_pulses[i], SilkTables.Silk_pulses_per_block_iCDF[RateLevelIndex], 8)

@@ -1,7 +1,6 @@
 package silk
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/gotranspile/cxgo/runtime/cmath"
@@ -138,7 +137,6 @@ func EncodeFrame_FLP(psEnc *EncoderStateFLP, pnBytesOut *int32, psRangeEnc *entc
 					psEnc.SShape.LastGainIndex = sEncCtrl.LastGainIndexPrev
 					for i = 0; i < psEnc.SCmn.Nb_subfr; i++ {
 						psEnc.SCmn.Indices.GainsIndices[i] = 4
-						fmt.Printf(".GainsIndices[i] = 4\r\n")
 					}
 					if condCoding != CODE_CONDITIONALLY {
 						psEnc.SCmn.Indices.GainsIndices[0] = sEncCtrl.LastGainIndexPrev

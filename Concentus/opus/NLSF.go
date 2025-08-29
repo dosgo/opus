@@ -191,7 +191,6 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []int8, psNLSF_CB *NLSFCode
 }
 
 func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
-	//fmt.Printf("silk_NLSF_del_dec_quant indices md5:%s \r\n", ByteSliceToMD5(indices))
 
 	var nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
 	var pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5 int
@@ -296,8 +295,7 @@ func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_c
 			for j := nStates; j < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; j++ {
 				ind[j][i] = ind[j-nStates][i]
 			}
-			//fmt.Printf(" nStates <= (NLSF_QUANT_DEL_DEC_STATES >> 1)\r\n")
-			//fmt.Printf("nStates <= (NLSF_QUANT_DEL_DEC_STATES ind:%+v \r\n", ind)
+
 		} else if i > 0 {
 			for j := 0; j < NLSF_QUANT_DEL_DEC_STATES; j++ {
 				if RD_Q25[j] > RD_Q25[j+NLSF_QUANT_DEL_DEC_STATES] {

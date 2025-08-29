@@ -8,67 +8,6 @@ func silk_autocorr(results []int, scale *BoxedValueInt, inputData []int16, input
 	scale.Val = _celt_autocorr(inputData, results, corrCount-1, inputDataSize)
 }
 
-func _celt_autocorrBak(x []int16, ac []int, lag int, n int) int {
-	d := int(0)
-	fastN := n - lag
-	shift := 0
-	var xptr []int16
-	xx := make([]int16, n)
-	OpusAssert(n > 0)
-	xptr = x
-
-	ac0 := int(1 + (n << 7))
-	if (n & 1) != 0 {
-		ac0 += SHR32(MULT16_16(int(xptr[0]), int(xptr[0])), 9)
-	}
-	for i := (n & 1); i < n; i += 2 {
-		ac0 += SHR32(MULT16_16(int(xptr[i]), int(xptr[i])), 9)
-		ac0 += SHR32(MULT16_16(int(xptr[i+1]), int(xptr[i+1])), 9)
-	}
-	shift = celt_ilog2(ac0) - 30 + 10
-	shift = (shift) / 2
-	if shift > 0 {
-		for i := 0; i < n; i++ {
-			xx[i] = int16(PSHR32(int(xptr[i]), shift))
-		}
-		xptr = xx
-	} else {
-		shift = 0
-	}
-
-	pitch_xcorr2(xptr, xptr, ac, fastN, lag+1)
-	for k := 0; k <= lag; k++ {
-		d = 0
-		for i := k + fastN; i < n; i++ {
-			d = int(MAC16_16(int16(d), int16(xptr[i]), int16(xptr[i-k])))
-		}
-		ac[k] += d
-	}
-
-	shift = 2 * shift
-	if shift <= 0 {
-		ac[0] += int(SHL32(1, -shift))
-	}
-	if ac[0] < 268435456 {
-		shift2 := 29 - EC_ILOG(int64(ac[0]))
-		for i := 0; i <= lag; i++ {
-			ac[i] = SHL32(ac[i], shift2)
-		}
-		shift -= shift2
-	} else if ac[0] >= 536870912 {
-		shift2 := 1
-		if ac[0] >= 1073741824 {
-			shift2++
-		}
-		for i := 0; i <= lag; i++ {
-			ac[i] = SHR32(ac[i], shift2)
-		}
-		shift += shift2
-	}
-
-	return shift
-}
-
 func _celt_autocorr(x []int16, ac []int, lag int, n int) int {
 
 	var d int

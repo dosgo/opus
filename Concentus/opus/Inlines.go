@@ -778,16 +778,16 @@ func silk_SMLABB_ovflwNew(a32, b32, c32 int32) int32 {
 	product := int32(b16) * int32(c16)
 	return a32 + product
 }
-func silk_SMULBB(a32, b32 int) int {
-	return int(int(a32)) * int(int(b32))
-}
 
+func silk_SMULBB(a32, b32 int) int {
+	return int(int(int16(a32)) * int(int16(b32)))
+}
 func silk_SMULWB(a32, b32 int) int {
 	return int((int64(a32) * int64(int16(b32))) >> 16)
 }
 
 func silk_SMLABB(a32, b32, c32 int) int {
-	return a32 + int(b32)*int(c32)
+	return ((a32) + int(int32(int16(b32))*int32(int16(c32))))
 }
 
 func silk_DIV32_16(a32, b32 int) int {
@@ -1314,9 +1314,8 @@ func silk_SMULBT(a32, b32 int) int {
 }
 
 func silk_SMLABT(a32, b32, c32 int) int {
-	return a32 + int(int(b32))*(c32>>16)
+	return ((a32) + ((int)(int16(b32)))*((c32)>>16))
 }
-
 func silk_SMLAL(a64 int64, b32, c32 int) int64 {
 	return a64 + int64(b32)*int64(c32)
 }

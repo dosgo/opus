@@ -369,8 +369,6 @@ func silk_Encode(
 					encControl.toMono,
 					psEnc.state_Fxx[0].fs_kHz,
 					psEnc.state_Fxx[0].frame_length)
-				//fmt.Printf("silk_stereo_LR_to_MS psEnc.state_Fxx[0].inputBuf:%+v\r\n", psEnc.state_Fxx[0].inputBuf)
-				//	fmt.Printf("silk_stereo_LR_to_MS psEnc.state_Fxx[1].inputBuf:%+v\r\n", psEnc.state_Fxx[1].inputBuf)
 
 				psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded] = midOnlyFlag
 

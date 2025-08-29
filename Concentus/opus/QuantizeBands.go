@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 var pred_coef = []int{29440, 26112, 21248, 16384}
 var beta_coef = []int{30147, 22282, 12124, 6554}
 
@@ -117,7 +115,6 @@ func quant_coarse_energy(m *CeltMode, start int, end int, effEnd int, eBands [][
 
 	intra := boolToInt(force_intra != 0 || (two_pass == 0 && delayedIntra.Val > 2*C*(end-start) && nbAvailableBytes > (end-start)*C))
 
-	fmt.Printf("delayedIntra.Val :%d\r\n", delayedIntra.Val)
 	intra_bias := (budget * delayedIntra.Val * loss_rate) / (C * 512)
 	new_distortion := loss_distortion(eBands, oldEBands, start, effEnd, m.nbEBands, C)
 

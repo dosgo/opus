@@ -1261,8 +1261,6 @@ func (st *OpusEncoder) Encode(in_pcm []int16, pcm_offset, frame_size int, out_da
 		return 0, errors.New("Not enough samples provided in input signal")
 	}
 
-	//fmt.Printf("st.width_mem:%+v\r\n", st.Celt_Encoder.in_mem)
-
 	ret := st.opus_encode_native(in_pcm, pcm_offset, internal_frame_size, out_data, out_data_offset, max_data_bytes, 16, in_pcm, pcm_offset, frame_size, 0, -2, st.channels, 0)
 	if ret < 0 {
 		if ret == OpusError.OPUS_BAD_ARG {
