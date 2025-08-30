@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 func silk_find_LPC(
 	psEncC *SilkChannelEncoder,
 	NLSF_Q15 []int16,
@@ -115,17 +113,12 @@ func silk_find_LPC(
 			}
 		}
 	}
-	if Debug {
-		fmt.Printf("silk_find_LPC NLSF_Q15:%+v\r\n", NLSF_Q15)
-		fmt.Printf("silk_find_LPC a_Q16:%+v\r\n", a_Q16)
-	}
+
 	if psEncC.indices.NLSFInterpCoef_Q2 == 4 {
 		/* NLSF interpolation is currently inactive, calculate NLSFs from full frame AR coefficients */
 		silk_A2NLSF(NLSF_Q15, a_Q16, psEncC.predictLPCOrder)
 	}
-	if Debug {
-		fmt.Printf("silk_find_LPC NLSF_Q1511:%+v\r\n", NLSF_Q15)
-	}
+
 	OpusAssert(psEncC.indices.NLSFInterpCoef_Q2 == 4 || (psEncC.useInterpolatedNLSFs != 0 && psEncC.first_frame_after_reset == 0 && psEncC.nb_subfr == SilkConstants.MAX_NB_SUBFR))
 
 }

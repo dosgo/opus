@@ -63,7 +63,7 @@ func main() {
 				i++
 				continue
 			}*/
-		if i > 20 {
+		if i > 40 {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
@@ -72,10 +72,9 @@ func main() {
 		//encoder.PrintAllFields()
 
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
-		if i == 11 {
-			opus.Debug = false
-		}
-		if i > 11 {
+		if i == 37 {
+			opus.Debug = true
+		} else {
 			opus.Debug = false
 		}
 		//fmt.Printf("data_packet:%s\r\n", formatSignedBytes(data_packet))

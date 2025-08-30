@@ -192,15 +192,7 @@ func silk_NLSF_decode(pNLSF_Q15 []int16, NLSFIndices []int8, psNLSF_CB *NLSFCode
 }
 
 func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_coef_Q8 []int16, ec_ix []int16, ec_rates_Q5 []int16, quant_step_size_Q16 int, inv_quant_step_size_Q6 int16, mu_Q20 int, order int16) int {
-	if Debug {
-		fmt.Printf("x_Q10:%+v\r\n", x_Q10)
-		fmt.Printf("w_Q5:%+v\r\n", w_Q5)
-		fmt.Printf("pred_coef_Q8:%+v\r\n", pred_coef_Q8)
-		fmt.Printf("ec_ix:%+v\r\n", ec_ix)
-		fmt.Printf("ec_rates_Q5:%+v\r\n", ec_rates_Q5)
-		fmt.Printf("mu_Q20:%+v\r\n", mu_Q20)
 
-	}
 	var i, j, nStates, ind_tmp, ind_min_max, ind_max_min, in_Q10, res_Q10 int
 	var pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5 int
 	var RD_tmp_Q25, min_Q25, min_max_Q25, max_min_Q25, pred_coef_Q16 int
@@ -380,11 +372,7 @@ func silk_NLSF_del_dec_quant(indices []int8, x_Q10 []int16, w_Q5 []int16, pred_c
 			ind_tmp = j
 		}
 	}
-	if Debug {
-		fmt.Printf("ind:%+v\r\n", ind)
-		fmt.Printf("ind_tmp:%d\r\n", ind_tmp)
-		fmt.Printf("RD_Q25:%+v\r\n", RD_Q25)
-	}
+
 	for j = 0; j < int(order); j++ {
 		indices[j] = ind[ind_tmp&(SilkConstants.NLSF_QUANT_DEL_DEC_STATES-1)][j]
 		OpusAssert(int(indices[j]) >= 0-SilkConstants.NLSF_QUANT_MAX_AMPLITUDE_EXT)
@@ -415,9 +403,7 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	pCB := psNLSF_CB.CB1_NLSF_Q8
 	var iCDF_ptr int
 	var pCB_element int
-	if Debug {
-		fmt.Printf("pNLSF_Q15-1:%+v\r\n", pNLSF_Q15)
-	}
+
 	OpusAssert(nSurvivors <= SilkConstants.NLSF_VQ_MAX_SURVIVORS)
 	OpusAssert(signalType >= 0 && signalType <= 2)
 	OpusAssert(NLSF_mu_Q20 <= 32767 && NLSF_mu_Q20 >= 0)
@@ -435,9 +421,7 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 
 	RD_Q25 = make([]int, nSurvivors)
 	tempIndices2 = InitTwoDimensionalArrayByte(nSurvivors, SilkConstants.MAX_LPC_ORDER)
-	if Debug {
-		fmt.Printf("pNLSF_Q15:%+v\r\n", pNLSF_Q15)
-	}
+
 	// Loop over survivors
 	for s = 0; s < nSurvivors; s++ {
 		ind1 = tempIndices1[s]
@@ -465,9 +449,7 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 
 		// Unpack entropy table indices and predictor for current CB1 index
 		silk_NLSF_unpack(ec_ix, pred_Q8, psNLSF_CB, ind1)
-		if Debug {
-			fmt.Printf("res_Q10:%+v\r\n", res_Q10)
-		}
+
 		// Trellis quantizer
 		RD_Q25[s] = silk_NLSF_del_dec_quant(
 			tempIndices2[s],
@@ -497,10 +479,7 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	// Find the lowest rate-distortion error
 	bestIndex := make([]int, 1)
 	silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1)
-	if Debug {
-		fmt.Printf("NLSFIndices-1:%+v\r\n", NLSFIndices)
-		fmt.Printf("tempIndices2-1:%+v\r\n", tempIndices2)
-	}
+
 	NLSFIndices[0] = int8(tempIndices1[bestIndex[0]])
 	//System.arraycopy(tempIndices2[bestIndex[0]], 0, NLSFIndices, 1, psNLSF_CB.order)
 	copy(NLSFIndices[1:], tempIndices2[bestIndex[0]][0:psNLSF_CB.order])
@@ -508,7 +487,7 @@ func silk_NLSF_encode(NLSFIndices []int8, pNLSF_Q15 []int16, psNLSF_CB *NLSFCode
 	// Decode
 	silk_NLSF_decode(pNLSF_Q15, NLSFIndices, psNLSF_CB)
 	if Debug {
-		fmt.Printf("NLSFIndices:%+v\r\n", NLSFIndices)
+		fmt.Printf("NLSFIndices:%+v\r\n", (NLSFIndices))
 	}
 	return RD_Q25[0]
 }
@@ -815,9 +794,7 @@ func silk_A2NLSF(NLSF []int16, a_Q16 []int, d int) {
 }
 
 func silk_process_NLSFs(psEncC *SilkChannelEncoder, PredCoef_Q12 [][]int16, pNLSF_Q15 []int16, prev_NLSFq_Q15 []int16) {
-	if Debug {
-		fmt.Printf("silk_process_NLSFs pNLSF_Q15:%+v\r\n", pNLSF_Q15)
-	}
+
 	var doInterpolate bool
 	var NLSF_mu_Q20, i_sqr_Q15 int
 	pNLSF0_temp_Q15 := make([]int16, MAX_LPC_ORDER)

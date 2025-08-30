@@ -26,7 +26,7 @@ func silk_VQ_WMat_EC(ind *BoxedValueByte, rate_dist_Q14 *BoxedValueInt, gain_Q7 
 		diff_Q14[2] = int16(int(in_Q14[in_Q14_ptr+2]) - silk_LSHIFT(int(cb_row_Q7[2]), 7))
 		diff_Q14[3] = int16(int(in_Q14[in_Q14_ptr+3]) - silk_LSHIFT(int(cb_row_Q7[3]), 7))
 		diff_Q14[4] = int16(int(in_Q14[in_Q14_ptr+4]) - silk_LSHIFT(int(cb_row_Q7[4]), 7))
-		//	fmt.Printf("silk_VQ_WMat_EC diff_Q14:%+v\r\n", (diff_Q14))
+
 		/* Weighted rate */
 		sum1_Q14 = silk_SMULBB(mu_Q9, int(cl_Q5[k]))
 

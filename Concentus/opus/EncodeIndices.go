@@ -26,6 +26,10 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)
 	OpusAssert(typeOffset >= 0 && typeOffset < 6)
 	OpusAssert(encode_LBRR == 0 || typeOffset >= 2)
+	fmt.Printf("encode_LBRR:%d\r\n", encode_LBRR)
+	fmt.Printf("typeOffset:%d\r\n", typeOffset)
+	fmt.Printf("psIndices.signalType:%d\r\n", psIndices.signalType)
+	fmt.Printf("psIndices.quantOffsetType:%d\r\n", psIndices.quantOffsetType)
 	if encode_LBRR != 0 || typeOffset >= 2 {
 		psRangeEnc.enc_icdf(typeOffset-2, silk_type_offset_VAD_iCDF, 8)
 	} else {
@@ -47,7 +51,9 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	} else {
 		/* independent coding, in two stages: MSB bits followed by 3 LSBs */
 		OpusAssert(psIndices.GainsIndices[0] >= 0 && psIndices.GainsIndices[0] < N_LEVELS_QGAIN)
+
 		psRangeEnc.enc_icdf(silk_RSHIFT(int(psIndices.GainsIndices[0]), 3), silk_gain_iCDF[psIndices.signalType], 8)
+
 		psRangeEnc.enc_icdf(int(psIndices.GainsIndices[0]&7), silk_uniform8_iCDF, 8)
 	}
 	/* remaining subframes */
@@ -66,9 +72,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	/**
 	 * *************
 	 */
-	if Debug {
-		fmt.Printf("psIndices.NLSFIndices:%+v\r\n", psIndices.NLSFIndices)
-	}
+
 	psRangeEnc.enc_icdf_offset(int(psIndices.NLSFIndices[0]), psEncC.psNLSF_CB.CB1_iCDF, int(int16(psIndices.signalType>>1)*psEncC.psNLSF_CB.nVectors), 8)
 	silk_NLSF_unpack(ec_ix, pred_Q8, psEncC.psNLSF_CB, int(psIndices.NLSFIndices[0]))
 	OpusAssert(int(psEncC.psNLSF_CB.order) == psEncC.predictLPCOrder)

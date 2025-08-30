@@ -10,6 +10,9 @@ func silk_process_gains(
 	condCoding int,
 ) {
 
+	if psEncCtrl.Gains_Q16[0] == 23457008 {
+		//	panic("silk_process_gains")
+	}
 	psShapeSt := psEnc.sShape
 	var k int
 	var s_Q16, InvMaxSqrVal_Q16, gain, gain_squared, ResNrg, ResNrgPart, quant_offset_Q10 int

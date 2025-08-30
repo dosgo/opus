@@ -665,7 +665,9 @@ func (s *SilkChannelEncoder) silk_encode_frame(pnBytesOut *BoxedValueInt, psRang
 		res_pitch = make([]int16, s.la_pitch+s.frame_length+s.ltp_mem_length)
 		res_pitch_frame = s.ltp_mem_length
 		silk_find_pitch_lags(s, sEncCtrl, res_pitch, s.x_buf[:], x_frame)
+
 		silk_noise_shape_analysis(s, sEncCtrl, res_pitch, res_pitch_frame, s.x_buf[:], x_frame)
+
 		silk_find_pred_coefs(s, sEncCtrl, res_pitch, s.x_buf[:], x_frame, condCoding)
 		silk_process_gains(s, sEncCtrl, condCoding)
 		xfw_Q3 = make([]int, s.frame_length)
