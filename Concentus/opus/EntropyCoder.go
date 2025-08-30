@@ -428,7 +428,7 @@ func (ec *EntropyCoder) enc_icdf(_s int, _icdf []int16, _ftb int) {
 
 		fmt.Printf("enc_icdf nbits_total:%d this.rng  :%d old:%d  _ftb:%d _s:%d\r\n", ec.nbits_total, ec.rng, old, _ftb, _s)
 		if old == 57496504 {
-			panic("eeee")
+			//	panic("eeee")
 		}
 	}
 	ec.enc_normalize()

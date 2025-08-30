@@ -614,7 +614,8 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 
 	silk_VAD_GetSA_Q8(s, s.inputBuf[:], 1)
 
-	if s.speech_activity_Q8 < silk_SMULWB(int(TuningParameters.SPEECH_ACTIVITY_DTX_THRES), 1<<8) {
+	if s.speech_activity_Q8 < int((float64(TuningParameters.SPEECH_ACTIVITY_DTX_THRES)*float64(int64(1)<<(8)) + 0.5)) {
+
 		s.indices.signalType = byte(SilkConstants.TYPE_NO_VOICE_ACTIVITY)
 		s.noSpeechCounter++
 		if s.noSpeechCounter < SilkConstants.NB_SPEECH_FRAMES_BEFORE_DTX {
@@ -625,6 +626,7 @@ func (s *SilkChannelEncoder) silk_encode_do_VAD() {
 		}
 		s.VAD_flags[s.nFramesEncoded] = 0
 	} else {
+
 		s.noSpeechCounter = 0
 		s.inDTX = 0
 		s.indices.signalType = byte(SilkConstants.TYPE_UNVOICED)

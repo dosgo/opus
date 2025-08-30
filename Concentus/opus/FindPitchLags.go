@@ -90,6 +90,7 @@ func silk_find_pitch_lags(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderContr
 		psEnc.indices.contourIndex = 0
 		psEnc.LTPCorr_Q15 = 0
 	}
+
 }
 
 func silk_find_pitch_lagsbak(psEnc *SilkChannelEncoder, psEncCtrl *SilkEncoderControl, res []int16, x []int16, x_ptr int) {

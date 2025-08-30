@@ -63,7 +63,7 @@ func main() {
 				i++
 				continue
 			}*/
-		if i > 40 {
+		if i > 200 {
 			break
 		}
 		pcm, _ := BytesToShorts(inBuf, 0, len(inBuf))
@@ -73,7 +73,7 @@ func main() {
 
 		bytesEncoded, err := encoder.Encode(pcm, 0, packetSamples, data_packet, 0, 1275)
 		if i == 37 {
-			opus.Debug = true
+			//	opus.Debug = true
 		} else {
 			opus.Debug = false
 		}
@@ -82,7 +82,7 @@ func main() {
 		//fmt.Printf("encoder:%s\r\n", encoder.ResetState())
 		//break
 
-		fmt.Printf("bytesEncoded:%d data_packet:%s\r\n", bytesEncoded, ByteSliceToMD5(data_packet))
+		fmt.Printf("i:%d bytesEncoded:%d data_packet:%s\r\n", i, bytesEncoded, ByteSliceToMD5(data_packet))
 
 		//fmt.Printf(" data_packet:%s\r\n", BytesToJSONArray(data_packet))
 

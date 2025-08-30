@@ -1,7 +1,5 @@
 package opus
 
-import "fmt"
-
 func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, FrameIndex int, encode_LBRR int, condCoding int) {
 	var i, k, typeOffset int
 	var encode_absolute_lagIndex, delta_lagIndex int
@@ -26,10 +24,7 @@ func silk_encode_indices(psEncC *SilkChannelEncoder, psRangeEnc *EntropyCoder, F
 	typeOffset = 2*int(psIndices.signalType) + int(psIndices.quantOffsetType)
 	OpusAssert(typeOffset >= 0 && typeOffset < 6)
 	OpusAssert(encode_LBRR == 0 || typeOffset >= 2)
-	fmt.Printf("encode_LBRR:%d\r\n", encode_LBRR)
-	fmt.Printf("typeOffset:%d\r\n", typeOffset)
-	fmt.Printf("psIndices.signalType:%d\r\n", psIndices.signalType)
-	fmt.Printf("psIndices.quantOffsetType:%d\r\n", psIndices.quantOffsetType)
+
 	if encode_LBRR != 0 || typeOffset >= 2 {
 		psRangeEnc.enc_icdf(typeOffset-2, silk_type_offset_VAD_iCDF, 8)
 	} else {
